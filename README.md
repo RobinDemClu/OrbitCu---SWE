@@ -25,6 +25,8 @@ src/orbitcu/
   ingest/firms.py            NASA FIRMS VIIRS (SP archive + NRT)
   ingest/s5p.py              Sentinel-5P TROPOMI SO2 (range reads of netCDF)
   ingest/era5.py             ERA5 winds + boundary-layer height (Copernicus CDS)
+  statusmap.py               interactive map of smelters and monthly VIIRS activity status
+  templates/                 map page template + Natural Earth 1:50m TopoJSON (public domain)
   cli.py                     `orbitcu firms|optical|s5p|era5 ...`
 tests/                       unit tests (no network)
 ```

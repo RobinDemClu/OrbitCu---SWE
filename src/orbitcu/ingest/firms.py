@@ -52,31 +52,32 @@ def transactions_used() -> tuple[int, int]:
     return int(j.get("current_transactions", 0)), int(j.get("transaction_limit", 5000))
 
 
-def _wait_for_budget(margin: int = 300) -> None:
-    """Block until the rolling 10-minute window has room (FIRMS answers HTTP 400
-    "Invalid MAP_KEY" once the 5000-transaction budget is spent)."""
-    while True:
-        used, limit = transactions_used()
-        if used < limit - margin:
-            return
-        time.sleep(30)
+def _backoff() -> None:
+    """Pause after FIRMS refuses a request for exceeding the 5000-transactions
+    per 10-minute budget (it answers HTTP 400 "Invalid MAP_KEY"). The
+    ``mapkey_status`` counter is not a usable gate: it can stay near the limit
+    while requests are accepted again, so we simply wait and retry."""
+    time.sleep(60)
 
 
 def _get(url: str, retries: int = 15) -> str:
     for attempt in range(retries):
-        r = requests.get(url, timeout=120)
+        try:
+            r = requests.get(url, timeout=120)
+        except requests.ConnectionError:
+            time.sleep(2 ** min(attempt, 6))
+            continue
         if r.status_code == 200 and not r.text.startswith("Invalid"):
             if "Exceeding allowed transaction limit" in r.text:
-                _wait_for_budget()
+                _backoff()
                 continue
             return r.text
         if "Invalid MAP_KEY" in r.text:  # also returned when the budget is exhausted
-            _wait_for_budget()
-            time.sleep(60)  # the status counter lags behind the throttle
+            _backoff()
             continue
-        time.sleep(2 ** attempt)
+        time.sleep(2 ** min(attempt, 6))
     # never echo the URL: it contains the MAP_KEY
-    raise RuntimeError(f"FIRMS request failed after {retries} attempts (HTTP {r.status_code})")
+    raise RuntimeError(f"FIRMS request failed after {retries} attempts")
 
 
 @lru_cache(maxsize=1)
