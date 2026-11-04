@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbitcu"
+version = "0.1.0"
+description = "Satellite monitoring of copper smelters for supply nowcasting (OrbitCu, CSE 406)"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy", "pandas", "pyarrow", "requests",
+  "pystac-client", "planetary-computer", "rasterio", "shapely", "pyproj",
+]
+
+[project.optional-dependencies]
+era5 = ["cdsapi>=0.7", "xarray", "netcdf4"]
+s5p = ["xarray", "h5netcdf", "fsspec", "aiohttp"]
+dev = ["pytest"]
+
+[project.scripts]
+orbitcu = "orbitcu.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
