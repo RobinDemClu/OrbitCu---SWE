@@ -33,6 +33,15 @@ from .sites import REGISTRY_DIR, SITES_CSV
 TEMPLATES = Path(__file__).resolve().parent / "templates"
 
 
+def typical_level(days: list[int], min_months: int = 3) -> float:
+    """Typical monthly detection days of a site: the median over the months with
+    at least one detection. Using only months with heat keeps a long outage from
+    dragging the reference down (an outage must read as an outage). Fewer than
+    ``min_months`` such months means VIIRS sees the plant too rarely: 0."""
+    hot = [d for d in days if d > 0]
+    return float(np.median(hot)) if len(hot) >= min_months else 0.0
+
+
 def build_data(firms_dir: Path, start: str, end: str, radius_km: float = 1.5,
                sites_csv: Path = SITES_CSV) -> dict:
     sites = pd.read_csv(sites_csv)
@@ -57,14 +66,13 @@ def build_data(firms_dir: Path, start: str, end: str, radius_km: float = 1.5,
             "lon": float(r.lon),
             "note": r.geoloc_note,
             "days": days,
-            # typical level = median of monthly detection days over the period
-            "baseline": float(np.median(days)) if days else 0.0,
+            "baseline": typical_level(days),
             "has_data": path.exists(),
         })
     return {
         "months": months,
         "radius_km": radius_km,
-        "sensor": "VIIRS S-NPP 375 m (NASA FIRMS; SP archive, NRT for the latest months)",
+        "sensor": "VIIRS S-NPP 375 m (NASA FIRMS ; archive SP, puis NRT pour les derniers mois)",
         "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "sites": out,
     }
