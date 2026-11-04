@@ -1,0 +1,354 @@
+<title>OrbitCu Smelter Watch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control-room screen. Header with capacity tallies, then the world map beside a site register; stacks on phones. */
+:root {
+  --bg: #eef1f4;
+  --panel: #ffffff;
+  --ink: #17202b;
+  --muted: #5b6876;
+  --rule: #d5dce3;
+  --ocean: #dfe6ee;
+  --land: #f8fafb;
+  --border: #b9c4cf;
+  --copper: #b5602b;
+  --active: #1f8a5b;
+  --reduced: #d08a12;
+  --off: #c2413a;
+  --weak: #8d99a6;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1318; --panel: #151c23; --ink: #e6ebf0; --muted: #94a2b0; --rule: #26313c;
+    --ocean: #0b1015; --land: #1b242d; --border: #34414e; --copper: #e08a52;
+    --active: #3cc48a; --reduced: #f0b03c; --off: #ef6a62; --weak: #6f7d8a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1318; --panel: #151c23; --ink: #e6ebf0; --muted: #94a2b0; --rule: #26313c;
+  --ocean: #0b1015; --land: #1b242d; --border: #34414e; --copper: #e08a52;
+  --active: #3cc48a; --reduced: #f0b03c; --off: #ef6a62; --weak: #6f7d8a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 28px;
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: flex-end; justify-content: space-between; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 62ch; }
+.tallies { display: flex; flex-wrap: wrap; gap: 8px; }
+.tally { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px; min-width: 120px; }
+.tally .k { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.tally .v { font-family: var(--font-data); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.tally .v small { font-size: 0.75rem; color: var(--muted); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.s-active { background: var(--active); } .s-reduced { background: var(--reduced); } .s-off { background: var(--off); } .s-weak { background: var(--weak); }
+
+.controls { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+.ctl { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ctl label, .ctl .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.month-ctl { flex: 1 1 360px; }
+#month { flex: 1; min-width: 120px; accent-color: var(--copper); }
+#monthLabel { font-family: var(--font-data); font-variant-numeric: tabular-nums; min-width: 9ch; font-weight: 500; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-size: 0.85rem; background: transparent; color: var(--ink); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--copper); color: #fff; }
+.btn { font: inherit; font-size: 0.85rem; background: transparent; color: var(--ink); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+button:focus-visible, input:focus-visible, .row:focus-visible { outline: 2px solid var(--copper); outline-offset: 2px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+@media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.mapbox { background: var(--ocean); border: 1px solid var(--rule); border-radius: 8px; position: relative; overflow: hidden; min-width: 0; }
+#map { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9.4; cursor: grab; touch-action: none; }
+#map:active { cursor: grabbing; }
+.land { fill: var(--land); stroke: none; }
+.borders { fill: none; stroke: var(--border); stroke-width: 0.5; vector-effect: non-scaling-stroke; }
+.graticule { fill: none; stroke: var(--border); stroke-opacity: 0.35; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
+.site { cursor: pointer; stroke: var(--panel); vector-effect: non-scaling-stroke; }
+.site.low { stroke: var(--ink); stroke-dasharray: 2 2; }
+.site.sel { stroke: var(--copper); stroke-width: 3; stroke-dasharray: none; }
+.zoombar { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.zoombar button { width: 32px; height: 32px; font-size: 1.1rem; background: var(--panel); color: var(--ink); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+.legend { position: absolute; left: 12px; bottom: 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; display: grid; gap: 4px; max-width: calc(100% - 24px); }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.legend .ring { width: 10px; height: 10px; border-radius: 50%; border: 1.5px dashed var(--ink); display: inline-block; }
+@media (max-width: 640px) {
+  .legend { position: static; border: 0; border-top: 1px solid var(--rule); border-radius: 0; max-width: none; grid-template-columns: 1fr 1fr; }
+  .tallies { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .tally { min-width: 0; }
+  .spark-axis .mid { display: none; }
+}
+#tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; white-space: nowrap; }
+
+aside { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; min-width: 0; display: flex; flex-direction: column; }
+.detail { padding: 14px 16px; border-bottom: 1px solid var(--rule); }
+.detail h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; margin: 0 0 2px; }
+.detail .meta { color: var(--muted); font-size: 0.85rem; }
+.detail dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 10px 0 8px; font-size: 0.88rem; }
+.detail dt { color: var(--muted); }
+.detail dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.detail .note { font-size: 0.82rem; color: var(--muted); margin: 6px 0 0; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+.detail .spark svg { width: 100%; height: 56px; display: block; }
+.spark-axis { display: flex; justify-content: space-between; color: var(--muted); font-family: var(--font-data); font-size: 0.72rem; margin-top: 2px; }
+.listhead { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px 6px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.list { max-height: 560px; overflow-y: auto; }
+.row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 7px 16px; border-top: 1px solid var(--rule); cursor: pointer; }
+.row:hover { background: color-mix(in srgb, var(--copper) 8%, transparent); }
+.row.sel { background: color-mix(in srgb, var(--copper) 14%, transparent); }
+.row .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.9rem; }
+.row .nm span { font-weight: 400; color: var(--muted); }
+.row .cap { font-family: var(--font-data); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.row svg { grid-column: 2 / 4; width: 100%; height: 18px; display: block; }
+footer { color: var(--muted); font-size: 0.82rem; max-width: 90ch; display: grid; gap: 6px; }
+footer p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>OrbitCu Smelter Watch</h1>
+      <p class="sub">Les 29 plus grandes fonderies de cuivre primaire du registre, et leur activité thermique vue par le satellite VIIRS. Choisissez un mois et une fenêtre : le statut compare la chaleur détectée au niveau habituel de chaque site.</p>
+    </div>
+    <div class="tallies" id="tallies" aria-live="polite"></div>
+  </header>
+
+  <div class="controls">
+    <div class="ctl month-ctl">
+      <label for="month">Mois</label>
+      <input type="range" id="month" min="0" max="0" step="1" value="0">
+      <span id="monthLabel"></span>
+      <button class="btn" id="play" type="button" aria-pressed="false">Lecture</button>
+    </div>
+    <div class="ctl">
+      <span class="lbl" id="winLbl">Fenêtre</span>
+      <div class="seg" role="group" aria-labelledby="winLbl" id="win">
+        <button type="button" data-w="1" aria-pressed="false">1 mois</button>
+        <button type="button" data-w="3" aria-pressed="true">3 mois</button>
+        <button type="button" data-w="12" aria-pressed="false">12 mois</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="mapbox">
+      <svg id="map" role="img" aria-label="Carte du monde des fonderies de cuivre et de leur statut d'activité"></svg>
+      <div class="zoombar">
+        <button type="button" id="zin" aria-label="Zoomer">+</button>
+        <button type="button" id="zout" aria-label="Dézoomer">−</button>
+        <button type="button" id="zreset" aria-label="Vue mondiale">⟲</button>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div id="tip" hidden></div>
+    </div>
+    <aside>
+      <div class="detail" id="detail"></div>
+      <div class="listhead"><span>Fonderies, par capacité</span><span>kt Cu/an</span></div>
+      <div class="list" id="list"></div>
+    </aside>
+  </div>
+
+  <footer>
+    <p><strong>Méthode.</strong> Pour chaque mois, on compte les jours distincts avec au moins une détection VIIRS S-NPP (375 m, NASA FIRMS) à moins de <span id="radius"></span> km du four. Le niveau habituel d'un site est la médiane de ses jours de détection mensuels sur la période. Sur la fenêtre choisie : <em>actif</em> si le rythme atteint au moins la moitié du niveau habituel, <em>en baisse</em> s'il est plus faible mais non nul, <em>aucune chaleur détectée</em> s'il est nul. Un site dont le niveau habituel est inférieur à 2 jours par mois est classé <em>signal trop faible</em> : le satellite ne permet pas de conclure.</p>
+    <p><strong>Limites.</strong> Les nuages, la neige et la géométrie de visée font varier les détections d'un mois à l'autre. Les cercles en pointillés sont des positions de faible confiance : la chaleur détectée peut venir d'une autre usine proche. Kamoa-Kakula a démarré fin 2025, son niveau habituel est donc bas. Données : <span id="gen"></span>. Fond de carte : Natural Earth 1:50m.</p>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const DATA = /*__DATA__*/null;
+const WORLD = /*__WORLD__*/null;
+
+const MONTHS_FR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const STATUS = {
+  active:  { label: "Actif", cls: "s-active", varName: "--active" },
+  reduced: { label: "En baisse", cls: "s-reduced", varName: "--reduced" },
+  off:     { label: "Aucune chaleur détectée", cls: "s-off", varName: "--off" },
+  weak:    { label: "Signal trop faible", cls: "s-weak", varName: "--weak" },
+};
+const ORDER = ["active", "reduced", "off", "weak"];
+const CONF_FR = { high: "élevée", medium: "moyenne", low: "faible" };
+const NOTE_FR = {
+  high: "Position confirmée : un amas persistant de détections VIIRS se trouve près de l'adresse connue de l'usine.",
+  medium: "Position probable : amas VIIRS net, mais une autre source de chaleur existe à proximité.",
+  low: "Position à confirmer sur une carte : plusieurs usines possibles, ou aucun amas VIIRS net.",
+};
+
+const state = { m: DATA.months.length - 1, w: 3, sel: null, playing: null };
+try { const s = JSON.parse(localStorage.getItem("orbitcu-map") || "{}"); if ([1, 3, 12].includes(s.w)) state.w = s.w; } catch (e) {}
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtMonth = i => { const [y, m] = DATA.months[i].split("-"); return `${MONTHS_FR[+m - 1]} ${y}`; };
+const sites = DATA.sites.slice().sort((a, b) => (b.capacity_kt || 0) - (a.capacity_kt || 0));
+
+function windowStats(s) {
+  const lo = Math.max(0, state.m - state.w + 1);
+  const slice = s.days.slice(lo, state.m + 1);
+  const total = slice.reduce((a, b) => a + b, 0);
+  const rate = total / slice.length;
+  let status;
+  if (s.baseline < 2) status = "weak";
+  else if (rate >= 0.5 * s.baseline) status = "active";
+  else if (rate > 0) status = "reduced";
+  else status = "off";
+  return { lo, total, rate, status, months: slice.length };
+}
+
+// ---------- map ----------
+const svg = d3.select("#map");
+const W = 960, H = 564;
+svg.attr("viewBox", `0 0 ${W} ${H}`);
+const projection = d3.geoNaturalEarth1().fitExtent([[8, 8], [W - 8, H - 8]], { type: "Sphere" });
+const path = d3.geoPath(projection);
+const gZoom = svg.append("g");
+gZoom.append("path").datum(d3.geoGraticule10()).attr("class", "graticule").attr("d", path);
+const countries = topojson.feature(WORLD, WORLD.objects.countries);
+gZoom.append("path").datum(countries).attr("class", "land").attr("d", path);
+gZoom.append("path").datum(topojson.mesh(WORLD, WORLD.objects.countries, (a, b) => a !== b)).attr("class", "borders").attr("d", path);
+const capMax = d3.max(sites, s => s.capacity_kt || 0);
+const rScale = d3.scaleSqrt().domain([0, capMax]).range([3, 13]);
+const gSites = gZoom.append("g");
+let k = 1;
+const marks = gSites.selectAll("circle").data(sites.slice().reverse(), d => d.id).join("circle")
+  .attr("class", d => "site" + (d.confidence === "low" ? " low" : ""))
+  .attr("cx", d => projection([d.lon, d.lat])[0]).attr("cy", d => projection([d.lon, d.lat])[1])
+  .attr("tabindex", 0).attr("role", "button").attr("aria-label", d => d.name)
+  .on("click", (e, d) => select(d.id))
+  .on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(d.id); } })
+  .on("pointerenter", (e, d) => showTip(e, d)).on("pointermove", (e, d) => showTip(e, d)).on("pointerleave", hideTip);
+
+const zoom = d3.zoom().scaleExtent([1, 40]).translateExtent([[0, 0], [W, H]]).on("zoom", ev => {
+  k = ev.transform.k; gZoom.attr("transform", ev.transform); sizeMarks();
+});
+svg.call(zoom);
+d3.select("#zin").on("click", () => svg.transition().duration(250).call(zoom.scaleBy, 2));
+d3.select("#zout").on("click", () => svg.transition().duration(250).call(zoom.scaleBy, 0.5));
+d3.select("#zreset").on("click", () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity));
+function sizeMarks() {
+  marks.attr("r", d => (d.capacity_kt ? rScale(d.capacity_kt) : 4) / Math.sqrt(k))
+       .attr("stroke-width", d => (d.id === state.sel ? 3 : 1.25));
+}
+const tip = document.getElementById("tip");
+function showTip(e, d) {
+  const st = windowStats(d), box = document.querySelector(".mapbox").getBoundingClientRect();
+  tip.textContent = `${d.name} · ${STATUS[st.status].label} · ${st.total} j de détection`;
+  tip.hidden = false;
+  const x = Math.min(e.clientX - box.left + 12, box.width - tip.offsetWidth - 8);
+  tip.style.left = `${Math.max(8, x)}px`; tip.style.top = `${e.clientY - box.top + 12}px`;
+}
+function hideTip() { tip.hidden = true; }
+
+// ---------- legend, tallies ----------
+document.getElementById("legend").innerHTML = ORDER.map(s => `<div><span class="dot ${STATUS[s].cls}"></span>${STATUS[s].label}</div>`).join("")
+  + `<div><span class="ring"></span>Position à confirmer</div><div style="color:var(--muted)">Taille : capacité</div>`;
+document.getElementById("radius").textContent = String(DATA.radius_km).replace(".", ",");
+document.getElementById("gen").textContent = `${DATA.sensor}, ${fmtMonth(0)} à ${fmtMonth(DATA.months.length - 1)}, générées le ${DATA.generated}`;
+
+function renderTallies(stats) {
+  const agg = Object.fromEntries(ORDER.map(s => [s, { n: 0, cap: 0 }]));
+  sites.forEach(s => { const a = agg[stats.get(s.id).status]; a.n++; a.cap += s.capacity_kt || 0; });
+  document.getElementById("tallies").innerHTML = ORDER.map(s => `<div class="tally"><div class="k"><span class="dot ${STATUS[s].cls}"></span>${STATUS[s].label}</div><div class="v">${agg[s].n} <small>sites · ${Math.round(agg[s].cap).toLocaleString("fr-FR")} kt</small></div></div>`).join("");
+}
+
+// ---------- sparkline ----------
+function spark(s, st, h) {
+  const n = s.days.length, max = Math.max(31, ...s.days) || 31, bw = 100 / n;
+  const bars = s.days.map((v, i) => {
+    const bh = Math.max(v > 0 ? 1 : 0, (v / max) * (h - 2));
+    const inWin = i >= st.lo && i <= state.m;
+    const col = inWin ? css(STATUS[st.status].varName) : css("--border");
+    return `<rect x="${(i * bw + bw * 0.12).toFixed(3)}" y="${(h - bh).toFixed(2)}" width="${(bw * 0.76).toFixed(3)}" height="${bh.toFixed(2)}" fill="${col}"></rect>`;
+  }).join("");
+  const base = s.baseline >= 2 ? `<line x1="0" x2="100" y1="${(h - (s.baseline / max) * (h - 2)).toFixed(2)}" y2="${(h - (s.baseline / max) * (h - 2)).toFixed(2)}" stroke="${css("--muted")}" stroke-dasharray="1.5 1.5" stroke-width="0.6" vector-effect="non-scaling-stroke"></line>` : "";
+  return `<svg viewBox="0 0 100 ${h}" preserveAspectRatio="none" aria-hidden="true">${bars}${base}</svg>`;
+}
+
+// ---------- detail, list ----------
+function renderDetail(stats) {
+  const s = sites.find(x => x.id === state.sel) || sites[0];
+  const st = stats.get(s.id);
+  const winTxt = state.w === 1 ? fmtMonth(state.m) : `${fmtMonth(st.lo)} à ${fmtMonth(state.m)}`;
+  document.getElementById("detail").innerHTML = `
+    <h2>${s.name}</h2>
+    <div class="meta">${s.country} · ${s.operator}</div>
+    <dl>
+      <dt>Statut</dt><dd><span class="pill"><span class="dot ${STATUS[st.status].cls}"></span>${STATUS[st.status].label}</span></dd>
+      <dt>Fenêtre</dt><dd>${winTxt}</dd>
+      <dt>Jours détectés</dt><dd>${st.total} sur ${st.months} mois (${st.rate.toFixed(1).replace(".", ",")} / mois)</dd>
+      <dt>Niveau habituel</dt><dd>${s.baseline.toFixed(1).replace(".", ",")} j / mois</dd>
+      <dt>Capacité</dt><dd>${s.capacity_kt ? s.capacity_kt.toLocaleString("fr-FR") + " kt Cu/an" : "non publiée"}</dd>
+      <dt>Preuve opérateur</dt><dd>catégorie ${s.grade}</dd>
+      <dt>Position</dt><dd>confiance ${CONF_FR[s.confidence] || s.confidence} · ${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}</dd>
+    </dl>
+    <div class="spark">${spark(s, st, 56)}</div>
+    <div class="spark-axis"><span>${fmtMonth(0)}</span><span class="mid">jours détectés par mois · pointillé : niveau habituel</span><span>${fmtMonth(DATA.months.length - 1)}</span></div>
+    <p class="note">${NOTE_FR[s.confidence] || ""}</p>`;
+}
+function renderList(stats) {
+  document.getElementById("list").innerHTML = sites.map(s => {
+    const st = stats.get(s.id);
+    return `<div class="row${s.id === state.sel ? " sel" : ""}" data-id="${s.id}" tabindex="0" role="button" aria-label="${s.name}, ${STATUS[st.status].label}">
+      <span class="dot ${STATUS[st.status].cls}"></span>
+      <span class="nm">${s.name} <span>· ${s.country}</span></span>
+      <span class="cap">${s.capacity_kt ? Math.round(s.capacity_kt) : "n.p."}</span>
+      ${spark(s, st, 18)}
+    </div>`;
+  }).join("");
+}
+document.getElementById("list").addEventListener("click", e => { const r = e.target.closest(".row"); if (r) select(r.dataset.id, true); });
+document.getElementById("list").addEventListener("keydown", e => { const r = e.target.closest(".row"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select(r.dataset.id, true); } });
+
+function select(id, fly) {
+  state.sel = id;
+  if (fly) {
+    const s = sites.find(x => x.id === id), [x, y] = projection([s.lon, s.lat]), kk = Math.max(k, 6);
+    svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(W / 2 - kk * x, H / 2 - kk * y).scale(kk));
+  }
+  render();
+}
+
+// ---------- controls ----------
+const slider = document.getElementById("month");
+slider.max = DATA.months.length - 1; slider.value = state.m;
+slider.addEventListener("input", () => { state.m = +slider.value; render(); });
+document.querySelectorAll("#win button").forEach(b => b.addEventListener("click", () => {
+  state.w = +b.dataset.w;
+  try { localStorage.setItem("orbitcu-map", JSON.stringify({ w: state.w })); } catch (e) {}
+  render();
+}));
+const playBtn = document.getElementById("play");
+playBtn.addEventListener("click", () => {
+  if (state.playing) { clearInterval(state.playing); state.playing = null; playBtn.textContent = "Lecture"; playBtn.setAttribute("aria-pressed", "false"); return; }
+  if (state.m >= DATA.months.length - 1) state.m = 0;
+  playBtn.textContent = "Pause"; playBtn.setAttribute("aria-pressed", "true");
+  state.playing = setInterval(() => {
+    state.m++; slider.value = state.m; render();
+    if (state.m >= DATA.months.length - 1) playBtn.click();
+  }, 700);
+});
+
+function render() {
+  document.getElementById("monthLabel").textContent = fmtMonth(state.m);
+  document.querySelectorAll("#win button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.w === state.w)));
+  const stats = new Map(sites.map(s => [s.id, windowStats(s)]));
+  marks.attr("fill", d => css(STATUS[stats.get(d.id).status].varName))
+       .classed("sel", d => d.id === state.sel);
+  sizeMarks();
+  renderTallies(stats); renderDetail(stats); renderList(stats);
+}
+state.sel = sites[0].id;
+render();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>

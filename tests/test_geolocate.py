@@ -23,3 +23,16 @@ def test_monthly_detection_days_and_verdict():
     m = monthly_detection_days(df, 10.0, 20.0, start="2026-01", end="2026-03")
     assert list(m.values) == [2, 0, 2]
     assert verdict(m, last_n=1) == "active" and verdict(m, last_n=2) == "intermittent"
+
+
+def test_statusmap_build_data(tmp_path):
+    from orbitcu.statusmap import build_data, render
+    rows = pd.DataFrame({"latitude": [51.68775] * 3, "longitude": [15.98032] * 3,
+                         "acq_date": ["2026-01-02", "2026-01-03", "2026-02-10"]})
+    rows.to_parquet(tmp_path / "PL-GLOGOW.parquet")
+    data = build_data(tmp_path, "2026-01", "2026-03")
+    glogow = next(s for s in data["sites"] if s["id"] == "PL-GLOGOW")
+    assert data["months"] == ["2026-01", "2026-02", "2026-03"]
+    assert glogow["days"] == [2, 1, 0] and glogow["baseline"] == 1.0
+    html = render(data, tmp_path / "map.html").read_text()
+    assert "/*__DATA__*/" not in html and "PL-GLOGOW" in html

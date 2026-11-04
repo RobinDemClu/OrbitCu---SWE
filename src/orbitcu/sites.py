@@ -98,6 +98,8 @@ def load_sites(path: Path | str = SITES_CSV, ids: list[str] | None = None) -> li
     sites = []
     for r in df.itertuples(index=False):
         cap = getattr(r, "capacity_kt_cu", None)
+        half = getattr(r, "thermal_half_km", DEFAULT_THERMAL_HALF_KM)
+        radius = getattr(r, "so2_radius_km", DEFAULT_SO2_RADIUS_KM)
         sites.append(
             Site(
                 id=r.id,
@@ -107,6 +109,8 @@ def load_sites(path: Path | str = SITES_CSV, ids: list[str] | None = None) -> li
                 lon=float(r.lon),
                 capacity_kt=None if pd.isna(cap) else float(cap),
                 operator_check=getattr(r, "operator_check", None),
+                thermal_half_km=DEFAULT_THERMAL_HALF_KM if pd.isna(half) else float(half),
+                so2_radius_km=DEFAULT_SO2_RADIUS_KM if pd.isna(radius) else float(radius),
             )
         )
     return sites

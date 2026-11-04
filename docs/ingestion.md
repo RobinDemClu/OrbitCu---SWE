@@ -94,7 +94,7 @@ See `docs/prototype_results.md` for the numbers per site.
 * CDS serves files from `object-store.os-api.cci2.ecmwf.int`, also blocked; the
   ERA5 request is accepted (licence OK) but cannot be downloaded.
 * FIRMS allows 5000 transactions per 10 minutes; large boxes cost more.
-  `firms._wait_for_budget` throttles automatically.
+  `firms._get` backs off for 60 s and retries when FIRMS refuses a request (HTTP 400 "Invalid MAP_KEY"); the `mapkey_status` counter is not a reliable gate.
 * Data API throughput is ~1-2 scenes/s with 8 threads; a 7-year backfill of
   29 sites (~60 000 scenes) takes about 10 h from outside Azure.
 
