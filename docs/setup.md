@@ -68,18 +68,25 @@ orbitcu statusmap --open
 
 What it does:
 
-1. downloads one VIIRS S-NPP detection file per smelter from NASA FIRMS
-   (3 x 3 km box around the furnace, last 22 complete months) into
-   `cache/firms_hist/<site_id>.parquet`; sites already cached are skipped;
+1. downloads the VIIRS S-NPP detections of NASA FIRMS around each smelter
+   (3 x 3 km box, last 12 complete months), month by month, into
+   `cache/firms_hist/<site_id>/<YYYY-MM>.parquet`, with 12 requests in
+   parallel and a progress line with the time left;
 2. counts, per month, the days with at least one detection within 1.5 km of
    the furnace and compares them with the site's usual level;
 3. writes one self-contained page, `output/status_map.html`, and opens it in
    the browser (`--open`). The page needs internet only for its fonts and the
    d3 drawing library.
 
-Options: `--start 2025-01 --end 2026-10` (months), `--refresh` (download
-again), `--no-download` (cache only), `--out <file>`. Needs `FIRMS_MAP_KEY`.
-The first run takes about 15-30 minutes because of the FIRMS quota.
+The first run sends about 2 400 small requests to FIRMS, which answers slowly,
+so it takes a while. Months already downloaded are never downloaded again: an
+interrupted run (Ctrl+C) resumes where it stopped, and next month's run only
+fetches the new month.
+
+Options: `--months 6` (shorter history, faster first run), `--start 2025-01
+--end 2026-10`, `--workers 12`, `--refresh` (download again), `--no-download`
+(cache only), `--out <file>`. Needs `FIRMS_MAP_KEY`. Do not run two downloads
+with the same key at the same time: they share the FIRMS quota.
 `output/` and `cache/` are git-ignored: the map is always generated, never
 committed.
 

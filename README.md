@@ -65,9 +65,9 @@ orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2025-11-01 --end 20
 orbitcu firms   --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
 ```
 
-Interactive status map of the smelters (downloads the VIIRS history, then
-writes and opens `output/status_map.html`; first run about 15-30 min because of
-the FIRMS quota, later runs use the cache in `cache/firms_hist/`):
+Interactive status map of the smelters (downloads 12 months of VIIRS history,
+then writes and opens `output/status_map.html`; the first download is long,
+later runs reuse the cache in `cache/firms_hist/`, see `docs/setup.md`):
 
 ```bash
 orbitcu statusmap --open

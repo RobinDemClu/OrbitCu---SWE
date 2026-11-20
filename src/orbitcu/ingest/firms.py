@@ -63,9 +63,9 @@ def _backoff() -> None:
 def _get(url: str, retries: int = 15) -> str:
     for attempt in range(retries):
         try:
-            r = requests.get(url, timeout=120)
-        except requests.ConnectionError:
-            time.sleep(2 ** min(attempt, 6))
+            r = requests.get(url, timeout=60)
+        except (requests.ConnectionError, requests.Timeout):
+            time.sleep(min(2 ** attempt, 10))
             continue
         if r.status_code == 200 and not r.text.startswith("Invalid"):
             if "Exceeding allowed transaction limit" in r.text:
@@ -75,7 +75,7 @@ def _get(url: str, retries: int = 15) -> str:
         if "Invalid MAP_KEY" in r.text:  # also returned when the budget is exhausted
             _backoff()
             continue
-        time.sleep(2 ** min(attempt, 6))
+        time.sleep(min(2 ** attempt, 10))
     # never echo the URL: it contains the MAP_KEY
     raise RuntimeError(f"FIRMS request failed after {retries} attempts")
 
