@@ -49,12 +49,21 @@ VARS = {
 }
 
 
-def search_all(sites: list[Site], start: str, end: str, modes=("OFFL",), cat=None) -> pd.DataFrame:
+def search_all(sites: list[Site], start: str, end: str, modes=("OFFL", "RPRO", "NRTI"), cat=None) -> pd.DataFrame:
     """Union of the orbits touching any site; one row per (orbit file, site)."""
     cat = cat or client()
     parts = [s5p.search_orbits(s, start, end, modes=modes, cat=cat) for s in sites]
     parts = [p for p in parts if not p.empty]
-    return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
+    if not parts:
+        return pd.DataFrame()
+    df = pd.concat(parts, ignore_index=True)
+    # One file per (orbit, site): the Planetary Computer archive misses some
+    # OFFL orbits (e.g. most of July 2025), so RPRO then NRTI fill the gaps.
+    rank = {"OFFL": 0, "RPRO": 1, "NRTI": 2}
+    df["_r"] = df["mode"].map(rank).fillna(9)
+    key = df["orbit"].fillna(df["acquired_at"].dt.floor("h").astype(str))
+    df = df.assign(_k=key).sort_values("_r").drop_duplicates(["_k", "site_id"]).drop(columns=["_r", "_k"])
+    return df.sort_values("acquired_at").reset_index(drop=True)
 
 
 def _scale(ds, arr):
@@ -117,7 +126,7 @@ def _with_retry(fn, *args, tries: int = 4):
 
 
 def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: int = 8,
-                 modes=("OFFL",)) -> Path:
+                 modes=("OFFL", "RPRO", "NRTI")) -> Path:
     """Extract one calendar month for all sites; resumable via the cached file."""
     path = out_dir / "s5p_batch" / f"{month}.parquet"
     if path.exists():

@@ -132,8 +132,11 @@ def main(argv=None):
         if name == "s5p-batch":
             sp.add_argument("--workers", type=int, default=8)
             sp.add_argument("--reverse", action="store_true", help="newest month first")
-        if name in ("s5p", "s5p-batch"):
+        if name == "s5p":
             sp.add_argument("--modes", nargs="*", default=["OFFL"], choices=["OFFL", "NRTI", "RPRO"])
+        if name == "s5p-batch":
+            sp.add_argument("--modes", nargs="*", default=["OFFL", "RPRO", "NRTI"], choices=["OFFL", "NRTI", "RPRO"],
+                            help="product streams; OFFL preferred, others fill archive gaps")
     a = p.parse_args(argv)
     a.fn(a)
 
