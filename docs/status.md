@@ -7,7 +7,7 @@ Last updated: 20 November 2026 (morning).
 | Area | What exists | Where |
 |---|---|---|
 | Proposal and requirements | Phase 2 proposal (8 requirements, architecture, team roles) | course deliverable |
-| Smelter registry | 29 primary smelters, ~11.7 Mt/yr (~47 % of world capacity), each with operator evidence graded A / B / C; 8 exclusions documented | `data/registry/`, [`registry.md`](registry.md) |
+| Smelter registry | 29 primary smelters, ~11.7 Mt/yr (~47 % of world capacity), each with operator evidence graded A / B / C; 8 exclusions documented | `data/registry/`, [report, Part II section 3](latex/orbitcu_report.pdf) |
 | Grade-C satellite check | 10 sites without operator confirmation checked with VIIRS and Sentinel-2: 8 active, 2 likely active | `c_site_activity_check.csv` |
 | Geolocation | furnace points from VIIRS clusters + Sentinel-2 hot pixels: 10 high, 5 medium, 14 low confidence | `smelter_sites.csv`, `orbitcu.geolocate` |
 | Ingestion: optical | Sentinel-2 L2A and Landsat 8/9 with server-side crop and quality fractions | `orbitcu.ingest.optical` |

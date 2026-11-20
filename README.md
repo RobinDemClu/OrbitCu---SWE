@@ -17,17 +17,14 @@ CSE 406 Software Engineering term project, team CoPPernicus.
 
 | Document | Content |
 |---|---|
-| [`docs/overview.md`](docs/overview.md) | Purpose, client needs, scope, requirements |
+| [`docs/latex/orbitcu_report.pdf`](docs/latex/orbitcu_report.pdf) | **Project report** (LaTeX source `docs/latex/orbitcu_report.tex`): proposal, requirements and technical report |
 | [`docs/architecture.md`](docs/architecture.md) | The nine pipeline stages and how data flows between them |
 | [`docs/data_sources.md`](docs/data_sources.md) | Satellite and market data sources, access, limits |
-| [`docs/registry.md`](docs/registry.md) | How the 29 smelters were selected, sourced and geolocated |
 | [`docs/setup.md`](docs/setup.md) | Installation, API keys, command line, tests |
 | [`docs/modules.md`](docs/modules.md) | Reference of the Python package `orbitcu` |
 | [`docs/ingestion.md`](docs/ingestion.md) | Ingestion method in detail (AOIs, point-in-time rules, blockers) |
 | [`docs/prototype_results.md`](docs/prototype_results.md) | One-year prototype on Glogow, Hamburg and Kamoa-Kakula |
 | [`docs/status.md`](docs/status.md) | What is done, what remains, roadmap |
-| [`docs/report/technical_report.md`](docs/report/technical_report.md) | Research-paper style technical report (sources, methods, difficulties, references); Word version in `docs/report/` |
-| [`docs/report/OrbitCu_Proposal_Requirements.docx`](docs/report/OrbitCu_Proposal_Requirements.docx) | Phase 2 proposal and requirements (course deliverable) |
 
 ## Repository layout
 
