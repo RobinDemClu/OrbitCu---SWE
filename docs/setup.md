@@ -62,17 +62,26 @@ thermal area for the optical sensors.
 
 ## Status map
 
-A ready-made copy (data up to October 2026) is in `docs/status_map.html`:
-open it in any browser (internet needed for the fonts and the d3 library).
-To rebuild it:
-
 ```bash
-python -m orbitcu.statusmap --firms-dir cache/firms_hist --start 2025-01 --end 2026-10 \
-    --out output/status_map.html
+orbitcu statusmap --open
 ```
 
-Builds one self-contained HTML page: the smelters on a world map, sized by
-capacity, with a monthly VIIRS activity status over a 1, 3 or 12-month window.
+What it does:
+
+1. downloads one VIIRS S-NPP detection file per smelter from NASA FIRMS
+   (3 x 3 km box around the furnace, last 22 complete months) into
+   `cache/firms_hist/<site_id>.parquet`; sites already cached are skipped;
+2. counts, per month, the days with at least one detection within 1.5 km of
+   the furnace and compares them with the site's usual level;
+3. writes one self-contained page, `output/status_map.html`, and opens it in
+   the browser (`--open`). The page needs internet only for its fonts and the
+   d3 drawing library.
+
+Options: `--start 2025-01 --end 2026-10` (months), `--refresh` (download
+again), `--no-download` (cache only), `--out <file>`. Needs `FIRMS_MAP_KEY`.
+The first run takes about 15-30 minutes because of the FIRMS quota.
+`output/` and `cache/` are git-ignored: the map is always generated, never
+committed.
 
 ## Tests
 

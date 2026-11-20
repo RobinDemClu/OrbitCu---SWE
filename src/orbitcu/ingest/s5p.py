@@ -81,7 +81,8 @@ def extract_orbit(site: Site, href: str) -> pd.DataFrame:
     import fsspec
     import xarray as xr
 
-    with fsspec.open(href, "rb", block_size=2 ** 20) as f:
+    # trust_env: honour HTTPS_PROXY / SSL_CERT_FILE (aiohttp ignores them by default)
+    with fsspec.open(href, "rb", block_size=2 ** 20, client_kwargs={"trust_env": True}) as f:
         ds = xr.open_dataset(f, group="PRODUCT", engine="h5netcdf", decode_times=False)
         lat = ds["latitude"].isel(time=0).values
         lon = ds["longitude"].isel(time=0).values

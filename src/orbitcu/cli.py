@@ -6,6 +6,7 @@ Examples::
     orbitcu optical --sensor sentinel2 --sites DE-HAMBURG --start 2025-11-01 --end 2026-10-31
     orbitcu s5p     --sites DE-HAMBURG --start 2026-06-01 --end 2026-06-30
     orbitcu era5    --sites DE-HAMBURG --start 2025-11-01 --end 2026-10-31
+    orbitcu statusmap --open
 
 Outputs go to ``--out`` (default ``output/``): one Parquet manifest per
 (site, source) plus GeoTIFF clips for the optical sensors.
@@ -85,7 +86,12 @@ def cmd_era5(a):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="orbitcu")
+    import sys
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["statusmap"]:
+        from . import statusmap
+        return statusmap.main(argv[1:])
+    p = argparse.ArgumentParser(prog="orbitcu", epilog="also: orbitcu statusmap [--open] (see orbitcu statusmap -h)")
     sub = p.add_subparsers(dest="cmd", required=True)
     for name, fn in [("firms", cmd_firms), ("optical", cmd_optical), ("s5p", cmd_s5p), ("era5", cmd_era5)]:
         sp = sub.add_parser(name)

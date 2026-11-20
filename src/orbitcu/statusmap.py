@@ -8,10 +8,13 @@ Builds one self-contained HTML page (no tile server, no network at view time):
 * the page turns those counts into a status for a chosen month and window
   (1, 3 or 12 months), relative to each site's own typical level.
 
-Usage::
+Usage (downloads the VIIRS history it needs, then writes the page)::
 
-    python -m orbitcu.statusmap --firms-dir cache/firms_hist --start 2025-01 --end 2026-10 \
-        --out output/status_map.html
+    orbitcu statusmap                       # last 22 complete months -> output/status_map.html
+    orbitcu statusmap --start 2025-01 --end 2026-10 --open
+
+VIIRS detections are cached per site in ``cache/firms_hist/<site_id>.parquet``
+so a second run is instant; ``--refresh`` downloads them again.
 
 The base map is Natural Earth 1:50m (public domain) via the ``world-atlas``
 TopoJSON package, embedded in the page.
@@ -88,19 +91,58 @@ def render(data: dict, out: Path, template: Path = TEMPLATES / "status_map.html"
     return out
 
 
+def default_months(n: int = 22) -> tuple[str, str]:
+    """The last ``n`` complete calendar months, as ('YYYY-MM', 'YYYY-MM')."""
+    last = pd.Period(datetime.now(timezone.utc).strftime("%Y-%m"), freq="M") - 1
+    return str(last - (n - 1)), str(last)
+
+
+def fetch_history(firms_dir: Path, start: str, end: str, ids: list[str] | None = None,
+                  refresh: bool = False, sensors=("VIIRS_SNPP",)) -> None:
+    """Download VIIRS detections in each site's thermal box for [start, end]
+    into ``firms_dir/<site_id>.parquet``; sites already cached are skipped."""
+    from .ingest import firms
+    from .sites import load_sites
+
+    d0 = pd.Period(start, freq="M").start_time.date()
+    d1 = pd.Period(end, freq="M").end_time.date()
+    firms_dir.mkdir(parents=True, exist_ok=True)
+    sites = load_sites(ids=ids)
+    for i, s in enumerate(sites, 1):
+        path = firms_dir / f"{s.id}.parquet"
+        if path.exists() and not refresh:
+            print(f"[{i}/{len(sites)}] {s.id}: cached")
+            continue
+        df = firms.fetch_area(s.thermal_bbox(), d0, d1, sensors=sensors)
+        df.to_parquet(path)
+        print(f"[{i}/{len(sites)}] {s.id}: {len(df)} detections")
+
+
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="orbitcu-statusmap")
+    p = argparse.ArgumentParser(prog="orbitcu statusmap",
+                                description="Build the interactive smelter status map (HTML).")
+    p.add_argument("--start", default=None, help="first month YYYY-MM (default: 22 months back)")
+    p.add_argument("--end", default=None, help="last month YYYY-MM (default: last complete month)")
     p.add_argument("--firms-dir", type=Path, default=Path("cache/firms_hist"))
-    p.add_argument("--start", default="2025-01")
-    p.add_argument("--end", default="2026-10")
     p.add_argument("--radius-km", type=float, default=1.5)
     p.add_argument("--out", type=Path, default=Path("output/status_map.html"))
     p.add_argument("--json", type=Path, default=None, help="also write the data as JSON")
+    p.add_argument("--refresh", action="store_true", help="download VIIRS history again")
+    p.add_argument("--no-download", action="store_true", help="use the cache only")
+    p.add_argument("--open", action="store_true", help="open the page in the web browser")
     a = p.parse_args(argv)
-    data = build_data(a.firms_dir, a.start, a.end, a.radius_km)
+    start, end = default_months()
+    start, end = a.start or start, a.end or end
+    if not a.no_download:
+        fetch_history(a.firms_dir, start, end, refresh=a.refresh)
+    data = build_data(a.firms_dir, start, end, a.radius_km)
     if a.json:
         a.json.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(render(data, a.out))
+    out = render(data, a.out).resolve()
+    print(f"Status map ({start} to {end}) -> {out}")
+    if a.open:
+        import webbrowser
+        webbrowser.open(out.as_uri())
 
 
 if __name__ == "__main__":

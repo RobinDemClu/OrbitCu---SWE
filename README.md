@@ -26,7 +26,6 @@ CSE 406 Software Engineering term project, team CoPPernicus.
 | [`docs/ingestion.md`](docs/ingestion.md) | Ingestion method in detail (AOIs, point-in-time rules, blockers) |
 | [`docs/prototype_results.md`](docs/prototype_results.md) | One-year prototype on Glogow, Hamburg and Kamoa-Kakula |
 | [`docs/status.md`](docs/status.md) | What is done, what remains, roadmap |
-| [`docs/status_map.html`](docs/status_map.html) | Interactive smelter status map (VIIRS, Jan 2025 - Oct 2026): download and open in a browser |
 
 ## Repository layout
 
@@ -64,6 +63,14 @@ $env:CDSAPI_KEY = "..."
 pytest
 orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
 orbitcu firms   --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
+```
+
+Interactive status map of the smelters (downloads the VIIRS history, then
+writes and opens `output/status_map.html`; first run about 15-30 min because of
+the FIRMS quota, later runs use the cache in `cache/firms_hist/`):
+
+```bash
+orbitcu statusmap --open
 ```
 
 Windows (cmd): activate with `.venv\Scripts\activate.bat` and set keys with
