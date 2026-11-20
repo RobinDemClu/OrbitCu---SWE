@@ -448,7 +448,7 @@ Kamoa-Kakula (DR Congo) & low & 102 (53) & \textbf{8 / 53} & 19\\
 \textbf{What it says.}
 \begin{itemize}[leftmargin=1.2em]
   \item \textbf{20 smelters are seen hot on more than 100 days a year}, i.e.\ at least two days a week given cloud cover. For them, heat alone already tells whether they run.
-  \item \textbf{9 smelters give a weak or no heat signal}: the three Japanese plants, the two Indonesian plants, Kamoa-Kakula, Dahej, Huangshi and Onsan. Reasons: furnaces fully enclosed, positions still approximate, or plants that started recently. For these, \SOtwo{} must take over, and positions must be checked by hand.
+  \item \textbf{9 smelters give a weak or no heat signal}: the three Japanese plants, the two Indonesian plants, Kamoa-Kakula, Dahej, Huangshi and Onsan. Reasons: furnaces fully enclosed, positions still approximate, or plants that started recently. For these, the furnace positions must first be checked by hand. \SOtwo{} helps little here: these modern plants capture almost all their \SOtwo{} (Section~\ref{sec:so2}).
   \item The number of hot days is \textbf{not proportional to capacity}: Guixi, the largest smelter (900\,kt), shows fewer hot days than smaller plants in drier, less cloudy places (Chile, Iran). The heat signal must therefore be compared with each site's own usual level, not between sites.
 \end{itemize}
 
@@ -464,7 +464,7 @@ Kamoa-Kakula (DR Congo) & low & 102 (53) & \textbf{8 / 53} & 19\\
 \subsection{The interactive status map}
 The command \code{orbitcu statusmap --open} repeats Test 2 for the last 12 months and draws the result on a world map. For each smelter and month, it compares the number of hot days with the site's usual level and gives one of four statuses: \textbf{active} (at least half the usual level), \textbf{reduced}, \textbf{no heat detected}, or \textbf{signal too weak} when the satellite cannot decide. Downloads are kept month by month, so a second run only fetches the new month.
 
-\subsection{\SOtwo{} emissions: first results}
+\subsection{\SOtwo{} emissions: first results}\label{sec:so2}
 \textbf{Method.} For each smelter and month, the \SOtwo{} pixels within 40\,km are turned to face the wind measured at the smelter, and a plume shape (spread across the wind, fading along it) is fitted to them, following Fioletov et al.\ [7], [22]. The fit gives an emission rate in tonnes of \SOtwo{} per day, with its uncertainty. When another source is nearby, its position is estimated and it is fitted at the same time: at Kutch (India), most of the \SOtwo{} comes from coal power plants about 20\,km away, and the method now separates them from the smelter. Emissions are then converted to copper with one factor per site, set from output the operator published earlier.
 
 \textbf{Data.} 58 months (January 2022 to October 2026) of Sentinel-5P \SOtwo{} over the 29 smelters, 7.9 million pixels, with the ERA5 wind at each smelter every hour. One Sentinel-5P orbit file is read once for all the smelters it covers, and missing orbits in the main archive are filled from the reprocessed and near-real-time copies.
@@ -507,7 +507,8 @@ Dahej, Kutch (India) & 12, 20 & yes & Mostly coal power plants 20--25\,km away\\
 \begin{enumerate}[leftmargin=1.4em]
   \item Heat seen from space \textbf{does show whether a smelter runs}, for about two thirds of the sites.
   \item It \textbf{also shows partial stops} (Chuquicamata, Norilsk, Chifeng Jintong), which is the signal we are after.
-  \item Clouds and enclosed furnaces leave gaps: combining heat with \SOtwo{} and placing the remaining furnaces by hand is necessary before building the daily estimate.
+  \item \SOtwo{} is seen clearly only at 3 old smelters that let their sulfur escape (Norilsk, Sarcheshmeh, Jinchang), and yearly values depend on the satellite software version. It is a useful check there, not a copper counter.
+  \item Heat therefore remains the main signal. Before building the daily estimate, the remaining furnaces must be placed by hand, and clouds must be handled by combining Sentinel-2, Landsat and VIIRS.
 \end{enumerate}
 \end{keybox}
 
