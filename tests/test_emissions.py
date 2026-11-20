@@ -37,7 +37,7 @@ def test_fit_recovers_synthetic_emission():
         xr, yr = em.rotate(x, y, np.full(n_px, u), np.full(n_px, v))
         k = em.plume_kernel(xr, yr, np.full(n_px, s), cfg)
         vcd = a_true * k + 20 + rng.normal(0, 50, n_px)
-        rows.append(pd.DataFrame({"item_id": o, "kernel": k, "vcd_mol_km2": vcd, "wind": s}))
+        rows.append(pd.DataFrame({"item_id": o, "kernel": k, "vcd_mol_km2": vcd, "wind": s, "x_km": x, "y_km": y}))
     px = pd.concat(rows, ignore_index=True)
     res = em.fit_window(px, cfg, n_boot=50)
     assert abs(res["a_mol"] / a_true - 1) < 0.1

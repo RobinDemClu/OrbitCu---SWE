@@ -97,7 +97,11 @@ def cmd_s5p_batch(a):
     if a.reverse:
         months = months[::-1]
     for m in months:
-        path = s5p_batch.ingest_month(sites, m, a.out, workers=a.workers, modes=tuple(a.modes))
+        try:
+            path = s5p_batch.ingest_month(sites, m, a.out, workers=a.workers, modes=tuple(a.modes))
+        except RuntimeError as e:
+            print(f"SKIPPED {e}", flush=True)
+            continue
         print(f"{m}: {len(pd.read_parquet(path))} pixels -> {path}", flush=True)
 
 

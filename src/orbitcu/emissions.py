@@ -12,7 +12,10 @@ the time-averaged SO2 vertical column at (x, y) is modelled as
 * ``g(y, s) = (lam/2) exp(lam (lam sigma^2 - 2 y)/2) erfc((lam sigma^2 - y)/(sqrt 2 sigma))``
   - an exponentially-modified Gaussian along the wind: the plume decays
   with lifetime ``tau`` so ``lam = 1 / (s tau)`` (units 1/km);
-* ``a`` is the total SO2 mass around the source (mol) and ``B`` a background.
+* ``a`` is the total SO2 mass around the source (mol) and ``B`` a background,
+  planar by default (``B0 + Bx x + By y``, x/y east/north) to absorb regional
+  gradients (coast lines, terrain, distant sources), as in the multi-source
+  fits of Fioletov et al. (2017).
 
 The emission rate is ``E = a / tau``. With ``sigma`` and ``tau`` fixed - as in
 Fioletov et al. (2016, 2017) and the TROPOMI catalogue of Fioletov et al.
@@ -58,6 +61,7 @@ class FitConfig:
     qa_min: float = 0.5
     min_pixels: int = 150
     min_orbits: int = 5
+    gradient: bool = True
 
 
 def local_xy_km(lat, lon, lat0, lon0):
@@ -146,6 +150,9 @@ def fit_window(px: pd.DataFrame, cfg: FitConfig, n_boot: int = 200, seed: int = 
     if n < cfg.min_pixels or n_orb < cfg.min_orbits:
         return res
     cols = [px["kernel"].values, np.ones(n)]
+    if cfg.gradient:
+        # planar background (regional gradients: terrain, coast, distant sources)
+        cols += [px["x_km"].values / cfg.radius_km, px["y_km"].values / cfg.radius_km]
     if "kernel2" in px:
         cols.append(px["kernel2"].values)  # neighbouring source, fitted jointly
     X = np.column_stack(cols)
@@ -164,7 +171,7 @@ def fit_window(px: pd.DataFrame, cfg: FitConfig, n_boot: int = 200, seed: int = 
     se_a = float(np.std(boots, ddof=1))
     to_kt_yr = M_SO2 / (cfg.tau_h * 3600) * SECONDS_PER_YEAR / 1e6  # mol -> kt/yr
     if "kernel2" in px:
-        res["E2_kt_yr"] = coef[2] * to_kt_yr
+        res["E2_kt_yr"] = coef[-1] * to_kt_yr
     res.update(a_mol=coef[0], B_mol_km2=coef[1], E_kt_yr=coef[0] * to_kt_yr,
                E_se_kt_yr=se_a * to_kt_yr, t_stat=coef[0] / se_a if se_a > 0 else np.nan,
                mean_wind=float(px["wind"].mean()))
@@ -265,7 +272,7 @@ def locate_source(prep: pd.DataFrame, cfg: FitConfig = FitConfig(), half_km: flo
             xr_, yr_ = rotate(prep["x_km"].values - dx, prep["y_km"].values - dy,
                               prep["u"].values, prep["v"].values)
             k = plume_kernel(xr_, yr_, prep["wind"].values, cfg)
-            X = np.column_stack([k, np.ones(len(k))])
+            X = np.column_stack([k, np.ones(len(k)), prep["x_km"].values, prep["y_km"].values])
             c, *_ = np.linalg.lstsq(X, y, rcond=None)
             rss = float(np.sum((y - X @ c) ** 2))
             if rss < best[0]:

@@ -138,19 +138,23 @@ def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: in
             first = g.iloc[0]
             ss = [site_map[i] for i in g["site_id"].unique()]
             jobs[ex.submit(_with_retry, extract_orbit_multi, first.href, ss)] = first
-        parts = []
+        parts, failed = [], 0
         for fut in as_completed(jobs):
             meta = jobs[fut]
             try:
                 px = fut.result()
             except Exception as e:
                 log.error("orbit %s failed: %s", meta.item_id, e)
+                failed += 1
                 continue
             if px.empty:
                 continue
             px["item_id"], px["mode"], px["orbit"] = meta.item_id, meta["mode"], meta.orbit
             px["acquired_at"], px["available_at"] = meta.acquired_at, meta.available_at
             parts.append(px)
+    if failed:
+        # never cache an incomplete month: it would be skipped on the next run
+        raise RuntimeError(f"{month}: {failed}/{len(jobs)} orbits failed; month not saved, rerun to retry")
     df = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
     tmp = path.with_suffix(".tmp")
     df.to_parquet(tmp)
