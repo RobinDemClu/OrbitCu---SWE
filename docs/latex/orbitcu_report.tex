@@ -106,7 +106,7 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
 \begin{itemize}[leftmargin=1.2em]
   \item \textbf{29 smelters selected} (about 11.7 Mt of copper per year, roughly 47\,\% of world smelting capacity), each checked against its operator's own documents.
   \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
-  \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). At 9 smelters the heat signal is too weak or absent, so \SOtwo{} must take over there.
+  \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). \SOtwo{} emissions 2022--2026 are computed for all 29 sites, but only 3 old smelters (Norilsk, Sarcheshmeh, Jinchang) are seen clearly: modern plants capture almost all their \SOtwo.
   \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 24 automated tests pass.
   \item \textbf{Still to build:} the daily ``running or not'' estimate, the activity index, the copper output estimate, the trading test and the full dashboard.
 \end{itemize}
@@ -312,8 +312,8 @@ Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, tha
 \textbf{\#} & \textbf{The system shall\ldots} & \textbf{What exists today} & \textbf{Status}\\
 \midrule
 1 & keep a list of the 30 largest smelters & 29 sites, each with operator evidence and furnace position (Section~\ref{sec:registry}) & \done\\
-2 & download the 5 data sources, from 2018 and every day & All 5 sources work; \SOtwo{} history 2022--2026 being downloaded & \done\\
-3 & give a heat score and an \SOtwo{} emission per smelter & Hot-pixel rule and VIIRS hot-day counts work; \SOtwo{} emission method coded and tested & \wip\\
+2 & download the 5 data sources, from 2018 and every day & All 5 sources work; \SOtwo{} and wind history 2022--2026 downloaded & \done\\
+3 & give a heat score and an \SOtwo{} emission per smelter & Hot-pixel rule and VIIRS hot-day counts work; \SOtwo{} emission per smelter and month 2022--2026 computed (clear signal at 3 sites) & \wip\\
 4 & estimate daily ``running or not'' and publish activity indices & Planned (step 4--5 above) & \todo\\
 5 & check results against known events and official figures & 5 known shutdowns and start-ups and 28 published output figures collected & \wip\\
 6 & use market data and estimate monthly copper output & \SOtwo{}-to-copper conversion written; market data not yet loaded & \wip\\
@@ -467,7 +467,41 @@ The command \code{orbitcu statusmap --open} repeats Test 2 for the last 12 month
 \subsection{\SOtwo{} emissions: first results}
 \textbf{Method.} For each smelter and month, the \SOtwo{} pixels within 40\,km are turned to face the wind measured at the smelter, and a plume shape (spread across the wind, fading along it) is fitted to them, following Fioletov et al.\ [7], [22]. The fit gives an emission rate in tonnes of \SOtwo{} per day, with its uncertainty. When another source is nearby, its position is estimated and it is fitted at the same time: at Kutch (India), most of the \SOtwo{} comes from coal power plants about 20\,km away, and the method now separates them from the smelter. Emissions are then converted to copper with one factor per site, set from output the operator published earlier.
 
-\textbf{Status.} The method is coded and tested. The 2022--2026 \SOtwo{} and wind history for the 29 smelters is still downloading; results per smelter will be added to this section when it is complete.
+\textbf{Data.} 58 months (January 2022 to October 2026) of Sentinel-5P \SOtwo{} over the 29 smelters, 7.9 million pixels, with the ERA5 wind at each smelter every hour. One Sentinel-5P orbit file is read once for all the smelters it covers, and missing orbits in the main archive are filled from the reprocessed and near-real-time copies.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/so2_annual.png}
+\caption{Yearly \SOtwo{} emission at the five smelters seen most clearly, and at Ilo (Peru), a modern smelter that is not seen.}
+\label{fig:so2annual}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l r c X@{}}
+\toprule
+\textbf{Smelter} & \textbf{\SOtwo, kt/yr} & \textbf{Seen?} & \textbf{Comment}\\
+\midrule
+Norilsk (Russia) & 361 & every year & Mostly from nickel smelting; about 1.0\,t \SOtwo{} per t copper\\
+Sarcheshmeh (Iran) & 145 & every year & About 0.5\,t \SOtwo{} per t copper: a quarter of the sulfur escapes\\
+Jinchang (China) & 30 & every year & Smaller leak; copper share of the plant not known\\
+Chuquicamata (Chile) & 27 & 2023--2025 & Seen in three of five years\\
+Saganoseki (Japan) & 18 & some years & Other industry nearby (refinery, steel works)\\
+Dahej, Kutch (India) & 12, 20 & yes & Mostly coal power plants 20--25\,km away\\
+21 other smelters & $\approx 0$ & no & Acid plants capture almost all the \SOtwo\\
+\bottomrule
+\end{tabularx}
+\caption{Mean emission 2022--2025 and how often it is clearly above zero (more than 3 standard errors).}
+\end{table}
+
+\textbf{What it says.}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Only 3 smelters are seen clearly every year} (Norilsk, Sarcheshmeh, Jinchang). They are old plants that let a large part of their sulfur escape. Modern smelters capture more than 99\,\% of it in acid plants, so the satellite sees almost nothing: Glogow, Hamburg, Pirdop, Ilo, Guixi, the Japanese plants. For them, \SOtwo{} cannot give copper output; heat must be used instead.
+  \item \textbf{Checks against published output.} Sarcheshmeh: \SOtwo{} $+7\,\%$ from 2022 to 2023, Iran's primary copper $+11\,\%$ [15]. Norilsk: with the factor set on 2022 only, 2024 copper is predicted 15\,\% too low against the Nornickel figure. A full test against Aurubis (Hamburg, Pirdop) and Southern Copper (Ilo) quarterly figures is not possible, because these plants are not seen.
+  \item \textbf{Known events.} The Manyar fire (October 2024 to May 2025) and the Pirdop shutdown (spring 2025) both show a significant fall. The Hamburg shutdown (mid-2024) goes the right way but is within the noise. The Kamoa start-up (end of 2025) and the 15\,\% fall at Ilo in 2025 are not seen.
+  \item \textbf{Main limit: the satellite product changes every year.} Each year was processed with a different version of the Sentinel-5P software (v2.3 in 2022 to v2.8 in 2026), and no single consistent version exists in the archive we use. The background level halves from 2025, and in 2026 Norilsk ($+62\,\%$), Sarcheshmeh ($+46\,\%$) and Saganoseki rise together. Real changes cannot yet be told apart from software changes, so comparisons should for now be made only inside one version.
+  \item \textbf{Precision.} Even at the best sites, yearly values move by 20--40\,\% from one year to the next, more than copper output does. \SOtwo{} is therefore an \emph{activity check} for a few large, leaky smelters, not a precise copper counter.
+\end{itemize}
 
 \begin{keybox}[What the first tests tell us]
 \begin{enumerate}[leftmargin=1.4em]
@@ -487,7 +521,7 @@ The command \code{orbitcu statusmap --open} repeats Test 2 for the last 12 month
 \textbf{\#} & \textbf{Task} & \textbf{Owner}\\
 \midrule
 1 & Place the 14 low-confidence smelters by hand (Kamoa first); choose slot 30 and Manyar's capacity & Baptiste\\
-2 & Finish the \SOtwo{} and wind history 2022--2026; emission estimates for all sites; compare with published output & Ethan\\
+2 & \SOtwo: correct for software version changes; add country statistics to test more sites; use \SOtwo{} with heat in the daily estimate & Ethan\\
 3 & Download the full image and heat history since 2018 for all sites (about 60\,000 images, around 10\,h) & Radu\\
 4 & Heat score for every image, with a quality flag & Radu\\
 5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
