@@ -70,7 +70,7 @@ What it does:
 
 1. downloads the VIIRS S-NPP detections of NASA FIRMS around each smelter
    (3 x 3 km box, last 12 complete months), month by month, into
-   `cache/firms_hist/<site_id>/<YYYY-MM>.parquet`, with 12 requests in
+   `cache/firms_hist/<site_id>/<YYYY-MM>.parquet`, with 6 requests in
    parallel and a progress line with the time left;
 2. counts, per month, the days with at least one detection within 1.5 km of
    the furnace and compares them with the site's usual level;
@@ -84,9 +84,12 @@ interrupted run (Ctrl+C) resumes where it stopped, and next month's run only
 fetches the new month.
 
 Options: `--months 6` (shorter history, faster first run), `--start 2025-01
---end 2026-10`, `--workers 12`, `--refresh` (download again), `--no-download`
-(cache only), `--out <file>`. Needs `FIRMS_MAP_KEY`. Do not run two downloads
-with the same key at the same time: they share the FIRMS quota.
+--end 2026-10`, `--workers 6`, `--refresh` (download again), `--no-download`
+(cache only), `--out <file>`. Needs `FIRMS_MAP_KEY`. When the FIRMS quota (5 000 requests per 10 minutes per key) is reached, all
+downloads pause for a minute and resume. A request that still fails is skipped:
+the map is built anyway, the missing months are listed, and running the same
+command again fills them in. Do not run two downloads with the same key at the
+same time: they share the quota.
 `output/` and `cache/` are git-ignored: the map is always generated, never
 committed.
 

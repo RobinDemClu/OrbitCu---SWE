@@ -113,7 +113,7 @@ def load_cached(firms_dir: Path, site_id: str) -> pd.DataFrame:
 
 
 def fetch_history(firms_dir: Path, start: str, end: str, ids: list[str] | None = None,
-                  refresh: bool = False, sensor: str = "VIIRS_SNPP", workers: int = 12) -> None:
+                  refresh: bool = False, sensor: str = "VIIRS_SNPP", workers: int = 6) -> list[str]:
     """Download VIIRS detections in each site's thermal box, month by month,
     into ``firms_dir/<site_id>/<YYYY-MM>.parquet``.
 
@@ -138,7 +138,7 @@ def fetch_history(firms_dir: Path, start: str, end: str, ids: list[str] | None =
                 todo.append((s, m, path))
     if not todo:
         print("VIIRS history: everything already cached")
-        return
+        return []
 
     # One FIRMS request covers at most 5 days: split each (site, month).
     plan = firms.plan_requests(sensor, pd.Period(start, freq="M").start_time.date(),
@@ -158,25 +158,35 @@ def fetch_history(firms_dir: Path, start: str, end: str, ids: list[str] | None =
     left = {k: 0 for k in range(len(todo))}
     for k, *_ in jobs:
         left[k] += 1
+    failed: set[int] = set()
     t0, done = time.time(), 0
     with ThreadPoolExecutor(workers) as ex:
         futs = {ex.submit(firms._fetch_one, src, todo[k][0].thermal_bbox(), d, n): k for k, src, d, n in jobs}
         for f in as_completed(futs):
             k = futs[f]
-            parts[k].append(f.result())
+            try:
+                parts[k].append(f.result())
+            except Exception:  # one failed request must not stop the run
+                failed.add(k)
             left[k] -= 1
             done += 1
             if left[k] == 0:  # month complete: write it so progress survives an interruption
                 s, m, path = todo[k]
                 got = [p for p in parts.pop(k) if not p.empty]
-                df = firms.normalise(pd.concat(got, ignore_index=True)) if got else pd.DataFrame()
-                path.parent.mkdir(parents=True, exist_ok=True)
-                df.to_parquet(path)
+                if k not in failed:  # an incomplete month is not saved: the next run retries it
+                    df = firms.normalise(pd.concat(got, ignore_index=True)) if got else pd.DataFrame()
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    df.to_parquet(path)
             el = time.time() - t0
             eta = el / done * (len(jobs) - done)
             sys.stdout.write(f"\r  {done}/{len(jobs)} requests, about {eta / 60:.0f} min left   ")
             sys.stdout.flush()
     print()
+    missing = [f"{todo[k][0].id} {todo[k][1]}" for k in sorted(failed)]
+    if missing:
+        print(f"{len(missing)} site-months could not be downloaded (FIRMS quota or network); "
+              f"run the same command again later to fill them in: " + ", ".join(missing))
+    return missing
 
 
 def main(argv=None):
@@ -191,18 +201,21 @@ def main(argv=None):
     p.add_argument("--json", type=Path, default=None, help="also write the data as JSON")
     p.add_argument("--refresh", action="store_true", help="download VIIRS history again")
     p.add_argument("--no-download", action="store_true", help="use the cache only")
-    p.add_argument("--workers", type=int, default=12, help="parallel FIRMS requests (default 12)")
+    p.add_argument("--workers", type=int, default=6, help="parallel FIRMS requests (default 6)")
     p.add_argument("--open", action="store_true", help="open the page in the web browser")
     a = p.parse_args(argv)
     start, end = default_months(a.months)
     start, end = a.start or start, a.end or end
+    missing = []
     if not a.no_download:
-        fetch_history(a.firms_dir, start, end, refresh=a.refresh, workers=a.workers)
+        missing = fetch_history(a.firms_dir, start, end, refresh=a.refresh, workers=a.workers)
     data = build_data(a.firms_dir, start, end, a.radius_km)
     if a.json:
         a.json.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     out = render(data, a.out).resolve()
     print(f"Status map ({start} to {end}) -> {out}")
+    if missing:
+        print("Note: the months listed above are shown as empty until they are downloaded.")
     if a.open:
         import webbrowser
         webbrowser.open(out.as_uri())

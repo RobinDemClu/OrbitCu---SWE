@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import io
 import os
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
@@ -52,32 +53,64 @@ def transactions_used() -> tuple[int, int]:
     return int(j.get("current_transactions", 0)), int(j.get("transaction_limit", 5000))
 
 
+_quota_lock = threading.Lock()
+_quota_until = 0.0  # time.time() before which no thread sends a request
+QUOTA_WAIT_S = 60
+QUOTA_MAX_WAIT_S = 15 * 60  # the FIRMS window is 10 minutes
+
+
+def _wait_quota() -> None:
+    """Block while a quota pause is running (shared by all threads)."""
+    while True:
+        with _quota_lock:
+            left = _quota_until - time.time()
+        if left <= 0:
+            return
+        time.sleep(min(left, 5))
+
+
 def _backoff() -> None:
-    """Pause after FIRMS refuses a request for exceeding the 5000-transactions
-    per 10-minute budget (it answers HTTP 400 "Invalid MAP_KEY"). The
-    ``mapkey_status`` counter is not a usable gate: it can stay near the limit
-    while requests are accepted again, so we simply wait and retry."""
-    time.sleep(60)
+    """FIRMS refused a request for exceeding the 5000-transactions per 10-minute
+    budget (it answers HTTP 400 "Invalid MAP_KEY" or "Exceeding allowed
+    transaction limit"). Pause *all* threads for QUOTA_WAIT_S, so the parallel
+    downloads stop hammering the server together. The ``mapkey_status`` counter
+    is not a usable gate: it can stay near the limit while requests are
+    accepted again, so we simply wait and retry."""
+    global _quota_until
+    with _quota_lock:
+        if _quota_until <= time.time():
+            print(f"\nFIRMS quota reached: pausing {QUOTA_WAIT_S} s, then resuming.", flush=True)
+            _quota_until = time.time() + QUOTA_WAIT_S
+    _wait_quota()
 
 
-def _get(url: str, retries: int = 15) -> str:
-    for attempt in range(retries):
+def _get(url: str, retries: int = 8) -> str:
+    """GET with retries. Quota refusals wait (up to QUOTA_MAX_WAIT_S in total)
+    and do not count as failed attempts; other errors are retried ``retries`` times."""
+    errors, quota_waited = 0, 0.0
+    while True:
+        _wait_quota()
         try:
             r = requests.get(url, timeout=60)
         except (requests.ConnectionError, requests.Timeout):
-            time.sleep(min(2 ** attempt, 10))
-            continue
-        if r.status_code == 200 and not r.text.startswith("Invalid"):
-            if "Exceeding allowed transaction limit" in r.text:
+            r = None
+        if r is not None:
+            quota = "Invalid MAP_KEY" in r.text or "Exceeding allowed transaction limit" in r.text
+            if r.status_code == 200 and not quota and not r.text.startswith("Invalid"):
+                return r.text
+            if quota:
+                if quota_waited >= QUOTA_MAX_WAIT_S:
+                    break
+                t = time.time()
                 _backoff()
+                quota_waited += time.time() - t
                 continue
-            return r.text
-        if "Invalid MAP_KEY" in r.text:  # also returned when the budget is exhausted
-            _backoff()
-            continue
-        time.sleep(min(2 ** attempt, 10))
+        errors += 1
+        if errors >= retries:
+            break
+        time.sleep(min(2 ** errors, 10))
     # never echo the URL: it contains the MAP_KEY
-    raise RuntimeError(f"FIRMS request failed after {retries} attempts")
+    raise RuntimeError("FIRMS request failed (quota still exhausted or server unreachable)")
 
 
 @lru_cache(maxsize=1)
