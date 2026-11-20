@@ -62,6 +62,10 @@ thermal area for the optical sensors.
 
 ## Status map
 
+A ready-made copy (data up to October 2026) is in `docs/status_map.html`:
+open it in any browser (internet needed for the fonts and the d3 library).
+To rebuild it:
+
 ```bash
 python -m orbitcu.statusmap --firms-dir cache/firms_hist --start 2025-01 --end 2026-10 \
     --out output/status_map.html

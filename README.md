@@ -26,6 +26,7 @@ CSE 406 Software Engineering term project, team CoPPernicus.
 | [`docs/ingestion.md`](docs/ingestion.md) | Ingestion method in detail (AOIs, point-in-time rules, blockers) |
 | [`docs/prototype_results.md`](docs/prototype_results.md) | One-year prototype on Glogow, Hamburg and Kamoa-Kakula |
 | [`docs/status.md`](docs/status.md) | What is done, what remains, roadmap |
+| [`docs/status_map.html`](docs/status_map.html) | Interactive smelter status map (VIIRS, Jan 2025 - Oct 2026): download and open in a browser |
 
 ## Repository layout
 
