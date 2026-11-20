@@ -83,7 +83,7 @@ def reported_vs_satellite(em: pd.DataFrame, rep: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def pit_backtest(pairs: pd.DataFrame, min_coverage: float = 0.6) -> pd.DataFrame:
+def pit_backtest(pairs: pd.DataFrame, min_coverage: float = 0.45) -> pd.DataFrame:
     """Leave-future-out prediction of each reported period.
 
     For period P, ``k`` is computed from the reported periods published
@@ -132,7 +132,7 @@ def site_estimates(em: pd.DataFrame, sites, rep: pd.DataFrame | None = None, anc
         method, k = "none", np.nan
         if rep is not None and (rep["site_id"] == s.id).any():
             pairs = reported_vs_satellite(em, rep[rep["site_id"] == s.id])
-            pairs = pairs[pairs["E_kt"].notna() & (pairs["months"] >= 0.6 * pairs["months_expected"])]
+            pairs = pairs[pairs["E_kt"].notna() & (pairs["months"] >= 0.45 * pairs["months_expected"])]
             if not pairs.empty and pairs["cu_kt"].sum() > 0 and pairs["E_kt"].sum() > 0:
                 k, method = pairs["E_kt"].sum() / pairs["cu_kt"].sum(), "reported"
         if method == "none" and s.capacity_kt:

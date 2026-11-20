@@ -99,8 +99,8 @@ def cmd_s5p_batch(a):
     for m in months:
         try:
             path = s5p_batch.ingest_month(sites, m, a.out, workers=a.workers, modes=tuple(a.modes))
-        except RuntimeError as e:
-            print(f"SKIPPED {e}", flush=True)
+        except Exception as e:  # network / catalogue errors: skip, a rerun retries the month
+            print(f"SKIPPED {m}: {type(e).__name__}: {e}", flush=True)
             continue
         print(f"{m}: {len(pd.read_parquet(path))} pixels -> {path}", flush=True)
 

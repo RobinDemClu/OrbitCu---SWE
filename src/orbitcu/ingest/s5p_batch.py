@@ -52,7 +52,7 @@ VARS = {
 def search_all(sites: list[Site], start: str, end: str, modes=("OFFL", "RPRO", "NRTI"), cat=None) -> pd.DataFrame:
     """Union of the orbits touching any site; one row per (orbit file, site)."""
     cat = cat or client()
-    parts = [s5p.search_orbits(s, start, end, modes=modes, cat=cat) for s in sites]
+    parts = [_with_retry(s5p.search_orbits, s, start, end, modes, cat, tries=6) for s in sites]
     parts = [p for p in parts if not p.empty]
     if not parts:
         return pd.DataFrame()
