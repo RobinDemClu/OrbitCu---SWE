@@ -214,7 +214,7 @@ No open-source system combines these building blocks into an end-to-end, reprodu
 \end{notebox}
 
 % =====================================================================
-\section{How OrbitCu works}
+\section{How OrbitCu works: architecture}
 
 \subsection{The chain, step by step}
 Figure~\ref{fig:pipeline} shows the whole chain. Each step reads the result of the previous one and saves its own files, so any step can be rerun alone.
@@ -232,6 +232,58 @@ Figure~\ref{fig:pipeline} shows the whole chain. Each step reads the result of t
 \begin{notebox}[Three rules followed everywhere]
 \textbf{No look-ahead:} every record stores when the satellite saw it and when a trader could first have had it (provider timestamp when available, otherwise a cautious delay: 3\,h for VIIRS, 1 day for Sentinel-2, 16 days for Landsat, 5 days for ERA5). \textbf{Quality travels with the data:} cloud and shadow fractions are kept with each image. \textbf{Free data only.}
 \end{notebox}
+
+\subsection{Software architecture}
+Under the hood, OrbitCu is a set of small programs (``jobs'') that pass data to each other through three storage areas. Each job does one thing and can be rerun alone.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  box/.style={draw,rounded corners=3pt,minimum width=30mm,minimum height=16mm,align=center,font=\sffamily\footnotesize,line width=0.8pt},
+  store/.style={box,fill=donebg,draw=done},
+  storew/.style={box,fill=wipbg,draw=wip},
+  storet/.style={box,fill=todobg,draw=todo},
+  job/.style={font=\sffamily\scriptsize,color=ink,align=center,fill=white,inner sep=1.5pt},
+  arr/.style={-{Stealth[length=2.4mm]},line width=0.9pt,color=muted},
+  lab/.style={font=\sffamily\scriptsize\bfseries,color=muted}]
+\node[store] (src) at (0,0) {\textbf{Free data}\\[-1pt]{\scriptsize images, heat spots,}\\[-3pt]{\scriptsize \SOtwo, wind}};
+\node[store] (raw) at (4.6,0) {\textbf{1. Raw data}\\[-1pt]{\scriptsize small cut-outs around}\\[-3pt]{\scriptsize each smelter}};
+\node[storew] (proc) at (9.2,0) {\textbf{2. Processed data}\\[-1pt]{\scriptsize one score per smelter}\\[-3pt]{\scriptsize and satellite pass}};
+\node[storet] (fin) at (13.8,0) {\textbf{3. Final results}\\[-1pt]{\scriptsize daily status, indices,}\\[-3pt]{\scriptsize copper, trading test}};
+\node[storew] (dash) at (17.9,0) {\textbf{Dashboard}\\[-1pt]{\scriptsize web page}};
+\draw[arr] (src)--node[job,above=3pt]{download}(raw);
+\draw[arr] (raw)--node[job,above=3pt]{measure}(proc);
+\draw[arr] (proc)--node[job,above=3pt]{combine}(fin);
+\draw[arr] (fin)--(dash);
+\node[store,minimum height=9mm] (reg) at (6.9,2.3) {\textbf{Smelter list} {\scriptsize (where to look)}};
+\draw[arr,dashed] (reg.west)-|(raw.north); \draw[arr,dashed] (reg.east)-|(proc.north);
+\draw[arr,dashed] (reg.east)-|(fin.north);
+\node[storet,minimum width=180mm,minimum height=8mm] (k8s) at (8.95,-2.0) {\textbf{Runs every day automatically} {\scriptsize (containers on Kubernetes; today the jobs are started by hand with the \code{orbitcu} command)}};
+\node[lab] at (4.6,-1.15) {GeoTIFF, Parquet};
+\node[lab] at (9.2,-1.15) {Parquet};
+\node[lab] at (13.8,-1.15) {Parquet, DuckDB};
+\end{tikzpicture}}
+\caption{System architecture. Colours show progress as in Figure~\ref{fig:pipeline}.}
+\label{fig:archi}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X l l@{}}
+\toprule
+\textbf{Block} & \textbf{What it does} & \textbf{Code} & \textbf{Status}\\
+\midrule
+Smelter list & Positions, areas to watch, capacities & \code{data/registry}, \code{sites} & \done\\
+Download & Fetches the 5 sources for each smelter, records when each item became available & \code{ingest} & \done\\
+Measure & Heat score per image; \SOtwo{} emission per smelter and month & \code{activity\_check}, \code{emissions} & \wip\\
+Combine & Daily running probability, indices, copper estimate, trading test & \code{copper} (first part) & \todo\\
+Dashboard & Map and charts & \code{statusmap} (first version) & \wip\\
+Automation & Daily runs in containers, tests at every change on GitHub & --- & \todo\\
+\bottomrule
+\end{tabularx}
+\caption{The blocks of Figure~\ref{fig:archi}, the code that implements them and their status.}
+\end{table}
 
 \subsection{Requirements and where each one stands}
 \begin{table}[H]
