@@ -1,0 +1,6 @@
+site_id,start,end,event,expected_effect,source
+DE-HAMBURG,2024-05-01,2024-07-31,major maintenance shutdown,down,https://www.aurubis.com/en/media/press-releases/press-releases-2024/aurubis-significantly-increases-nine-month-result-best-quarter-with-a-major-shutdown-in-company-history
+BG-PIRDOP,2025-04-01,2025-06-30,major maintenance shutdown (Q3 2024/25 throughput -61%),down,https://www.aurubis.com/en/dam/jcr:7f592880-73e9-455a-9847-6217da8de17c/Aurubis_Quarterly%20Report_Q3_2024_25.pdf
+ID-MANYAR,2024-10-15,2025-05-31,fire during start-up; smelting suspended until restart (May 2025),down,https://www.sec.gov/Archives/edgar/data/831259/000083125925000028/a2q2025exhibit991.htm
+CD-KAMOA,2025-11-20,2026-10-31,smelter heat-up late Nov 2025 then ramp-up (first anode 29 Dec 2025),up,https://www.miningweekly.com/article/ivanhoe-announces-first-anode-production-from-kamoa-kakula-copper-smelter-2026-01-05
+PE-ILO,2025-01-01,2025-12-31,anode output -15% vs 2024,down,https://www.sec.gov/Archives/edgar/data/1001838/000110465926021492/scco-20251231x10k.htm

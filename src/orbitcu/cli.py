@@ -104,6 +104,9 @@ def cmd_s5p_batch(a):
 def main(argv=None):
     import sys
     argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["so2-copper"]:
+        from . import so2_copper
+        return so2_copper.main(argv[1:])
     if argv[:1] == ["statusmap"]:
         from . import statusmap
         return statusmap.main(argv[1:])

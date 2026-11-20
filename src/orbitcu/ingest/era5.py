@@ -110,6 +110,47 @@ def retrieve_overpass(site: Site, year: int, out_dir: Path, last_month: int = 12
     return out
 
 
+TS_DATASET = "reanalysis-era5-single-levels-timeseries"
+
+
+def retrieve_timeseries(site: Site, start: str, end: str, out_dir: Path) -> Path:
+    """Hourly ERA5 10 m and 100 m wind at the smelter point, as a Parquet table.
+
+    Uses the CDS *ERA5 time series* dataset (cloud-optimised ARCO store): a
+    whole multi-year series for one point comes back in ~30 s, whereas
+    gridded requests can wait hours in the shared ERA5 queue. The nearest
+    0.25 deg grid point is returned. Columns: valid_time (UTC), u100, v100,
+    u10, v10, available_at (valid_time + 5 days, ERA5T latency rule).
+    """
+    import io
+    import zipfile
+
+    import cdsapi
+
+    out = out_dir / "era5_ts" / f"{site.id}_{start}_{end}.parquet"
+    if out.exists():
+        return out
+    out.parent.mkdir(parents=True, exist_ok=True)
+    c = cdsapi.Client(url=os.environ.get("CDSAPI_URL", CDS_URL), key=os.environ["CDSAPI_KEY"], quiet=True)
+    tmp = out.with_suffix(".zip")
+    c.retrieve(TS_DATASET, {
+        "variable": ["10m_u_component_of_wind", "10m_v_component_of_wind",
+                     "100m_u_component_of_wind", "100m_v_component_of_wind"],
+        "location": {"longitude": round(site.lon, 3), "latitude": round(site.lat, 3)},
+        "date": [f"{start}/{end}"],
+        "data_format": "csv",
+    }, str(tmp))
+    with zipfile.ZipFile(tmp) as z:
+        name = [n for n in z.namelist() if n.endswith(".csv")][0]
+        df = pd.read_csv(io.BytesIO(z.read(name)))
+    tmp.unlink()
+    df["valid_time"] = pd.to_datetime(df["valid_time"], utc=True)
+    df["site_id"] = site.id
+    df["available_at"] = df["valid_time"] + LATENCY["era5t"]
+    df.to_parquet(out)
+    return out
+
+
 def retrieve(site: Site, year: int, month: int, out_dir: Path) -> Path:
     import cdsapi
 
