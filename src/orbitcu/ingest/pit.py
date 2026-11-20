@@ -13,7 +13,7 @@ Where the provider publishes a processing / creation timestamp we use it
 deliberately conservative latency rule (``basis = "latency_rule"``).
 Reprocessed archives (e.g. Sentinel-2 baseline 05.xx, FIRMS "SP") carry
 timestamps that are *later* than the original near-real-time release or
-contain slightly different data; see ``docs/ingestion.md`` for how each case
+contain slightly different data; see the project report, ``docs/latex/orbitcu_report.pdf`` for how each case
 is handled.
 """
 

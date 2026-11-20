@@ -8,86 +8,40 @@ inside point-in-time backtests of copper futures strategies.
 
 CSE 406 Software Engineering term project, team CoPPernicus.
 
-> Status (November 2026): the **smelter registry** and the **satellite
-> ingestion layer** are built and prototyped on three sites. Detection, fusion,
-> indices, validation, market data, backtest and dashboard are still to do.
-> See [`docs/status.md`](docs/status.md).
-
 ## Documentation
 
-| Document | Content |
-|---|---|
-| [`docs/latex/orbitcu_report.pdf`](docs/latex/orbitcu_report.pdf) | **Project report** (LaTeX source `docs/latex/orbitcu_report.tex`): proposal, requirements and technical report |
-| [`docs/architecture.md`](docs/architecture.md) | The nine pipeline stages and how data flows between them |
-| [`docs/data_sources.md`](docs/data_sources.md) | Satellite and market data sources, access, limits |
-| [`docs/setup.md`](docs/setup.md) | Installation, API keys, command line, tests |
-| [`docs/modules.md`](docs/modules.md) | Reference of the Python package `orbitcu` |
-| [`docs/ingestion.md`](docs/ingestion.md) | Ingestion method in detail (AOIs, point-in-time rules, blockers) |
-| [`docs/prototype_results.md`](docs/prototype_results.md) | One-year prototype on Glogow, Hamburg and Kamoa-Kakula |
-| [`docs/status.md`](docs/status.md) | What is done, what remains, roadmap |
+**All the documentation is in one file:
+[`docs/latex/orbitcu_report.pdf`](docs/latex/orbitcu_report.pdf)**
+(LaTeX source `docs/latex/orbitcu_report.tex`). It covers the project goal and
+requirements, architecture, data sources, smelter registry, what has been built,
+how to use the code, difficulties and next steps.
+
+> Status (20 November 2026): smelter registry done (29 sites), all 5 satellite
+> data sources working, status map available, SO2 emission estimates in
+> progress. Fusion, indices, market data, backtest and dashboard are still to do.
 
 ## Repository layout
 
 ```
-data/registry/               smelter registry, exclusions, site coordinates
-src/orbitcu/                 Python package (sites, ingestion, geolocation, status map)
-  ingest/                    one module per data source + point-in-time rules
-  templates/                 status map page and embedded base map
-tests/                       unit tests (no network)
-docs/                        project documentation
+data/registry/      smelter registry, exclusions, site coordinates
+data/reference/     known events and published output (validation)
+src/orbitcu/        Python package (sites, ingestion, geolocation, status map, SO2)
+tests/              unit tests (no network)
+docs/latex/         project documentation (LaTeX + PDF)
 ```
 
 ## Quick start
 
-Linux / macOS (bash):
-
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,era5,s5p]"
-export FIRMS_MAP_KEY=...      # free key: https://firms.modaps.eosdis.nasa.gov/api/map_key/
-export CDSAPI_KEY=...         # Copernicus CDS personal access token
-pytest                        # 20 unit tests, no network
-orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
-orbitcu firms   --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
+pip install -e ".[dev,era5,s5p,emissions]"
+export FIRMS_MAP_KEY=...      # Windows PowerShell: $env:FIRMS_MAP_KEY = "..."
+export CDSAPI_KEY=...         # Windows PowerShell: $env:CDSAPI_KEY = "..."
+pytest                        # 24 unit tests, no network
+orbitcu statusmap --open      # interactive smelter status map
 ```
 
-Windows (PowerShell):
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1      # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-pip install -e ".[dev,era5,s5p]"
-$env:FIRMS_MAP_KEY = "..."
-$env:CDSAPI_KEY = "..."
-pytest
-orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
-orbitcu firms   --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
-```
-
-Interactive status map of the smelters (downloads 12 months of VIIRS history,
-then writes and opens `output/status_map.html`; the first download is long,
-later runs reuse the cache in `cache/firms_hist/`, see `docs/setup.md`):
-
-```bash
-orbitcu statusmap --open
-```
-
-Windows (cmd): activate with `.venv\Scripts\activate.bat` and set keys with
-`set FIRMS_MAP_KEY=...` (no quotes, no spaces around `=`). With Anaconda, you
-can skip the venv and run the same commands in an activated conda environment.
-
-Variables set this way last only for the current terminal. To keep them,
-use `setx FIRMS_MAP_KEY "..."` on Windows (then open a new terminal) or add the
-`export` lines to `~/.bashrc`.
-
-Outputs go to `output/<site_id>/` (git-ignored). Details in
-[`docs/setup.md`](docs/setup.md).
+All commands and options are described in the report, section "Using the code".
 
 ## Team
 
-| Member | Course role | Modules |
-|---|---|---|
-| Robin | User (analyst / trader) | Market data, nowcast, backtest, dashboard |
-| Ethan | Customer (trading desk) | SO2 estimation, fusion, activity indices |
-| Radu | Software developer | Satellite ingestion, thermal detection |
-| Baptiste | Development manager | Kubernetes, CI/CD, smelter registry, data contracts |
+Baptiste, Radu, Ethan, Robin.

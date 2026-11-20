@@ -1,9 +1,7 @@
-# OrbitCu report (LaTeX)
+# OrbitCu documentation (LaTeX)
 
-`orbitcu_report.tex` is the project document: Part I is the Phase 2 proposal
-and requirements, Part II is the technical report on the work done so far
-(registry, data sources, ingestion, prototype, difficulties). Figures are in
-`figures/`; the compiled version is `orbitcu_report.pdf`.
+`orbitcu_report.tex` is the single project document; `orbitcu_report.pdf` is
+its compiled version. Figures are in `figures/`.
 
 Compile (TeX Live or MiKTeX, run twice for the table of contents):
 

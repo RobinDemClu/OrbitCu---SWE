@@ -16,7 +16,7 @@ months (using the provider's ``data_availability`` endpoint), so a backfill is
 seamless. All records get ``available_at = acquired_at + 3 h`` (the NRT
 latency): an SP detection is the reprocessed version of a detection that was
 published in NRT within hours. This is a documented approximation - the NRT
-and SP detection sets differ slightly (see ``docs/ingestion.md``).
+and SP detection sets differ slightly (see the project report, ``docs/latex/orbitcu_report.pdf``).
 """
 
 from __future__ import annotations
