@@ -108,6 +108,11 @@ def load_winds(era5_ts_dir: Path, site_id: str) -> pd.DataFrame | None:
     return w.sort_values("valid_time").reset_index(drop=True)
 
 
+def _epoch_s(t: pd.Series) -> np.ndarray:
+    t = pd.to_datetime(t, utc=True)
+    return (t - pd.Timestamp("1970-01-01", tz="UTC")).dt.total_seconds().to_numpy()
+
+
 def winds_at_pixels(w: pd.DataFrame, px: pd.DataFrame, level: str = "100") -> pd.DataFrame:
     """ERA5 wind at the source, linearly interpolated to each pixel's time.
 
@@ -115,8 +120,9 @@ def winds_at_pixels(w: pd.DataFrame, px: pd.DataFrame, level: str = "100") -> pd
     overpass time; within the 40 km fit radius the spatial variation of the
     reanalysis wind is small compared with its hourly variation.
     """
-    t = w["valid_time"].astype("int64").values / 1e9
-    tp = px["pixel_time_utc"].astype("int64").values / 1e9
+    # convert explicitly to seconds: parquet files may store ms or ns units
+    t = _epoch_s(w["valid_time"])
+    tp = _epoch_s(px["pixel_time_utc"])
     u = np.interp(tp, t, w[f"u{level}"].values, left=np.nan, right=np.nan)
     v = np.interp(tp, t, w[f"v{level}"].values, left=np.nan, right=np.nan)
     return pd.DataFrame({"u": u, "v": v}, index=px.index)

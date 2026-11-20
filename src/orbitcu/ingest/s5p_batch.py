@@ -52,7 +52,13 @@ VARS = {
 def search_all(sites: list[Site], start: str, end: str, modes=("OFFL", "RPRO", "NRTI"), cat=None) -> pd.DataFrame:
     """Union of the orbits touching any site; one row per (orbit file, site)."""
     cat = cat or client()
-    parts = [_with_retry(s5p.search_orbits, s, start, end, modes, cat, tries=6) for s in sites]
+    # Weekly windows: a whole summer month at high latitude (Norilsk sees up
+    # to ~14 orbits a day) makes the STAC search exceed the server timeout.
+    edges = pd.date_range(start, pd.Timestamp(end) + pd.Timedelta(days=1), freq="7D").append(
+        pd.DatetimeIndex([pd.Timestamp(end) + pd.Timedelta(days=1)])).unique()
+    wins = [(a.date().isoformat(), (b - pd.Timedelta(seconds=1)).isoformat())
+            for a, b in zip(edges[:-1], edges[1:]) if a < b]
+    parts = [_with_retry(s5p.search_orbits, s, a, b, modes, cat, tries=6) for s in sites for a, b in wins]
     parts = [p for p in parts if not p.empty]
     if not parts:
         return pd.DataFrame()
@@ -108,6 +114,13 @@ def extract_orbit_multi(href: str, sites: list[Site], qa_min: float = 0.5) -> pd
             df = pd.DataFrame({"site_id": site.id, "lat": la[ii, jj], "lon": lo[ii, jj], **cols})
             t = np.array([x.decode() if isinstance(x, bytes) else str(x) for x in tutc[sl][ii]])
             df["pixel_time_utc"] = pd.to_datetime(t, utc=True, errors="coerce", format="ISO8601")
+            if df["pixel_time_utc"].isna().all():
+                # older processor versions leave time_utc empty: use the
+                # reference time (s since 2010-01-01) + delta_time (ms)
+                t0 = pd.Timestamp("2010-01-01", tz="UTC") + pd.to_timedelta(int(h["PRODUCT/time"][0]), "s")
+                dms = h["PRODUCT/delta_time"][0, sl]
+                dms = dms[:, 0] if dms.ndim == 2 else dms
+                df["pixel_time_utc"] = t0 + pd.to_timedelta(dms[ii].astype("int64"), "ms")
             df = df[df["qa_value"] >= qa_min]
             if not df.empty:
                 out.append(df)
@@ -118,6 +131,9 @@ def _with_retry(fn, *args, tries: int = 4):
     for k in range(tries):
         try:
             return fn(*args)
+        except FileNotFoundError:
+            # listed in STAC but absent from storage (HTTP 404): permanent
+            raise
         except Exception as e:  # network resets through the proxy are common
             if k == tries - 1:
                 raise
@@ -147,11 +163,14 @@ def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: in
             first = g.iloc[0]
             ss = [site_map[i] for i in g["site_id"].unique()]
             jobs[ex.submit(_with_retry, extract_orbit_multi, first.href, ss)] = first
-        parts, failed = [], 0
+        parts, failed, missing = [], 0, 0
         for fut in as_completed(jobs):
             meta = jobs[fut]
             try:
                 px = fut.result()
+            except FileNotFoundError:
+                missing += 1
+                continue
             except Exception as e:
                 log.error("orbit %s failed: %s", meta.item_id, e)
                 failed += 1
@@ -164,11 +183,30 @@ def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: in
     if failed:
         # never cache an incomplete month: it would be skipped on the next run
         raise RuntimeError(f"{month}: {failed}/{len(jobs)} orbits failed; month not saved, rerun to retry")
+    if missing:
+        log.warning("%s: %d/%d orbit files listed but missing from storage (404), skipped",
+                    month, missing, len(jobs))
     df = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
     tmp = path.with_suffix(".tmp")
     df.to_parquet(tmp)
     tmp.rename(path)
     return path
+
+
+# Pixel time minus item datetime (minutes) as a cubic in latitude, fitted on
+# 2025 files (|residual| < 8 min for 95 % of pixels). Used for cached files
+# from older processor versions whose time_utc field is empty.
+_DT_POLY = (-4.43377342e-05, 1.07067466e-03, 3.12000736e-01, 1.91809459e-02)
+
+
+def fill_pixel_time(df: pd.DataFrame) -> pd.DataFrame:
+    df["pixel_time_utc"] = pd.to_datetime(df["pixel_time_utc"], utc=True).astype("datetime64[ns, UTC]")
+    miss = df["pixel_time_utc"].isna()
+    if miss.any():
+        mins = np.polyval(_DT_POLY, df.loc[miss, "lat"].to_numpy())
+        df.loc[miss, "pixel_time_utc"] = (df.loc[miss, "acquired_at"].astype("datetime64[ns, UTC]")
+                                          + pd.to_timedelta(mins, "min"))
+    return df
 
 
 def load(out_dir: Path, start: str | None = None, end: str | None = None) -> pd.DataFrame:
@@ -178,5 +216,5 @@ def load(out_dir: Path, start: str | None = None, end: str | None = None) -> pd.
     if end:
         files = [f for f in files if f.stem <= end[:7]]
     parts = [pd.read_parquet(f) for f in files]
-    parts = [p for p in parts if not p.empty]
+    parts = [fill_pixel_time(p) for p in parts if not p.empty]
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
