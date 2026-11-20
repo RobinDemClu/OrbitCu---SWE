@@ -42,3 +42,14 @@ def test_typical_level_ignores_outage_months():
     from orbitcu.statusmap import typical_level
     assert typical_level([0, 0, 0, 20, 22, 24]) == 22.0
     assert typical_level([0, 5, 0, 6]) == 0.0
+
+
+def test_statusmap_reads_monthly_cache(tmp_path):
+    from orbitcu.statusmap import build_data
+    d = tmp_path / "PL-GLOGOW"
+    d.mkdir()
+    for m, days in [("2026-01", ["2026-01-02", "2026-01-03"]), ("2026-02", ["2026-02-10"])]:
+        pd.DataFrame({"latitude": [51.68775] * len(days), "longitude": [15.98032] * len(days),
+                      "acq_date": days}).to_parquet(d / f"{m}.parquet")
+    glogow = next(s for s in build_data(tmp_path, "2026-01", "2026-03")["sites"] if s["id"] == "PL-GLOGOW")
+    assert glogow["days"] == [2, 1, 0] and glogow["has_data"]
