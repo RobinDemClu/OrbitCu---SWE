@@ -1,6 +1,6 @@
 # Status and roadmap
 
-Last updated: 20 November 2026.
+Last updated: 20 November 2026 (morning).
 
 ## Done
 
@@ -12,10 +12,10 @@ Last updated: 20 November 2026.
 | Geolocation | furnace points from VIIRS clusters + Sentinel-2 hot pixels: 10 high, 5 medium, 14 low confidence | `smelter_sites.csv`, `orbitcu.geolocate` |
 | Ingestion: optical | Sentinel-2 L2A and Landsat 8/9 with server-side crop and quality fractions | `orbitcu.ingest.optical` |
 | Ingestion: VIIRS | NASA FIRMS SP + NRT with quota back-off | `orbitcu.ingest.firms` |
-| Ingestion: SO2 and winds | Sentinel-5P and ERA5 modules written and unit-tested | `orbitcu.ingest.s5p`, `orbitcu.ingest.era5` |
+| Ingestion: SO2 and winds | Sentinel-5P and ERA5 now download end to end (download hosts unblocked on 20 Nov 2026); multi-site S5P backfill `orbitcu s5p-batch` | `orbitcu.ingest.s5p`, `orbitcu.ingest.era5` |
 | Point-in-time rules | `acquired_at` / `available_at` / `pit_basis` on every record | `orbitcu.ingest.pit` |
 | Prototype | one year (Nov 2025 - Oct 2026) on Glogow, Hamburg, Kamoa-Kakula: 576 optical scenes, no failure | [`prototype_results.md`](prototype_results.md) |
-| Status map | interactive map of the smelters with monthly VIIRS activity status | `orbitcu.statusmap` |
+| Status map | `orbitcu statusmap --open` downloads the VIIRS history and builds an interactive map of the smelters with monthly activity status | `orbitcu.statusmap` |
 | Tests | 20 unit tests, no network | `tests/` |
 
 ## Remaining
@@ -26,8 +26,8 @@ Last updated: 20 November 2026.
    its position is still the prior).
 2. Decide **slot 30** of the registry (Southwest Copper Kunming or Tongling
    Jinxin) and fill Manyar's capacity.
-3. Allow the two blocked download hosts, then run **Sentinel-5P and ERA5**
-   end to end.
+3. Run the **Sentinel-5P and ERA5** backfill for all sites (hosts now
+   allowed; first SO2 emission fit in progress).
 4. Review and merge the ingestion pull request into `main`.
 5. Run the **backfill 2018 -> today** for all sites (~60 000 optical scenes,
    about 10 h from outside Azure), then set up incremental updates.

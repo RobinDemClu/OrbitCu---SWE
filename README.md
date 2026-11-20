@@ -26,6 +26,8 @@ CSE 406 Software Engineering term project, team CoPPernicus.
 | [`docs/ingestion.md`](docs/ingestion.md) | Ingestion method in detail (AOIs, point-in-time rules, blockers) |
 | [`docs/prototype_results.md`](docs/prototype_results.md) | One-year prototype on Glogow, Hamburg and Kamoa-Kakula |
 | [`docs/status.md`](docs/status.md) | What is done, what remains, roadmap |
+| [`docs/report/technical_report.md`](docs/report/technical_report.md) | Research-paper style technical report (sources, methods, difficulties, references); Word version in `docs/report/` |
+| [`docs/report/OrbitCu_Proposal_Requirements.docx`](docs/report/OrbitCu_Proposal_Requirements.docx) | Phase 2 proposal and requirements (course deliverable) |
 
 ## Repository layout
 
