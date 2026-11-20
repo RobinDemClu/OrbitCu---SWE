@@ -63,6 +63,53 @@ def request(site: Site, year: int, month: int) -> dict:
     }
 
 
+def overpass_hours(site: Site) -> list[int]:
+    """UTC hours bracketing the Sentinel-5P overpass (~13:30 local solar time).
+
+    Above 60 deg latitude consecutive orbits overlap, so a site is seen at
+    several times of day: all 24 hours are then requested.
+    """
+    if abs(site.lat) > 60:
+        return list(range(24))
+    h0 = int((13.5 - site.lon / 15.0) // 1)
+    return sorted({(h0 + k) % 24 for k in (-1, 0, 1, 2)})
+
+
+def request_overpass(site: Site, year: int, months: list[int]) -> dict:
+    return {
+        "product_type": ["reanalysis"],
+        "variable": VARIABLES,
+        "year": [str(year)],
+        "month": [f"{m:02d}" for m in months],
+        "day": [f"{d:02d}" for d in range(1, 32)],
+        "time": [f"{h:02d}:00" for h in overpass_hours(site)],
+        "area": area(site),
+        "data_format": "netcdf",
+        "download_format": "unarchived",
+    }
+
+
+def retrieve_overpass(site: Site, year: int, out_dir: Path, last_month: int = 12) -> Path:
+    """One request per site and year, overpass hours only (used by the SO2 fit).
+
+    ``last_month`` < 12 for the current year (CDS refuses dates not yet
+    produced); the file name then carries the month so a later call with a
+    longer range downloads again.
+    """
+    import cdsapi
+
+    tag = f"{year}" if last_month == 12 else f"{year}-to{last_month:02d}"
+    out = out_dir / "era5_overpass" / site.id / f"{tag}.nc"
+    if out.exists():
+        return out
+    out.parent.mkdir(parents=True, exist_ok=True)
+    c = cdsapi.Client(url=os.environ.get("CDSAPI_URL", CDS_URL), key=os.environ["CDSAPI_KEY"], quiet=True)
+    tmp = out.with_suffix(".part")
+    c.retrieve(DATASET, request_overpass(site, year, list(range(1, last_month + 1))), str(tmp))
+    tmp.rename(out)
+    return out
+
+
 def retrieve(site: Site, year: int, month: int, out_dir: Path) -> Path:
     import cdsapi
 

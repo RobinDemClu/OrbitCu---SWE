@@ -15,6 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 era5 = ["cdsapi>=0.7", "xarray", "netcdf4"]
 s5p = ["xarray", "h5netcdf", "h5py", "fsspec", "aiohttp"]
+emissions = ["scipy", "xarray", "netcdf4"]
 dev = ["pytest"]
 
 [project.scripts]

@@ -5,6 +5,7 @@ Examples::
     orbitcu firms   --sites DE-HAMBURG PL-GLOGOW --start 2025-11-01 --end 2026-10-31
     orbitcu optical --sensor sentinel2 --sites DE-HAMBURG --start 2025-11-01 --end 2026-10-31
     orbitcu s5p     --sites DE-HAMBURG --start 2026-06-01 --end 2026-06-30
+    orbitcu s5p-batch --start 2025-01 --end 2026-10      # all sites, one read per orbit
     orbitcu era5    --sites DE-HAMBURG --start 2025-11-01 --end 2026-10-31
     orbitcu statusmap --open
 
@@ -85,6 +86,21 @@ def cmd_era5(a):
         print(f"{s.id}: {sum(len(t) for t in tables)} rows -> {out}")
 
 
+def cmd_s5p_batch(a):
+    import logging
+
+    from .ingest import s5p_batch
+
+    logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(levelname)s %(message)s")
+    sites = load_sites(ids=a.sites or None)
+    months = pd.period_range(a.start, a.end, freq="M")
+    if a.reverse:
+        months = months[::-1]
+    for m in months:
+        path = s5p_batch.ingest_month(sites, m, a.out, workers=a.workers, modes=tuple(a.modes))
+        print(f"{m}: {len(pd.read_parquet(path))} pixels -> {path}", flush=True)
+
+
 def main(argv=None):
     import sys
     argv = sys.argv[1:] if argv is None else argv
@@ -93,7 +109,8 @@ def main(argv=None):
         return statusmap.main(argv[1:])
     p = argparse.ArgumentParser(prog="orbitcu", epilog="also: orbitcu statusmap [--open] (see orbitcu statusmap -h)")
     sub = p.add_subparsers(dest="cmd", required=True)
-    for name, fn in [("firms", cmd_firms), ("optical", cmd_optical), ("s5p", cmd_s5p), ("era5", cmd_era5)]:
+    for name, fn in [("firms", cmd_firms), ("optical", cmd_optical), ("s5p", cmd_s5p), ("era5", cmd_era5),
+                     ("s5p-batch", cmd_s5p_batch)]:
         sp = sub.add_parser(name)
         sp.add_argument("--sites", nargs="*", help="site ids (default: all)")
         sp.add_argument("--start", required=True)
@@ -105,7 +122,10 @@ def main(argv=None):
             sp.add_argument("--max-cloud", type=float, default=None)
         if name == "firms":
             sp.add_argument("--wide", action="store_true", help="use the 50 km SO2 box instead of the thermal box")
-        if name == "s5p":
+        if name == "s5p-batch":
+            sp.add_argument("--workers", type=int, default=24)
+            sp.add_argument("--reverse", action="store_true", help="newest month first")
+        if name in ("s5p", "s5p-batch"):
             sp.add_argument("--modes", nargs="*", default=["OFFL"], choices=["OFFL", "NRTI", "RPRO"])
     a = p.parse_args(argv)
     a.fn(a)
