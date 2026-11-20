@@ -234,56 +234,75 @@ Figure~\ref{fig:pipeline} shows the whole chain. Each step reads the result of t
 \end{notebox}
 
 \subsection{Software architecture}
-Under the hood, OrbitCu is a set of small programs (``jobs'') that pass data to each other through three storage areas. Each job does one thing and can be rerun alone.
+Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, that pass data to each other through three storage areas: \textbf{raw}, \textbf{processed} and \textbf{final}. Each job reads the smelter list, does one thing, writes its result and can be rerun alone. Figure~\ref{fig:archi} shows every job with the Python module that implements it.
 
 \begin{figure}[H]
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  box/.style={draw,rounded corners=3pt,minimum width=30mm,minimum height=16mm,align=center,font=\sffamily\footnotesize,line width=0.8pt},
-  store/.style={box,fill=donebg,draw=done},
-  storew/.style={box,fill=wipbg,draw=wip},
-  storet/.style={box,fill=todobg,draw=todo},
-  job/.style={font=\sffamily\scriptsize,color=ink,align=center,fill=white,inner sep=1.5pt},
-  arr/.style={-{Stealth[length=2.4mm]},line width=0.9pt,color=muted},
-  lab/.style={font=\sffamily\scriptsize\bfseries,color=muted}]
-\node[store] (src) at (0,0) {\textbf{Free data}\\[-1pt]{\scriptsize images, heat spots,}\\[-3pt]{\scriptsize \SOtwo, wind}};
-\node[store] (raw) at (4.6,0) {\textbf{1. Raw data}\\[-1pt]{\scriptsize small cut-outs around}\\[-3pt]{\scriptsize each smelter}};
-\node[storew] (proc) at (9.2,0) {\textbf{2. Processed data}\\[-1pt]{\scriptsize one score per smelter}\\[-3pt]{\scriptsize and satellite pass}};
-\node[storet] (fin) at (13.8,0) {\textbf{3. Final results}\\[-1pt]{\scriptsize daily status, indices,}\\[-3pt]{\scriptsize copper, trading test}};
-\node[storew] (dash) at (17.9,0) {\textbf{Dashboard}\\[-1pt]{\scriptsize web page}};
-\draw[arr] (src)--node[job,above=3pt]{download}(raw);
-\draw[arr] (raw)--node[job,above=3pt]{measure}(proc);
-\draw[arr] (proc)--node[job,above=3pt]{combine}(fin);
-\draw[arr] (fin)--(dash);
-\node[store,minimum height=9mm] (reg) at (6.9,2.3) {\textbf{Smelter list} {\scriptsize (where to look)}};
-\draw[arr,dashed] (reg.west)-|(raw.north); \draw[arr,dashed] (reg.east)-|(proc.north);
-\draw[arr,dashed] (reg.east)-|(fin.north);
-\node[storet,minimum width=180mm,minimum height=8mm] (k8s) at (8.95,-2.0) {\textbf{Runs every day automatically} {\scriptsize (containers on Kubernetes; today the jobs are started by hand with the \code{orbitcu} command)}};
-\node[lab] at (4.6,-1.15) {GeoTIFF, Parquet};
-\node[lab] at (9.2,-1.15) {Parquet};
-\node[lab] at (13.8,-1.15) {Parquet, DuckDB};
+  j/.style={draw,rounded corners=2.5pt,minimum width=30mm,minimum height=11mm,align=center,font=\sffamily\small,line width=0.8pt},
+  d/.style={j,fill=donebg,draw=done},
+  w/.style={j,fill=wipbg,draw=wip},
+  t/.style={j,fill=todobg,draw=todo},
+  src/.style={j,fill=white,draw=muted,minimum width=27mm},
+  st/.style={draw=copper,fill=copper!8,line width=1pt,rounded corners=2.5pt,minimum width=24mm,minimum height=86mm,align=center,font=\sffamily\small},
+  m/.style={font=\ttfamily\scriptsize,color=muted},
+  arr/.style={-{Stealth[length=2.2mm]},line width=0.7pt,color=muted},
+  hd/.style={font=\sffamily\small\bfseries,color=copper}]
+% column headers
+\node[hd] at (0,5.0) {SOURCES};
+\node[hd] at (3.9,5.0) {DOWNLOAD};
+\node[hd] at (10.6,5.0) {MEASURE};
+\node[hd] at (17.3,5.0) {COMBINE \& TEST};
+\node[hd] at (23.8,5.0) {USE};
+% sources (grouped by what they measure)
+\node[src] (s1) at (0,3.6)  {\textbf{Images}\\{\scriptsize Sentinel-2, Landsat}};
+\node[src] (s2) at (0,1.8)  {\textbf{Heat spots}\\{\scriptsize VIIRS}};
+\node[src] (s3) at (0,0.0)  {\textbf{\SOtwo{} gas}\\{\scriptsize Sentinel-5P}};
+\node[src] (s4) at (0,-1.8) {\textbf{Wind}\\{\scriptsize ERA5}};
+\node[src] (s5) at (0,-3.6) {\textbf{Market data}\\{\scriptsize prices, stocks, stats}};
+% download jobs
+\node[d] (i1) at (3.9,3.6)  {Image cut-outs\\[-2pt]\texttt{\scriptsize ingest.optical}};
+\node[d] (i2) at (3.9,1.8)  {Heat detections\\[-2pt]\texttt{\scriptsize ingest.firms}};
+\node[d] (i3) at (3.9,0.0)  {\SOtwo{} pixels\\[-2pt]\texttt{\scriptsize ingest.s5p}};
+\node[d] (i4) at (3.9,-1.8) {Wind series\\[-2pt]\texttt{\scriptsize ingest.era5}};
+\node[t] (i5) at (3.9,-3.6) {Market loader\\[-2pt]\texttt{\scriptsize (planned)}};
+\foreach \k in {1,...,5} \draw[arr] (s\k)--(i\k);
+% raw store
+\node[st] (raw) at (7.25,0) {\textbf{RAW}\\[4pt]{\scriptsize clips: GeoTIFF}\\{\scriptsize tables: Parquet}\\[4pt]{\scriptsize every record has}\\{\scriptsize \emph{observed} and}\\{\scriptsize \emph{available} dates}\\[2pt]\texttt{\scriptsize ingest.pit}};
+\foreach \k in {1,...,5} \draw[arr] (i\k.east)--(i\k.east-|raw.west);
+% measure jobs
+\node[w] (p1) at (10.6,2.7) {Hot-pixel score\\[-2pt]\texttt{\scriptsize activity\_check}};
+\node[w] (p2) at (10.6,0.0) {\SOtwo{} emission\\{\scriptsize plume + wind}\\[-2pt]\texttt{\scriptsize emissions}};
+\node[t] (p3) at (10.6,-3.6) {Market tables\\{\scriptsize with publication dates}};
+\draw[arr] (raw.east|-p1)--(p1); \draw[arr] (raw.east|-p2)--(p2); \draw[arr] (raw.east|-p3)--(p3);
+% processed store
+\node[st] (proc) at (13.95,0) {\textbf{PROCESSED}\\[4pt]{\scriptsize one value per}\\{\scriptsize smelter and}\\{\scriptsize satellite pass,}\\{\scriptsize with quality flag}\\[4pt]{\scriptsize Parquet}};
+\draw[arr] (p1.east)--(p1.east-|proc.west); \draw[arr] (p2.east)--(p2.east-|proc.west); \draw[arr] (p3.east)--(p3.east-|proc.west);
+% combine jobs
+\node[t] (f1) at (17.3,3.6)  {Daily status\\{\scriptsize hidden Markov model}};
+\node[t] (f2) at (17.3,1.8)  {Activity index\\{\scriptsize world, regions}};
+\node[w] (f3) at (17.3,0.0)  {Copper output\\[-2pt]\texttt{\scriptsize copper}};
+\node[w] (f4) at (17.3,-1.8) {Validation\\{\scriptsize known events, stats}};
+\node[t] (f5) at (17.3,-3.6) {Backtest\\{\scriptsize futures, costs}};
+\draw[arr] (proc.east|-f1)--(f1); \draw[arr] (f1)--(f2); \draw[arr] (f2)--(f3); \draw[arr] (f3)--(f4); \draw[arr] (f4)--(f5);
+% final store
+\node[st] (fin) at (20.65,0) {\textbf{FINAL}\\[4pt]{\scriptsize daily status,}\\{\scriptsize indices,}\\{\scriptsize estimates,}\\{\scriptsize test results}\\[4pt]{\scriptsize Parquet, DuckDB}};
+\foreach \k in {1,...,5} \draw[arr] (f\k.east)--(f\k.east-|fin.west);
+% use
+\node[w] (u1) at (23.8,1.8)  {Dashboard\\[-2pt]\texttt{\scriptsize statusmap}};
+\node[t] (u2) at (23.8,-1.8) {Trading signal};
+\draw[arr] (fin.east|-u1)--(u1); \draw[arr] (fin.east|-u2)--(u2);
+% registry band
+\node[d,minimum width=190mm,minimum height=8mm] (reg) at (12.0,6.2) {\textbf{Smelter list} \ \ {\scriptsize 29 sites: furnace position, areas to watch, capacity} \ \ \texttt{\scriptsize data/registry, sites, geolocate}};
+% orchestration band
+\node[t,minimum width=268mm,minimum height=9mm] (orc) at (11.9,-5.4) {\textbf{Orchestration} \ \ {\scriptsize one container per job, run every day by Kubernetes + Argo (planned) \ · \ today: started by hand with the} \texttt{\scriptsize orbitcu} {\scriptsize command} \ · \ {\scriptsize tests: pytest on GitHub}};
 \end{tikzpicture}}
-\caption{System architecture. Colours show progress as in Figure~\ref{fig:pipeline}.}
+\caption{Software architecture. \textcolor{done}{\textbf{Green}}: done; \textcolor{wip}{\textbf{amber}}: in progress; \textcolor{todo}{\textbf{grey}}: to do. Module names are those of the Python package \code{orbitcu}.}
 \label{fig:archi}
 \end{figure}
 
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l X l l@{}}
-\toprule
-\textbf{Block} & \textbf{What it does} & \textbf{Code} & \textbf{Status}\\
-\midrule
-Smelter list & Positions, areas to watch, capacities & \code{data/registry}, \code{sites} & \done\\
-Download & Fetches the 5 sources for each smelter, records when each item became available & \code{ingest} & \done\\
-Measure & Heat score per image; \SOtwo{} emission per smelter and month & \code{activity\_check}, \code{emissions} & \wip\\
-Combine & Daily running probability, indices, copper estimate, trading test & \code{copper} (first part) & \todo\\
-Dashboard & Map and charts & \code{statusmap} (first version) & \wip\\
-Automation & Daily runs in containers, tests at every change on GitHub & --- & \todo\\
-\bottomrule
-\end{tabularx}
-\caption{The blocks of Figure~\ref{fig:archi}, the code that implements them and their status.}
-\end{table}
+\textbf{How to read it.} Data flow from left to right. \emph{Download} jobs cut out a small area around each smelter and store it, with the date it was observed and the date a trader could first have had it (so that no test uses information from the future). \emph{Measure} jobs turn each image into a hot-pixel score and each \SOtwo{} map, combined with the wind, into an emission rate. \emph{Combine} jobs fuse all measures into a daily running status, add the smelters up into an activity index, estimate copper output, check the results against known events and official statistics, and finally test trading strategies. The dashboard and the trading signal read only the final results.
 
 \subsection{Requirements and where each one stands}
 \begin{table}[H]
