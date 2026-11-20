@@ -13,7 +13,10 @@
 ```bash
 git clone https://github.com/RobinDemClu/OrbitCu---SWE.git
 cd OrbitCu---SWE
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate        # Linux / macOS
+# .venv\Scripts\Activate.ps1    # Windows PowerShell
+# .venv\Scripts\activate.bat    # Windows cmd
 pip install -e ".[dev,era5,s5p]"
 ```
 
@@ -26,6 +29,15 @@ Extras: `era5` (cdsapi, xarray, netCDF4), `s5p` (xarray, h5netcdf, fsspec),
 |---|---|
 | `FIRMS_MAP_KEY` | free, https://firms.modaps.eosdis.nasa.gov/api/map_key/ |
 | `CDSAPI_KEY` | Copernicus CDS account, personal access token; accept the ERA5 licence once |
+
+Set them in the terminal before running the commands:
+
+| Shell | Command |
+|---|---|
+| bash / zsh (Linux, macOS) | `export FIRMS_MAP_KEY=...` |
+| PowerShell (Windows) | `$env:FIRMS_MAP_KEY = "..."` |
+| cmd (Windows) | `set FIRMS_MAP_KEY=...` |
+| permanent on Windows | `setx FIRMS_MAP_KEY "..."`, then open a new terminal |
 
 The Planetary Computer needs no key. Keys can be put in a `.env` file, which
 is git-ignored. Never commit them.

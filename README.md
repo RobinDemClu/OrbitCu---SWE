@@ -40,7 +40,10 @@ docs/                        project documentation
 
 ## Quick start
 
+Linux / macOS (bash):
+
 ```bash
+python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,era5,s5p]"
 export FIRMS_MAP_KEY=...      # free key: https://firms.modaps.eosdis.nasa.gov/api/map_key/
 export CDSAPI_KEY=...         # Copernicus CDS personal access token
@@ -48,6 +51,27 @@ pytest                        # 20 unit tests, no network
 orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
 orbitcu firms   --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
 ```
+
+Windows (PowerShell):
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1      # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+pip install -e ".[dev,era5,s5p]"
+$env:FIRMS_MAP_KEY = "..."
+$env:CDSAPI_KEY = "..."
+pytest
+orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
+orbitcu firms   --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
+```
+
+Windows (cmd): activate with `.venv\Scripts\activate.bat` and set keys with
+`set FIRMS_MAP_KEY=...` (no quotes, no spaces around `=`). With Anaconda, you
+can skip the venv and run the same commands in an activated conda environment.
+
+Variables set this way last only for the current terminal. To keep them,
+use `setx FIRMS_MAP_KEY "..."` on Windows (then open a new terminal) or add the
+`export` lines to `~/.bashrc`.
 
 Outputs go to `output/<site_id>/` (git-ignored). Details in
 [`docs/setup.md`](docs/setup.md).
