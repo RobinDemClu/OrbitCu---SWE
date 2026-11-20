@@ -1,47 +1,62 @@
 # OrbitCu
 
-Open, reproducible pipeline that measures from free satellite data whether the
-largest copper smelters are operating, to nowcast refined copper supply and
-backtest copper futures strategies (CSE 406 term project, team CoPPernicus).
+OrbitCu is an open, reproducible pipeline that uses **free satellite data** to
+measure, every day, whether the world's largest copper smelters are running.
+The activity signal is turned into capacity-weighted indices, used to nowcast
+refined copper supply before official statistics are published, and tested
+inside point-in-time backtests of copper futures strategies.
 
-This repository currently holds the **smelter registry (FR-1)** and the
-**satellite ingestion layer (FR-2)**. See [`docs/ingestion.md`](docs/ingestion.md).
+CSE 406 Software Engineering term project, team CoPPernicus.
 
-## Layout
+> Status (November 2026): the **smelter registry** and the **satellite
+> ingestion layer** are built and prototyped on three sites. Detection, fusion,
+> indices, validation, market data, backtest and dashboard are still to do.
+> See [`docs/status.md`](docs/status.md).
+
+## Documentation
+
+| Document | Content |
+|---|---|
+| [`docs/overview.md`](docs/overview.md) | Purpose, client needs, scope, requirements |
+| [`docs/architecture.md`](docs/architecture.md) | The nine pipeline stages and how data flows between them |
+| [`docs/data_sources.md`](docs/data_sources.md) | Satellite and market data sources, access, limits |
+| [`docs/registry.md`](docs/registry.md) | How the 29 smelters were selected, sourced and geolocated |
+| [`docs/setup.md`](docs/setup.md) | Installation, API keys, command line, tests |
+| [`docs/modules.md`](docs/modules.md) | Reference of the Python package `orbitcu` |
+| [`docs/ingestion.md`](docs/ingestion.md) | Ingestion method in detail (AOIs, point-in-time rules, blockers) |
+| [`docs/prototype_results.md`](docs/prototype_results.md) | One-year prototype on Glogow, Hamburg and Kamoa-Kakula |
+| [`docs/status.md`](docs/status.md) | What is done, what remains, roadmap |
+
+## Repository layout
 
 ```
-data/registry/
-  smelter_registry.csv       FR-1 registry (29 smelters, operator evidence grades A/B/C)
-  smelter_excluded.csv       closed / suspended plants left out
-  site_priors.csv            town / address level starting coordinates
-  smelter_sites.csv          geolocated furnace points + AOIs + evidence + confidence
-  c_site_activity_check.csv  VIIRS activity check of grade-C sites
-src/orbitcu/
-  sites.py                   Site model, thermal box (1.5 km) and SO2 disc (50 km) in local UTM
-  geolocate.py               VIIRS persistent-cluster geolocation, Sentinel-2 TAI hot pixels
-  activity_check.py          monthly VIIRS detection days -> active / intermittent / inactive?
-  ingest/pit.py              point-in-time availability rules (no look-ahead)
-  ingest/optical.py          Sentinel-2 L2A + Landsat 8/9 L2 (Planetary Computer STAC + data API)
-  ingest/firms.py            NASA FIRMS VIIRS (SP archive + NRT)
-  ingest/s5p.py              Sentinel-5P TROPOMI SO2 (range reads of netCDF)
-  ingest/era5.py             ERA5 winds + boundary-layer height (Copernicus CDS)
-  statusmap.py               interactive map of smelters and monthly VIIRS activity status
-  templates/                 map page template + Natural Earth 1:50m TopoJSON (public domain)
-  cli.py                     `orbitcu firms|optical|s5p|era5 ...`
+data/registry/               smelter registry, exclusions, site coordinates
+src/orbitcu/                 Python package (sites, ingestion, geolocation, status map)
+  ingest/                    one module per data source + point-in-time rules
+  templates/                 status map page and embedded base map
 tests/                       unit tests (no network)
+docs/                        project documentation
 ```
 
 ## Quick start
 
 ```bash
 pip install -e ".[dev,era5,s5p]"
-export FIRMS_MAP_KEY=...      # https://firms.modaps.eosdis.nasa.gov/api/map_key/
-export CDSAPI_KEY=...         # CDS personal access token; accept the ERA5 licence once
-pytest
+export FIRMS_MAP_KEY=...      # free key: https://firms.modaps.eosdis.nasa.gov/api/map_key/
+export CDSAPI_KEY=...         # Copernicus CDS personal access token
+pytest                        # 20 unit tests, no network
 orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
 orbitcu firms   --sites PL-GLOGOW --start 2025-11-01 --end 2026-10-31
 ```
 
-Outputs go to `output/<site_id>/` (git-ignored): Parquet manifests with
-`acquired_at`, `available_at`, `pit_basis`, cloud/quality fractions, and
-GeoTIFF clips of the thermal AOI.
+Outputs go to `output/<site_id>/` (git-ignored). Details in
+[`docs/setup.md`](docs/setup.md).
+
+## Team
+
+| Member | Course role | Modules |
+|---|---|---|
+| Robin | User (analyst / trader) | Market data, nowcast, backtest, dashboard |
+| Ethan | Customer (trading desk) | SO2 estimation, fusion, activity indices |
+| Radu | Software developer | Satellite ingestion, thermal detection |
+| Baptiste | Development manager | Kubernetes, CI/CD, smelter registry, data contracts |
