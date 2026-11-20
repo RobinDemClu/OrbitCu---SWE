@@ -79,63 +79,76 @@
 % =====================================================================
 \begin{titlepage}
 \centering
-\vspace*{2.5cm}
+\vspace*{3cm}
 {\sffamily\color{copper}\large CSE 406 Software Engineering --- Term Project, group CoPPernicus\par}
-\vspace{1.2cm}
-{\sffamily\bfseries\color{ink}\fontsize{30}{36}\selectfont OrbitCu\par}
-\vspace{0.4cm}
+\vspace{1.4cm}
+{\sffamily\bfseries\color{ink}\fontsize{34}{40}\selectfont OrbitCu\par}
+\vspace{0.5cm}
 {\sffamily\Large\color{ink}Watching the world's largest copper smelters from space\\ to estimate copper supply and trade on it\par}
-\vspace{1.2cm}
-{\large Project documentation: proposal, requirements, technical report and user guide\par}
-\vspace{1.5cm}
-\includegraphics[width=0.78\textwidth]{figures/copper_value_chain.png}\par
-\vspace{1.2cm}
+\vspace{1.4cm}
+{\large Project documentation\par}
+\vspace{0.2cm}
+{\color{muted}goal and requirements · how the system works · first results · user guide\par}
+\vfill
 {\large Baptiste \quad Radu \quad Ethan \quad Robin\par}
 \vspace{0.3cm}
-{\color{muted}Status of 20 November 2026 \quad·\quad repository \code{github.com/RobinDemClu/OrbitCu---SWE}\par}
+{\color{muted}Status of 20 November 2026 \quad·\quad \code{github.com/RobinDemClu/OrbitCu---SWE}\par}
+\vspace*{1cm}
 \end{titlepage}
 
 % =====================================================================
 \section*{Summary}
 \addcontentsline{toc}{section}{Summary}
 
-Copper supply is known only weeks after the fact, through monthly statistics. Smelters, however, leave traces visible from space: hot furnaces in infrared images and sulfur dioxide (\SOtwo) plumes. \textbf{OrbitCu} watches the 30 largest copper smelters with free satellite data, decides every day whether each one is running, turns this into capacity-weighted activity indices, uses them to estimate copper production before official figures, and tests whether this signal improves copper futures strategies.
+Copper supply is known only weeks after the fact, through monthly statistics. Smelters, however, leave traces visible from space: hot furnaces and sulfur dioxide (\SOtwo) plumes. \textbf{OrbitCu} watches the largest copper smelters with free satellite data, decides every day whether each one is running, turns this into an activity index, uses it to estimate copper production before official figures, and tests whether this signal improves copper futures strategies.
 
 \begin{keybox}[Where the project stands (20 November 2026)]
 \begin{itemize}[leftmargin=1.2em]
-  \item \textbf{Smelter registry:} 29 primary smelters (about 11.7 Mt/yr, roughly 47\,\% of world smelting capacity), each checked against its operator's own documents. Slot 30 is still open.
-  \item \textbf{Satellite data:} all \textbf{5 sources work} end to end (Sentinel-2, Landsat 8/9, VIIRS, Sentinel-5P, ERA5) through 3 free platforms.
-  \item \textbf{Code:} Python package \code{orbitcu} with a command line (download, status map, \SOtwo{} estimation), 24 automated tests, all passing.
-  \item \textbf{First results:} one-year prototype on 3 smelters (576 images, no failure); activity check of the 10 least documented smelters; interactive status map; first \SOtwo{} emission estimates per smelter (download of the 2022--2026 history in progress).
-  \item \textbf{Still to build:} fusion into a daily ``running'' probability, activity indices, validation, market data, futures backtest, full dashboard, Kubernetes deployment.
+  \item \textbf{29 smelters selected} (about 11.7 Mt of copper per year, roughly 47\,\% of world smelting capacity), each checked against its operator's own documents.
+  \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
+  \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). At 9 smelters the heat signal is too weak or absent, so \SOtwo{} must take over there.
+  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 24 automated tests pass.
+  \item \textbf{Still to build:} the daily ``running or not'' estimate, the activity index, the copper output estimate, the trading test and the full dashboard.
 \end{itemize}
 \end{keybox}
 
 \begin{figure}[H]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  node distance=4mm and 4mm,
-  st/.style={draw,rounded corners=3pt,minimum width=26mm,minimum height=12mm,align=center,font=\sffamily\footnotesize,line width=0.8pt},
-  d/.style={st,fill=donebg,draw=done},
-  w/.style={st,fill=wipbg,draw=wip},
-  t/.style={st,fill=todobg,draw=todo},
-  arr/.style={-{Stealth[length=2.2mm]},line width=0.7pt,color=muted}]
-\node[d] (s1) {\textbf{1} Smelter\\registry};
-\node[d,right=of s1] (s2) {\textbf{2} Satellite\\ingestion};
-\node[w,right=of s2,yshift=8mm] (s3) {\textbf{3} Heat\\detection};
-\node[w,right=of s2,yshift=-8mm] (s4) {\textbf{4} \SOtwo{}\\emissions};
-\node[t,right=of s3,yshift=-8mm] (s5) {\textbf{5} Fusion\\(daily state)};
-\node[t,right=of s5] (s6) {\textbf{6} Activity\\indices};
-\node[w,below=9mm of s6] (s7) {\textbf{7} Validation\\\& nowcast};
-\node[t,left=of s7] (s8) {\textbf{8} Futures\\backtest};
-\node[w,left=of s8] (s9) {\textbf{9} Web\\dashboard};
-\node[t,below=9mm of s2] (mk) {Market data\\(prices, stocks)};
-\draw[arr] (s1)--(s2); \draw[arr] (s2)--(s3); \draw[arr] (s2)--(s4);
-\draw[arr] (s3)--(s5); \draw[arr] (s4)--(s5); \draw[arr] (s5)--(s6);
-\draw[arr] (s6)--(s7); \draw[arr] (s7)--(s8); \draw[arr] (s8)--(s9);
-\draw[arr] (mk)--(s8);
-\end{tikzpicture}
-\caption{The nine pipeline stages. \textcolor{done}{Green}: done; \textcolor{wip}{amber}: in progress; \textcolor{todo}{grey}: to do.}
+  box/.style={draw,rounded corners=3pt,minimum width=29mm,minimum height=11mm,align=center,font=\sffamily\footnotesize,line width=0.8pt},
+  d/.style={box,fill=donebg,draw=done},
+  w/.style={box,fill=wipbg,draw=wip},
+  t/.style={box,fill=todobg,draw=todo},
+  arr/.style={-{Stealth[length=2.2mm]},line width=0.7pt,color=muted},
+  lab/.style={font=\sffamily\scriptsize\bfseries,color=muted}]
+% inputs
+\node[lab] at (0,4.15) {WHAT THE SATELLITES SEE};
+\node[d] (img) at (0,3.2) {\textbf{Images}\\[-1pt]{\scriptsize Sentinel-2, Landsat}};
+\node[d] (hot) at (0,1.7) {\textbf{Heat spots}\\[-1pt]{\scriptsize VIIRS}};
+\node[d] (gas) at (0,0.2) {\textbf{\SOtwo{} gas}\\[-1pt]{\scriptsize Sentinel-5P}};
+\node[d] (wind) at (0,-1.3) {\textbf{Wind}\\[-1pt]{\scriptsize ERA5}};
+% per smelter
+\node[w] (heat) at (4.3,2.45) {\textbf{Heat score}};
+\node[w] (so2) at (4.3,-0.55) {\textbf{\SOtwo{} emission}};
+\node[draw=muted,dashed,rounded corners=4pt,inner sep=7pt,fit=(heat)(so2),label={[lab]below:PER SMELTER}] (grp) {};
+\node[d] (reg) at (4.3,4.55) {\textbf{Smelter list}\\[-1pt]{\scriptsize 29 sites}};
+% fusion
+\node[t] (run) at (8.1,0.95) {\textbf{Running or not?}\\[-1pt]{\scriptsize every day}};
+\node[t] (idx) at (11.6,0.95) {\textbf{Activity index}\\[-1pt]{\scriptsize world, regions}};
+% outputs
+\node[w] (cu) at (15.0,2.45) {\textbf{Copper output}\\[-1pt]{\scriptsize estimate}};
+\node[t] (bt) at (15.0,-0.55) {\textbf{Trading test}\\[-1pt]{\scriptsize futures}};
+\node[t] (mk) at (15.0,-2.15) {\textbf{Market prices}};
+\node[w] (dash) at (11.6,-1.3) {\textbf{Dashboard}\\[-1pt]{\scriptsize map, charts}};
+\draw[arr] (img.east)--(heat.west); \draw[arr] (hot.east)--(heat.west);
+\draw[arr] (gas.east)--(so2.west); \draw[arr] (wind.east)--(so2.west);
+\draw[arr] (reg.south)--(grp.north);
+\draw[arr] (heat.east)--(run.west); \draw[arr] (so2.east)--(run.west);
+\draw[arr] (run)--(idx); \draw[arr] (idx.east)--(cu.west); \draw[arr] (idx.east)--(bt.west);
+\draw[arr] (mk)--(bt); \draw[arr] (idx)--(dash);
+\end{tikzpicture}}
+\caption{How OrbitCu works. \textcolor{done}{\textbf{Green}}: done; \textcolor{wip}{\textbf{amber}}: in progress; \textcolor{todo}{\textbf{grey}}: to do.}
 \label{fig:pipeline}
 \end{figure}
 
@@ -143,22 +156,22 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
 \clearpage
 
 % =====================================================================
-\section{The project}
+\section{The problem and our answer}
 
-\subsection{Why copper smelters}
-Copper is essential to power grids, electric vehicles and renewable energy. Mined concentrate must go through a smelter before it becomes refined metal, and a small number of large smelters accounts for most of the world's capacity. When a major smelter stops (maintenance, accident, power shortage), refined supply tightens and futures prices and spreads can move. Market participants learn about it late: official production statistics come out monthly, weeks after the end of the month, and company disclosures are irregular.
+\subsection{Why watch copper smelters}
+Copper is essential to power grids, electric vehicles and renewable energy. Mined ore must go through a smelter before it becomes refined metal, and a small number of large smelters accounts for most of the world's capacity. When a major smelter stops (maintenance, accident, power shortage), refined supply tightens and copper futures prices and spreads can move. Market participants learn about it late: official production statistics come out monthly, weeks after the end of the month, and company disclosures are irregular.
 
-Smelters are visible from space. Furnaces and converters emit intense heat seen in short-wave infrared images, and smelting sulfide ore releases \SOtwo{} that atmospheric sensors measure. Free satellite missions observe the whole planet every few days, so an objective, near-real-time measure of smelting activity is possible.
+Smelters are visible from space. Furnaces emit intense heat, seen in infrared images, and smelting sulfide ore releases \SOtwo, which atmospheric sensors measure. Free satellite missions observe the whole planet every few days, so an objective, near-real-time measure of smelting activity is possible.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.82\textwidth]{figures/copper_value_chain.png}
+\includegraphics[width=0.85\textwidth]{figures/copper_value_chain.png}
 \caption{From mine to product. OrbitCu observes the smelting, converting and fire-refining stages, the only ones with a signature visible from space (heat and \SOtwo). Refineries (electrolysis) emit neither.}
 \end{figure}
 
-\textbf{Copper life cycle in brief.} Sulfide ore (0.5--1\,\% Cu) is mined and concentrated by flotation to 25--35\,\% Cu. The smelter melts the concentrate into matte (50--70\,\% Cu), converts it to blister (98--99\,\%) and fire-refines it into anodes (99.5\,\%). Electrorefining produces cathode (99.99\,\%), the traded commodity. Registry capacities are therefore expressed as blister or anode copper, the output of the observed stages. Copper made by other routes (SX-EW cathode from leached oxide ore, scrap refining) is invisible to OrbitCu, which limits how much of refined output the indices can explain.
+\textbf{Copper life cycle in brief.} Sulfide ore (0.5--1\,\% Cu) is mined and concentrated to 25--35\,\% Cu. The smelter melts the concentrate into matte (50--70\,\% Cu), converts it to blister (98--99\,\%) and fire-refines it into anodes (99.5\,\%). Electrorefining then produces cathode (99.99\,\%), the traded commodity. Copper made by other routes (leaching of oxide ore, scrap recycling) is invisible to OrbitCu, which limits how much of refined output our indices can explain.
 
-\subsection{Client and needs}
+\subsection{Who it is for}
 Our client is a commodity trading or research desk that needs a timely and verifiable view of refined copper supply.
 
 \begin{table}[H]
@@ -168,201 +181,106 @@ Our client is a commodity trading or research desk that needs a timely and verif
 \textbf{Need} & \textbf{What it means} & \textbf{How OrbitCu answers it}\\
 \midrule
 Timeliness & An estimate days or weeks before official data & Daily satellite observations, available hours to days after the pass\\
-Transparency & Every number traced back to raw observations & Open code; every record keeps its source scene or detection\\
-Point-in-time history & Know when each piece of information became available & Every record stores \code{acquired\_at} and \code{available\_at}\\
-Actionability & Production nowcasts and an honest test on futures & Nowcast and walk-forward backtest (stages 7--8)\\
+Transparency & Every number traced back to raw observations & Open code; every record keeps its source image or detection\\
+Honest history & Know when each piece of information became available & Every record stores when it was observed and when it became available\\
+Actionability & Production estimates and an honest test on futures & Copper output estimate and trading test\\
 Affordability & Free data, open-source software & All sources free; cloud covered by Azure for Students\\
 \bottomrule
 \end{tabularx}
-\caption{Client needs.}
+\caption{What the client needs.}
 \end{table}
 
-\subsection{Existing work and the gap}
+\subsection{What exists already}
 \begin{table}[H]
 \centering\small
 \begin{tabularx}{\textwidth}{@{}l X X@{}}
 \toprule
 \textbf{Work} & \textbf{What it does} & \textbf{Limitation for our client}\\
 \midrule
-SAVANT, Earth-i [1]--[3] & Satellite monitoring of copper smelters (about 70\,\% of world capacity), launched in 2019 & Closed and paid (\$10k--\$250k per year at launch)\\
-SMM [4] & Relays satellite estimates of inactive capacity (11.8\,\% in Aug.\ 2025) & Headline figures only\\
+SAVANT, Earth-i [1]--[3] & Satellite monitoring of copper smelters (about 70\,\% of world capacity) since 2019 & Closed and paid (\$10k--\$250k per year at launch)\\
+SMM [4] & Relays satellite estimates of idle capacity (11.8\,\% in Aug.\ 2025) & Headline figures only\\
 TransitionZero, Climate TRACE [5] & Infrared hotspots to estimate heavy-industry activity & Not specific to copper\\
 Massimetti et al.\ [6] & Sentinel-2 infrared hotspot detection & Designed for volcanoes\\
-Fioletov et al.\ [7], [22] & Catalogue of large \SOtwo{} sources, including 53 smelters & Annual emissions, not daily activity\\
-ddeq library [8] & Open-source emission estimation for point sources & Demonstrated on NO\textsubscript{2}, not \SOtwo\\
-Finch and Palmer [9] & U-Net detection of \SOtwo{} plumes in TROPOMI images & Detects plumes, not smelter activity; weaker in China\\
+Fioletov et al.\ [7], [22] & Catalogue of large \SOtwo{} sources, including 53 smelters & Yearly emissions, not daily activity\\
+ddeq library [8] & Open-source emission estimation for point sources & Shown on NO\textsubscript{2}, not \SOtwo\\
+Finch and Palmer [9] & Automatic detection of \SOtwo{} plumes in satellite images & Detects plumes, not smelter activity\\
 \bottomrule
 \end{tabularx}
 \caption{Related software and research.}
 \end{table}
 
-\begin{notebox}[The gap]
-No open-source system combines these building blocks into an end-to-end, reproducible copper smelter activity index and evaluates its value for trading. OrbitCu aims to fill this gap. Out of scope: real-money trading, commercial high-resolution imagery, mine monitoring.
-\end{notebox}
-
-\subsection{Team and roles}
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l l X X@{}}
-\toprule
-\textbf{Role} & \textbf{Member} & \textbf{Responsibilities} & \textbf{Module owned}\\
-\midrule
-User & Robin & Speaks for the analyst/trader: use cases, tests the dashboard and signals & Market data, nowcast, backtest, dashboard\\
-Customer & Ethan & Speaks for the trading desk: sets and prioritises requirements, accepts deliverables & \SOtwo{} estimation, fusion, activity indices\\
-Software developer & Radu & Code standards: structure, reviews, testing rules & Satellite ingestion, heat detection\\
-Development manager & Baptiste & Team process: schedule, weekly meetings, integration, decision log & Kubernetes, CI/CD, smelter registry, data contracts\\
-\bottomrule
-\end{tabularx}
-\caption{Roles until mid-term. The team has no leader: decisions are taken together at the weekly meeting.}
-\end{table}
-
-% =====================================================================
-\section{Requirements and their status}
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}c >{\raggedright\arraybackslash}p{2.6cm} X l@{}}
-\toprule
-\textbf{\#} & \textbf{Requirement} & \textbf{The system shall\ldots{} / what exists today} & \textbf{Status}\\
-\midrule
-1 & Smelter registry & Keep a versioned catalogue of the 30 largest smelters (id, coordinates, area of interest, capacity, owner), shared by all stages. \emph{Today: 29 sites with evidence grades and geolocation (Section~\ref{sec:registry}).} & \done\\
-2 & Satellite ingestion & Ingest Sentinel-2, Landsat 8/9, VIIRS, Sentinel-5P and ERA5, as a backfill from 2018 and incrementally. \emph{Today: all 5 sources download; backfill of \SOtwo{} 2022--2026 running.} & \done\\
-3 & Site activity detection & Per site and acquisition, a heat score and an \SOtwo{} emission estimate, each with a quality flag. \emph{Today: hot-pixel rule and VIIRS day counts; \SOtwo{} emission fit coded and tested.} & \wip\\
-4 & Fusion and indices & Fuse all observations into a daily probability of being active, robust to clouds; publish capacity-weighted global and regional indices. & \todo\\
-5 & Validation & Compare with known events, official statistics and public SAVANT figures; produce a validation report. \emph{Today: 5 known events and 28 published output figures collected; first event checks in the \SOtwo{} module.} & \wip\\
-6 & Market data and nowcast & Ingest futures prices, exchange stocks and official statistics with their publication dates; nowcast monthly production. \emph{Today: \SOtwo{}-to-copper conversion with point-in-time check against reported output.} & \wip\\
-7 & Backtest & Backtest index-driven futures strategies (walk-forward, contract rolls, costs, performance and risk metrics). & \todo\\
-8 & Dashboard & Web dashboard: smelter map and status, site time series, indices, nowcasts, backtest results. \emph{Today: interactive status map.} & \wip\\
-\bottomrule
-\end{tabularx}
-\caption{The eight requirements of the proposal and where each one stands.}
-\end{table}
-
-% =====================================================================
-\section{Architecture}
-
-\subsection{How the pipeline fits together}
-OrbitCu is a chain of independent stages (Figure~\ref{fig:pipeline}). Each stage reads the output of the previous one and writes its own files, so a stage can be rerun alone. Data are stored in three simple folders: \textbf{raw data} (cropped images and weather data as downloaded), \textbf{processed data} (one heat or gas score per smelter and satellite pass) and \textbf{final outputs} (daily on/off probabilities, indices, financial results).
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{figures/architecture.png}
-\caption{Planned system architecture. Numbers refer to the requirements. Yellow boxes are processing steps run by Kubernetes; green boxes are the three storage stages.}
-\end{figure}
-
-\subsection{Design principles}
-\begin{itemize}[leftmargin=1.2em]
-  \item \textbf{One reference for sites.} Every stage reads smelter ids, coordinates and areas of interest from the registry file \code{smelter\_sites.csv} (folder \code{data/registry}).
-  \item \textbf{Download only what is needed.} Each smelter has a 3\,$\times$\,3\,km box for heat and a 50\,km disc for \SOtwo. Images are cropped on the server (about 90\,kB per Sentinel-2 scene instead of hundreds of MB).
-  \item \textbf{No look-ahead.} Every record carries \code{acquired\_at} (when the satellite saw it), \code{available\_at} (when a trader could have had it) and \code{pit\_basis} (how that date was obtained).
-  \item \textbf{Quality travels with the data.} Cloud, shadow and no-data fractions are stored with each image, so later stages can weight or drop observations.
-  \item \textbf{Free data only.} All sources are free; optional cloud use is covered by the team's Azure for Students credits.
-\end{itemize}
-
-\subsection{How the daily state will be estimated (fusion)}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.5\textwidth]{figures/fusion.png}
-\caption{Fusion model for one site. The daily on/off state is hidden; each sensor gives an observation only when it passes over in clear sky. On cloudy days the probability stays close to the previous day instead of dropping to zero.}
-\end{figure}
-
-\subsection{Development environment}
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l X@{}}
-\toprule
-\textbf{Component} & \textbf{Choice}\\
-\midrule
-Language & Python (3.10 or later; 3.12 planned for the containers), SQL through DuckDB\\
-Machines & Team Windows 11 laptops; WSL 2 and Docker Desktop for the containers\\
-Satellite and geodata & pystac-client, planetary-computer, rasterio, shapely, pyproj, xarray, h5netcdf, cdsapi\\
-Data tables & pandas, numpy, scipy, Parquet and CSV files\\
-Modelling and tracking & scikit-learn, statsmodels, MLflow\\
-Market data & LSEG Workspace (licence held by a team member)\\
-Orchestration (planned) & Kubernetes (kind locally, Azure AKS optional) and Argo Workflows\\
-Dashboard & Plotly Dash (planned); the current status map is a self-contained HTML page\\
-Version control and tests & Git and GitHub (\code{developpement} branch, pull requests to \code{main}), pytest\\
-Cost & \$0: free data, open-source software, own laptops; optional Azure use covered by Azure for Students\\
-\bottomrule
-\end{tabularx}
-\caption{Development environment.}
-\end{table}
-
-% =====================================================================
-\section{Satellite data}
-
-OrbitCu uses five free datasets reached through three access platforms. Sources are grouped by platform because keys, quotas and failure modes are set per platform.
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.5cm} >{\raggedright\arraybackslash}p{2.4cm} >{\raggedright\arraybackslash}p{2.6cm} X c@{}}
-\toprule
-\textbf{Source} & \textbf{Platform} & \textbf{Resolution, revisit} & \textbf{What it tells us} & \textbf{Access}\\
-\midrule
-Sentinel-2 L2A (ESA) & Microsoft Planetary Computer & 20\,m, about 5 days & Hot furnaces stand out as bright pixels in short-wave infrared (bands B11, B12) & \ok\\
-Landsat 8/9 L2 (NASA/USGS) & Microsoft Planetary Computer & 30\,m, about 8 days & Same signal plus a thermal band; more images & \ok\\
-VIIRS 375\,m (S-NPP, NOAA-20, NOAA-21) & NASA FIRMS & 375\,m, every night & Ready-made heat detections; we count the days a smelter is seen hot & \ok\\
-Sentinel-5P TROPOMI (ESA) & Microsoft Planetary Computer & about 5.5\,$\times$\,3.5\,km, daily & \SOtwo{} column above the site: a running smelter emits \SOtwo, even when the furnace is hidden & \ok\\
-ERA5 reanalysis (not a satellite) & Copernicus Climate Data Store & 0.25°, hourly & Wind speed and direction, to turn an \SOtwo{} plume into an emission rate & \ok\\
-\bottomrule
-\end{tabularx}
-\caption{The five data sources. All work end to end since 20 November 2026.}
-\end{table}
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l X X@{}}
-\toprule
-\textbf{Platform} & \textbf{Access} & \textbf{Limits}\\
-\midrule
-Microsoft Planetary Computer & STAC search; pixels cut out on the server by the data API; \SOtwo{} files read in pieces (HTTP range reads) & Sentinel-5P files come from {\small\url{sentinel5euwest.blob.core.windows.net}}\\
-NASA FIRMS & Free key (\code{FIRMS\_MAP\_KEY}); archive (SP) then near-real-time (NRT) & 5\,000 requests per 10 minutes, 5 days per request; when exhausted the server answers ``Invalid MAP\_KEY''\\
-Copernicus CDS & Personal token (\code{CDSAPI\_KEY}); ERA5 licence accepted once & Files come from {\small\url{object-store.os-api.cci2.ecmwf.int}}; queue of a few minutes per request\\
-\bottomrule
-\end{tabularx}
-\caption{Access platforms.}
-\end{table}
-
-\begin{notebox}[Point-in-time rules]
-When a provider gives a publication timestamp we use it (Sentinel-2 \code{s2:generation\_time}, Landsat STAC \code{created}, Sentinel-5P processing time in the file name). Otherwise a conservative delay is added: VIIRS near-real-time 3\,h, Sentinel-5P NRTI 3\,h / OFFL 5 days, ERA5T 5 days, Sentinel-2 1 day, Landsat 16 days. Measured median delays: Sentinel-2 4--5\,h, Landsat 19--32 days, VIIRS 3\,h.
+\begin{notebox}[The gap we fill]
+No open-source system combines these building blocks into an end-to-end, reproducible copper smelter activity index and tests its value for trading. Out of scope: real-money trading, paid high-resolution imagery, mine monitoring.
 \end{notebox}
 
 % =====================================================================
-\section{Smelter registry}\label{sec:registry}
+\section{How OrbitCu works}
 
-\subsection{Selection rules}
-\begin{itemize}[leftmargin=1.2em]
-  \item \textbf{Primary smelters only}: refineries emit neither furnace heat nor \SOtwo.
-  \item \textbf{Active in 2026}: a site is kept unless a source reports it closed or suspended; restarting sites are kept with a flag.
-  \item \textbf{Checked against the operator's own documents}, site by site (annual and interim reports, filings, results presentations).
-  \item Ranked by capacity in kt of copper per year, harmonised to blister or anode copper.
-\end{itemize}
+\subsection{The chain, step by step}
+Figure~\ref{fig:pipeline} shows the whole chain. Each step reads the result of the previous one and saves its own files, so any step can be rerun alone.
 
-\begin{keybox}[What the search revealed: the data gap confirms the need]
-No free, current, plant-level capacity table exists (ICSG, Statista and Wood Mackenzie are paywalled), and operator documents leave large holes. Of the 29 sites, \textbf{10 have no dated 2025--2026 operator confirmation that they are running} and \textbf{20 have no capacity figure from their operator}. A trading desk cannot know from public sources alone whether a third of the largest smelters are operating: this is exactly what daily satellite observation fills.
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Smelter list.} One shared list of the smelters to watch: position of the furnaces, capacity, operator. Every other step reads it.
+  \item \textbf{Satellite data.} For each smelter, we download only a small area: a 3\,$\times$\,3\,km box around the furnaces for images and heat, a 50\,km disc for \SOtwo{} and wind.
+  \item \textbf{Per smelter.} Each image gives a \emph{heat score} (how many very hot pixels); \SOtwo{} and wind together give an \emph{emission rate} (tonnes of \SOtwo{} per day).
+  \item \textbf{Running or not, every day.} All observations are combined into a daily probability that the smelter is running. Clouds hide images on many days: on such days the estimate stays close to the day before instead of dropping to zero (hidden Markov model [25]).
+  \item \textbf{Activity index.} The probabilities are weighted by capacity and added up, for the world and by region.
+  \item \textbf{Copper output and trading test.} The index is used to estimate monthly copper production before official figures [26] and to test simple futures strategies on past data, with transaction costs and without using any information not yet published at the time [27].
+  \item \textbf{Dashboard.} A web page shows the map of smelters and their status, time series, indices and test results.
+\end{enumerate}
+
+\begin{notebox}[Three rules followed everywhere]
+\textbf{No look-ahead:} every record stores when the satellite saw it and when a trader could first have had it (provider timestamp when available, otherwise a cautious delay: 3\,h for VIIRS, 1 day for Sentinel-2, 16 days for Landsat, 5 days for ERA5). \textbf{Quality travels with the data:} cloud and shadow fractions are kept with each image. \textbf{Free data only.}
+\end{notebox}
+
+\subsection{Requirements and where each one stands}
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}c >{\raggedright\arraybackslash}p{2.7cm} X l@{}}
+\toprule
+\textbf{\#} & \textbf{The system shall\ldots} & \textbf{What exists today} & \textbf{Status}\\
+\midrule
+1 & keep a list of the 30 largest smelters & 29 sites, each with operator evidence and furnace position (Section~\ref{sec:registry}) & \done\\
+2 & download the 5 data sources, from 2018 and every day & All 5 sources work; \SOtwo{} history 2022--2026 being downloaded & \done\\
+3 & give a heat score and an \SOtwo{} emission per smelter & Hot-pixel rule and VIIRS hot-day counts work; \SOtwo{} emission method coded and tested & \wip\\
+4 & estimate daily ``running or not'' and publish activity indices & Planned (step 4--5 above) & \todo\\
+5 & check results against known events and official figures & 5 known shutdowns and start-ups and 28 published output figures collected & \wip\\
+6 & use market data and estimate monthly copper output & \SOtwo{}-to-copper conversion written; market data not yet loaded & \wip\\
+7 & test futures strategies on past data & Planned & \todo\\
+8 & show everything on a web dashboard & Interactive status map available & \wip\\
+\bottomrule
+\end{tabularx}
+\caption{The eight requirements of the project.}
+\end{table}
+
+% =====================================================================
+\section{Which smelters we watch}\label{sec:registry}
+
+We keep only \textbf{primary smelters} (refineries emit neither heat nor \SOtwo) that are \textbf{active in 2026}, ranked by capacity, and we checked each one against its \textbf{operator's own documents} (annual reports, filings, results presentations).
+
+\begin{keybox}[What the search revealed]
+No free, up-to-date, plant-by-plant capacity table exists, and operator documents leave large holes. Of the 29 sites, \textbf{10 have no recent operator confirmation that they are running} and \textbf{20 have no capacity figure from their operator}. From public sources alone, a trading desk cannot know whether a third of the largest smelters are operating: this is exactly what satellites can fill.
 \end{keybox}
 
 \begin{figure}[H]
 \centering
-\begin{minipage}{0.48\textwidth}
+\begin{minipage}{0.47\textwidth}
 \centering
 \includegraphics[width=\textwidth]{figures/status_quad.png}
 \end{minipage}\hfill
-\begin{minipage}{0.48\textwidth}\small
-\textbf{Grade A} (8 sites): a dated 2025--26 operator document confirms activity \emph{and} gives the site capacity.\\[3pt]
-\textbf{Grade B} (11): activity confirmed by the operator; capacity from a secondary source.\\[3pt]
-\textbf{Grade C} (10): no dated operator confirmation (no site data, website refusing automated access, unreadable document). These sites were checked by satellite first: \textbf{8 active, 2 likely active} (Onsan, Toyo).
+\begin{minipage}{0.49\textwidth}\small
+\textbf{Grade A} (8 sites): a 2025--26 operator document confirms activity \emph{and} gives the capacity.\\[3pt]
+\textbf{Grade B} (11): activity confirmed by the operator; capacity from another source.\\[3pt]
+\textbf{Grade C} (10): no recent operator confirmation. These were checked by satellite first (Section~\ref{sec:results}).
 \end{minipage}
-\caption{Four site statuses, each tested differently.}
+\caption{Evidence grades.}
 \end{figure}
 
-\clearpage
-\subsection{The 29 smelters}
 {\small
 \rowcolors{2}{white}{todobg}
 \begin{longtable}{@{}r l l l r c c@{}}
 \toprule
-\textbf{\#} & \textbf{Smelter} & \textbf{Country} & \textbf{Operator} & \textbf{kt Cu/yr} & \textbf{Grade} & \textbf{Location}\\
+\textbf{\#} & \textbf{Smelter} & \textbf{Country} & \textbf{Operator} & \textbf{kt Cu/yr} & \textbf{Grade} & \textbf{Position}\\
 \midrule
 \endhead
 1 & Guixi & China & Jiangxi Copper & 900 & B & high\\
@@ -396,122 +314,151 @@ No free, current, plant-level capacity table exists (ICSG, Statista and Wood Mac
 29 & Manyar (PTFI smelter) & Indonesia & Freeport Indonesia & n/a & A & low\\
 30 & \emph{open slot} & & & & & \\
 \bottomrule
-\caption{Registry. ``Location'' is the confidence of the furnace coordinates. Quotes, dates and links for each site are in \code{data/registry/smelter\_registry.csv}.}
+\caption{The 29 smelters. ``Position'' is how sure we are of the furnace coordinates. Sources, quotes and dates for each site are in \code{data/registry/smelter\_registry.csv}.}
 \end{longtable}
 }
 
-\textbf{Share of world supply.} The 29 sites hold about 11.7 Mt/yr, around 47\,\% of the 24.7 Mt/yr active capacity counted by SAVANT in 2024 [13]; against 2025 world output this is 40\,\% of refined production (29.0 Mt) and 51\,\% of mine production (23.0 Mt) [15]. With utilisation near 70\,\% [14], these sites make roughly 28\,\% of world refined copper.
+\textbf{Share of world supply.} The 29 sites hold about 11.7 Mt/yr, around 47\,\% of the 24.7 Mt/yr of active capacity counted by SAVANT in 2024 [13]. With utilisation near 70\,\% [14], they make roughly 28\,\% of world refined copper (29.0 Mt in 2025 [15]).
 
-\textbf{Corrections and exclusions.} Nadezhda was replaced by the Norilsk Copper Plant (Nadezhda makes nickel matte); ``Chifeng Jinfeng'' by Chifeng Yunjin, the plant Yunnan Copper reports; Dahej was revised to 421\,kt and Caletones to 250\,kt from operator figures. Excluded as closed, suspended or unconfirmed: Altonorte, Ventanas, Paipote, Potrerillos, Guangxi Nanguo, Daye Yangxin Hongsheng, Sterlite Tuticorin, Mount Isa. These shutdowns fall inside the 2018--present history and will serve as validation events. Slot 30 candidates: Southwest Copper (Kunming) and Tongling Jinxin.
+\textbf{Excluded sites.} Eight large smelters were left out because they are closed, suspended or unconfirmed (Altonorte, Ventanas, Paipote, Potrerillos, Guangxi Nanguo, Daye Yangxin Hongsheng, Sterlite Tuticorin, Mount Isa). Their shutdowns fall inside our history and will be used to check the results. Candidates for slot 30: Southwest Copper (Kunming) and Tongling Jinxin.
 
-\subsection{Finding the furnaces}
-No map service was reachable from the build environment, so the coordinates were derived from the satellite data themselves:
-\begin{enumerate}[leftmargin=1.5em]
-  \item start from a town or street-address position;
-  \item find persistent VIIRS heat clusters within 25\,km (one year of detections, 1.5\,km clustering);
-  \item confirm with Sentinel-2 pixels that are hot on many clear scenes (thermal anomaly index $>0.45$ [21]);
-  \item grade the result.
-\end{enumerate}
-
-\begin{table}[H]
-\centering\small
-\begin{tabular}{@{}l c p{9.5cm}@{}}
-\toprule
-\textbf{Confidence} & \textbf{Sites} & \textbf{Meaning}\\
-\midrule
-\cellcolor{donebg}High & 10 & One dominant static heat cluster close to the expected position\\
-\cellcolor{wipbg}Medium & 5 & Clear cluster, but another industrial source nearby or far from the starting point\\
-\cellcolor{todobg}Low & 14 & Several candidate plants (Tongling, Chifeng, Huangshi), no cluster at all (Japan, Gresik, Kamoa) or town-level start only: \textbf{to be placed by hand before the full download}\\
-\bottomrule
-\end{tabular}
-\caption{Geolocation confidence. A heat cluster is not proof of a copper smelter: steel works, refineries and power plants are also hot.}
-\end{table}
+\textbf{Finding the furnaces.} The coordinates were found from the satellite data themselves: start from the town, find the place within 25\,km where VIIRS sees heat most often, then confirm with Sentinel-2 pixels that are hot on many clear images [21]. The result is graded: \textbf{10 sites high} confidence (one clear hot spot), \textbf{5 medium} (another industrial source nearby), \textbf{14 low} (several candidate plants in the same city, or no hot spot at all). The 14 low-confidence sites must be placed by hand before the full download, because steel works, refineries and power plants are hot too.
 
 % =====================================================================
-\section{What has been built}
+\section{What the satellites tell us}
 
-\subsection{Code overview}
 \begin{table}[H]
 \centering\small
-\begin{tabularx}{\textwidth}{@{}l X@{}}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.0cm} >{\raggedright\arraybackslash}p{2.5cm} >{\raggedright\arraybackslash}p{2.6cm} X >{\centering\arraybackslash}p{1.3cm}@{}}
 \toprule
-\textbf{Module} & \textbf{Role}\\
+\textbf{We measure} & \textbf{Satellite} & \textbf{Detail, how often} & \textbf{What it tells us} & \textbf{Works}\\
 \midrule
-\code{sites} & One smelter = furnace point + 3\,$\times$\,3\,km heat box + 50\,km \SOtwo{} disc, computed in the local UTM zone\\
-\code{ingest.optical} & Sentinel-2 and Landsat: catalogue search, server-side crop, cloud/shadow/no-data fractions, image clips\\
-\code{ingest.firms} & VIIRS detections (archive then near-real-time), shared pause when the quota is reached\\
-\code{ingest.s5p}, \code{s5p\_batch} & Sentinel-5P \SOtwo{} pixels inside the 50\,km disc, one site or all sites month by month\\
-\code{ingest.era5} & ERA5 winds and boundary-layer height around a site, and wind series at each smelter\\
-\code{ingest.pit} & Point-in-time rules: when each record became available; filter at a decision date\\
-\code{geolocate}, \code{activity\_check} & Furnace location from heat clusters; monthly ``days seen hot'' and active/inactive verdict\\
-\code{emissions} & \SOtwo{} emission rate per smelter from the plume and the wind (Fioletov method)\\
-\code{copper}, \code{so2\_copper} & From \SOtwo{} emissions to copper estimates, with point-in-time comparison to reported output\\
-\code{statusmap} & Downloads the VIIRS history and builds the interactive status map\\
-\code{cli} & The \code{orbitcu} command\\
+\textbf{Hot pixels} & Sentinel-2,\newline Landsat 8/9 & 20--30\,m,\newline every 3--5 days & A running furnace shows as bright pixels in infrared. Blocked by clouds. & \ok\\
+\textbf{Heat spots} & VIIRS & 375\,m,\newline every night & NASA flags hot spots directly; we count the days a smelter is seen hot. & \ok\\
+\textbf{\SOtwo{} gas} & Sentinel-5P & about 5\,km,\newline every day & A running smelter releases \SOtwo, even when the furnace is hidden. & \ok\\
+\textbf{Wind} & ERA5 (weather model) & 25\,km,\newline every hour & Turns an \SOtwo{} plume into an emission rate (tonnes per day). & \ok\\
 \bottomrule
 \end{tabularx}
-\caption{The Python package \code{orbitcu}. 24 automated tests (no network) cover areas of interest, cloud fractions, point-in-time rules, VIIRS planning, geolocation, the status map and the emission fit.}
+\caption{The data we use. All are free and all work since 20 November 2026.}
 \end{table}
 
-\subsection{Prototype: one year on three smelters}
-Run on 4 November 2026 for November 2025 to October 2026. ``Clear'' means less than 10\,\% cloud over the box; a ``hot scene'' has at least 3 Sentinel-2 pixels above the thermal anomaly threshold.
+\textbf{How we get the data.} Images and \SOtwo{} come from Microsoft Planetary Computer [10], [16], which cuts the small area we need on its own servers (about 90\,kB per image instead of hundreds of MB). VIIRS heat spots come from NASA FIRMS [17] with a free key, limited to 5\,000 requests per 10 minutes; when the limit is reached, all downloads pause together and resume. Wind comes from the Copernicus Climate Data Store [18] with a free account.
+
+% =====================================================================
+\section{First results: what the tests say about activity}\label{sec:results}
+
+\subsection{Test 1: one year of images on three smelters}
+We first downloaded one year (November 2025 to October 2026) of all images for three smelters chosen as test cases: 576 images, no failure. A ``clear'' image has less than 10\,\% cloud; a ``hot'' image has at least 3 very hot pixels.
 
 \begin{table}[H]
 \centering\small
-\begin{tabular}{@{}l c c c c c@{}}
+\begin{tabular}{@{}l c c c c@{}}
 \toprule
-\textbf{Smelter} & \textbf{Location} & \textbf{S2 scenes (clear)} & \textbf{S2 hot / clear} & \textbf{Landsat (clear)} & \textbf{VIIRS days}\\
+\textbf{Smelter} & \textbf{Position} & \textbf{Sentinel-2 images (clear)} & \textbf{Hot / clear} & \textbf{VIIRS hot days}\\
 \midrule
-Glogow & high & 203 (62) & 59 / 62 & 44 (10) & 276\\
-Hamburg & medium & 100 (27) & 21 / 27 & 71 (21) & 169\\
-Kamoa-Kakula & low & 102 (53) & 8 / 53 & 56 (34) & 19\\
+Glogow (Poland) & high & 203 (62) & \textbf{59 / 62} & 276\\
+Hamburg (Germany) & medium & 100 (27) & \textbf{21 / 27} & 169\\
+Kamoa-Kakula (DR Congo) & low & 102 (53) & \textbf{8 / 53} & 19\\
 \bottomrule
 \end{tabular}
-\caption{Prototype results: 576 images, no failed request, 89\,MB stored.}
+\caption{Test 1 results.}
 \end{table}
 
-\begin{keybox}[Reading]
-\textbf{Glogow} is the reference case: hot on 95\,\% of clear images and seen by VIIRS 276 days out of 365. \textbf{Hamburg} is clearly active at the chosen point. \textbf{Kamoa-Kakula} shows little heat: the smelter only started in late 2025 and its position is still approximate, so it must be placed by hand.
-\end{keybox}
+\textbf{What it says.} When the furnace position is right, the method works: Glogow is hot on 95\,\% of clear images. Clouds are the main limit: only 1 image in 3 is clear in Poland, and 1 in 4 in Hamburg. Kamoa-Kakula shows little heat because its smelter only started in late 2025 and our position is still approximate.
 
-\subsection{Activity check of the 10 grade-C smelters}
-\begin{table}[H]
-\centering\small
-\begin{tabular}{@{}l c l c@{}}
-\toprule
-\textbf{Smelter} & \textbf{Location} & \textbf{Verdict} & \textbf{VIIRS days, 12 months}\\
-\midrule
-Sarcheshmeh & high & active & 294\\
-Chuquicamata & high & active (almost no heat in June--July 2026) & 237\\
-Xiangguang & medium & active & 235\\
-Norilsk Copper Plant & high & active & 206\\
-Jinchuan Fangchenggang & medium & active & 183\\
-Dongying Fangyuan & low & active & 173\\
-Chifeng Jintong & low & active & 159\\
-Jinchuan HQ (Jinchang) & high & active & 158\\
-Onsan & medium & likely active (Sentinel-2 hot pixels; VIIRS weak) & 48\\
-Toyo & low & likely active (Sentinel-2 hot pixels; no VIIRS) & 0\\
-\bottomrule
-\end{tabular}
-\caption{Satellite check of the smelters without operator confirmation. ``Active'' at a low-confidence location only proves that some heat source there is running.}
-\end{table}
+\subsection{Test 2: heat seen at the 29 smelters over one year}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{figures/viirs_days.png}
+\caption{Number of days in a year on which VIIRS (Suomi-NPP satellite) saw heat at each smelter.}
+\label{fig:viirs}
+\end{figure}
 
-\subsection{Interactive status map}
-\code{orbitcu statusmap --open} downloads the VIIRS detections around each smelter (last 12 months by default), counts per month the days with at least one detection within 1.5\,km of the furnace, compares them with the site's usual level, and writes one HTML page (\code{output/status\_map.html}). Status per month and window (1, 3 or 12 months): \emph{active} (at least half the usual level), \emph{reduced}, \emph{no heat detected}, or \emph{signal too weak} when the satellite cannot decide (Kamoa, Toyo, Gresik, Onahama). Downloads are cached month by month, so a second run only fetches the new month.
-
-\subsection{\SOtwo{} emissions and copper estimates (in progress)}
+\textbf{What it says.}
 \begin{itemize}[leftmargin=1.2em]
-  \item \textbf{Emission fit.} Sentinel-5P pixels within 40\,km are rotated into the ERA5 wind at the smelter and fitted with the plume model of Fioletov et al.\ [7], [22] (Gaussian across the wind, exponential decay along it, lifetime 6\,h, width 10\,km). The fit gives an emission rate per smelter and month, quarter or year, with an uncertainty.
-  \item \textbf{Neighbouring sources.} The fit looks for the best source position; at Kutch (India) most \SOtwo{} comes from coal power plants 27\,km away, and the model now separates them from the smelter.
-  \item \textbf{From \SOtwo{} to copper.} Smelting one tonne of copper releases about 2\,t of \SOtwo, of which 95--99.9\,\% is captured by acid plants. The unknown capture rate is absorbed into one factor per site, calibrated on output the operator published earlier (only reports published before the decision date are used), or on capacity when no output is published.
-  \item \textbf{Reference data.} \code{data/reference/known\_events.csv} (5 shutdowns and start-ups: Hamburg 2024, Pirdop 2025, Manyar 2024--25, Kamoa 2025, Ilo 2025) and \code{reported\_output.csv} (28 published figures for Pirdop, Hamburg, Ilo, Kamoa), each with its publication date.
-  \item \textbf{Status.} Code written and tested; the 2022--2026 \SOtwo{} and wind history for the 29 smelters is being downloaded before the first per-site estimates and point-in-time checks.
+  \item \textbf{20 smelters are seen hot on more than 100 days a year}, i.e.\ at least two days a week given cloud cover. For them, heat alone already tells whether they run.
+  \item \textbf{9 smelters give a weak or no heat signal}: the three Japanese plants, the two Indonesian plants, Kamoa-Kakula, Dahej, Huangshi and Onsan. Reasons: furnaces fully enclosed, positions still approximate, or plants that started recently. For these, \SOtwo{} must take over, and positions must be checked by hand.
+  \item The number of hot days is \textbf{not proportional to capacity}: Guixi, the largest smelter (900\,kt), shows fewer hot days than smaller plants in drier, less cloudy places (Chile, Iran). The heat signal must therefore be compared with each site's own usual level, not between sites.
 \end{itemize}
 
+\subsection{Test 3: month by month at the 10 smelters without operator confirmation}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/csite_months.png}
+\caption{Days per month with VIIRS heat at the 10 grade-C smelters (August 2025 to October 2026).}
+\end{figure}
+
+\textbf{What it says.} \textbf{8 of the 10 are clearly active} and \textbf{2 likely active} (Onsan and Toyo: no or few VIIRS days, but hot pixels in Sentinel-2 images). The monthly view also shows \textbf{drops in activity}: Chuquicamata falls from about 23 hot days to 3 in June and 6 in July 2026, then returns to normal; Norilsk drops to 3 days in May 2026; Chifeng Jintong is almost cold from December 2025 to February 2026. These are exactly the events a trading desk wants to know about. Their causes (maintenance, incident, weather) still have to be confirmed with news and company reports.
+
+\subsection{The interactive status map}
+The command \code{orbitcu statusmap --open} repeats Test 2 for the last 12 months and draws the result on a world map. For each smelter and month, it compares the number of hot days with the site's usual level and gives one of four statuses: \textbf{active} (at least half the usual level), \textbf{reduced}, \textbf{no heat detected}, or \textbf{signal too weak} when the satellite cannot decide. Downloads are kept month by month, so a second run only fetches the new month.
+
+\subsection{\SOtwo{} emissions: first results}
+\textbf{Method.} For each smelter and month, the \SOtwo{} pixels within 40\,km are turned to face the wind measured at the smelter, and a plume shape (spread across the wind, fading along it) is fitted to them, following Fioletov et al.\ [7], [22]. The fit gives an emission rate in tonnes of \SOtwo{} per day, with its uncertainty. When another source is nearby, its position is estimated and it is fitted at the same time: at Kutch (India), most of the \SOtwo{} comes from coal power plants about 20\,km away, and the method now separates them from the smelter. Emissions are then converted to copper with one factor per site, set from output the operator published earlier.
+
+\textbf{Status.} The method is coded and tested. The 2022--2026 \SOtwo{} and wind history for the 29 smelters is still downloading; results per smelter will be added to this section when it is complete.
+
+\begin{keybox}[What the first tests tell us]
+\begin{enumerate}[leftmargin=1.4em]
+  \item Heat seen from space \textbf{does show whether a smelter runs}, for about two thirds of the sites.
+  \item It \textbf{also shows partial stops} (Chuquicamata, Norilsk, Chifeng Jintong), which is the signal we are after.
+  \item Clouds and enclosed furnaces leave gaps: combining heat with \SOtwo{} and placing the remaining furnaces by hand is necessary before building the daily estimate.
+\end{enumerate}
+\end{keybox}
+
+% =====================================================================
+\section{What comes next}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}c X >{\raggedright\arraybackslash}p{3.0cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Task} & \textbf{Owner}\\
+\midrule
+1 & Place the 14 low-confidence smelters by hand (Kamoa first); choose slot 30 and Manyar's capacity & Baptiste\\
+2 & Finish the \SOtwo{} and wind history 2022--2026; emission estimates for all sites; compare with published output & Ethan\\
+3 & Download the full image and heat history since 2018 for all sites (about 60\,000 images, around 10\,h) & Radu\\
+4 & Heat score for every image, with a quality flag & Radu\\
+5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
+6 & Market data (futures prices, exchange stocks, official statistics with their publication dates); monthly copper output estimate & Robin\\
+7 & Trading test on past data, with contract rolls and costs & Robin\\
+8 & Web dashboard (map, site charts, indices, estimates, test results) & Robin\\
+9 & Automated runs in containers, tests on GitHub at every change & Baptiste\\
+\bottomrule
+\end{tabularx}
+\caption{Remaining work, in order.}
+\end{table}
+
+\begin{notebox}[Decisions still open]
+Which exchange and contract to test (LME, COMEX or SHFE) · target delay and availability of the results · tools for scheduling, storage and the dashboard · source of the known-event list · task split after mid-term · project calendar.
+\end{notebox}
+
+% =====================================================================
+\section{Team and tools}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l l X X@{}}
+\toprule
+\textbf{Member} & \textbf{Course role} & \textbf{Responsibilities} & \textbf{Parts owned}\\
+\midrule
+Robin & User & Speaks for the analyst/trader; tests the dashboard and signals & Market data, copper estimate, trading test, dashboard\\
+Ethan & Customer & Speaks for the trading desk; sets priorities, accepts deliverables & \SOtwo{} emissions, daily estimate, indices\\
+Radu & Software developer & Code standards, reviews, testing rules & Satellite data, heat score\\
+Baptiste & Development manager & Schedule, weekly meetings, integration, decision log & Smelter list, infrastructure, automated tests\\
+\bottomrule
+\end{tabularx}
+\caption{Team. Decisions are taken together at the weekly meeting.}
+\end{table}
+
+\textbf{Tools.} Python 3.10 or later on the team's Windows 11 laptops, with satellite libraries (pystac-client, rasterio, xarray, cdsapi), data tables (pandas, Parquet, DuckDB), modelling (scikit-learn, statsmodels) and tests (pytest). Code on GitHub (work on branch \code{developpement}, merged into \code{main}). Planned: Docker and Kubernetes for automated runs, Plotly Dash for the dashboard, LSEG Workspace for market data (licence held by a team member). \textbf{Cost: \$0}: free data, open-source software, own laptops; optional cloud use is covered by Azure for Students [11].
+
+% =====================================================================
+\appendix
 \clearpage
 \section{Using the code}
 
-\subsection{Installation}
+\subsection*{Installation}
 \begin{tcolorbox}[colback=todobg,colframe=rule,boxrule=0.5pt,arc=2pt,title={\sffamily\bfseries Windows (PowerShell)},coltitle=ink,colbacktitle=rule]
 \small\ttfamily
 git clone https://github.com/RobinDemClu/OrbitCu---SWE.git\\
@@ -519,11 +466,11 @@ cd OrbitCu---SWE\\
 pip install -e ".[dev,era5,s5p,emissions]"\\
 \$env:FIRMS\_MAP\_KEY = "your\_key"\qquad \# free: firms.modaps.eosdis.nasa.gov/api/map\_key\\
 \$env:CDSAPI\_KEY = "your\_token"\qquad \# Copernicus CDS account\\
-pytest
+pytest\qquad\qquad\qquad\qquad\qquad\quad \# 24 tests, no internet needed
 \end{tcolorbox}
-On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}. In \code{cmd}, use \code{set FIRMS\_MAP\_KEY=...}. To keep a key on Windows: \code{setx FIRMS\_MAP\_KEY "..."}, then open a new terminal. Keys are never committed.
+On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{set FIRMS\_MAP\_KEY=...}. To keep a key on Windows: \code{setx FIRMS\_MAP\_KEY "..."}, then open a new terminal. Keys are never committed.
 
-\subsection{Commands}
+\subsection*{Commands}
 \begin{table}[H]
 \centering\small
 \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{6.4cm} X@{}}
@@ -531,68 +478,36 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}. In \code{cmd}, use \cod
 \textbf{Command} & \textbf{What it produces}\\
 \midrule
 \code{orbitcu statusmap --open} & Interactive smelter status map, \code{output/status\_map.html} (add \code{--months 6} for a faster first run)\\
-\code{orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2026-10-01 --end 2026-10-31} & Image clips (\code{.tif}, 3\,$\times$\,3\,km) and a table with dates and cloud fractions\\
-\code{orbitcu firms --sites PL-GLOGOW --start ... --end ...} & VIIRS heat detections (position, temperature, radiative power, dates)\\
+\code{orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2026-10-01 --end 2026-10-31} & Image clips (3\,$\times$\,3\,km) and a table with dates and cloud fractions\\
+\code{orbitcu firms --sites PL-GLOGOW --start ... --end ...} & VIIRS heat spots (position, temperature, power, dates)\\
 \code{orbitcu s5p --sites PL-GLOGOW --start ... --end ...} & Sentinel-5P \SOtwo{} pixels in the 50\,km disc\\
 \code{orbitcu s5p-batch --start 2022-01 --end 2026-10} & \SOtwo{} pixels for all smelters, month by month\\
-\code{orbitcu era5 --sites PL-GLOGOW --start ... --end ...} & Hourly winds and boundary-layer height\\
-\code{orbitcu so2-copper --data output --out output/so2\_copper} & \SOtwo{} emissions per site, copper estimates, event checks\\
+\code{orbitcu era5 --sites PL-GLOGOW --start ... --end ...} & Hourly wind and boundary-layer height\\
+\code{orbitcu so2-copper --data output --out output/so2\_copper} & \SOtwo{} emissions per site and copper estimates\\
 \bottomrule
 \end{tabularx}
-\caption{Main commands. Outputs go to \code{output/} and downloads are cached in \code{cache/}; both are ignored by Git.}
+\caption{Main commands. Results go to \code{output/}, downloads are kept in \code{cache/}.}
 \end{table}
 
-\textbf{Example (Glogow, October 2026).} \code{optical} found 19 Sentinel-2 scenes in 18\,s (10 clear) and saved 19 clips; \code{firms} returned 127 detections on 22 days; \code{s5p} read 3 orbits and 792 \SOtwo{} pixels; \code{era5} (September 2026) returned 51\,840 rows.
+\textbf{Example (Glogow, October 2026).} \code{optical} found 19 Sentinel-2 images in 18\,s (10 clear); \code{firms} returned 127 heat spots on 22 days; \code{s5p} read 3 orbits and 792 \SOtwo{} pixels.
 
-% =====================================================================
-\section{Difficulties and decisions}
+\subsection*{Code organisation}
 \begin{table}[H]
 \centering\small
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{6.3cm} X@{}}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
 \toprule
-\textbf{Difficulty} & \textbf{Decision}\\
+\textbf{Module} & \textbf{Role}\\
 \midrule
-No free, current, plant-level capacity table; sources mix years and bases & One cited source per site, basis recorded, capacities harmonised before indices\\
-The first list (Statista) ranked refineries, which have no satellite signature & Discarded; only primary smelters active in 2026\\
-Company-level figures do not prove that a given site runs & Every site checked against its operator's documents and graded A/B/C; grade C checked by satellite\\
-Several Chinese operator sites and NICICO refuse automated access & Secondary capacity figures kept, clearly flagged\\
-No map service reachable to look up plant coordinates & Plants located from satellite data, with a confidence grade; 14 to check by hand\\
-Several heat sources in the same city (Tongling, Chifeng, Huangshi, Hamburg) & Use hot-pixel persistence over many scenes; keep these locations as low confidence\\
-\SOtwo{} and wind files served from hosts blocked by the cloud network & Hosts allowed on 20 November 2026; both sources now run (an extra proxy setting was needed for \SOtwo)\\
-NASA FIRMS quota (5\,000 requests per 10 min), shared by everyone using the same key & All downloads pause together and resume; failed months are retried on the next run\\
-Status map too slow to generate & Parallel requests, monthly cache, 12 months by default\\
-\SOtwo{} near some smelters comes from other sources (Kutch: coal plants 27\,km away) & Fit the best source position and a second source when needed\\
+\code{sites} & Areas around each smelter (3\,$\times$\,3\,km box, 50\,km disc)\\
+\code{ingest} (\code{optical}, \code{firms}, \code{s5p}, \code{era5}, \code{pit}) & One downloader per source, plus the ``when was it available'' rules\\
+\code{geolocate}, \code{activity\_check} & Furnace position from heat spots; monthly hot days and active/inactive verdict\\
+\code{statusmap} & Status map (Test 2 on the last 12 months)\\
+\code{emissions}, \code{copper}, \code{so2\_copper} & \SOtwo{} emission per smelter and conversion to copper\\
+\code{cli} & The \code{orbitcu} command\\
 \bottomrule
 \end{tabularx}
-\caption{Main difficulties met so far.}
+\caption{The Python package \code{orbitcu}.}
 \end{table}
-
-% =====================================================================
-\section{Next steps}
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}c X >{\raggedright\arraybackslash}p{3.2cm}@{}}
-\toprule
-\textbf{\#} & \textbf{Task} & \textbf{Owner (module)}\\
-\midrule
-1 & Place the 14 low-confidence smelters by hand (Kamoa first); decide slot 30 and Manyar's capacity & Baptiste (registry)\\
-2 & Finish the \SOtwo{} and wind download 2022--2026, run the emission estimates and the point-in-time check against reported output & Ethan (\SOtwo)\\
-3 & Download the full image and VIIRS history from 2018 for all sites (about 60\,000 images, around 10\,h) & Radu (ingestion)\\
-4 & Heat score per image with a quality flag & Radu (detection)\\
-5 & Fusion into a daily probability per site; global and regional indices & Ethan (fusion, indices)\\
-6 & Market data from LSEG (futures, stocks, official statistics with publication dates) and monthly nowcast & Robin (market data)\\
-7 & Walk-forward futures backtest with rolls and costs & Robin (backtest)\\
-8 & Web dashboard (map, site series, indices, nowcast, backtest) & Robin (dashboard)\\
-9 & Containers, Kubernetes jobs, CI on GitHub & Baptiste (infrastructure)\\
-\bottomrule
-\end{tabularx}
-\caption{Remaining work, in order.}
-\end{table}
-
-\begin{notebox}[Open decisions]
-Exchange and contract for the backtest (LME, COMEX or SHFE) · non-functional requirements (delay, availability, reproducibility) · workflow, storage and dashboard tools · source of the known-event ground truth · task distribution after mid-term · project calendar.
-\end{notebox}
 
 % =====================================================================
 \section*{References}
