@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import numpy as np
@@ -77,7 +77,7 @@ def extract_orbit_multi(href: str, sites: list[Site], qa_min: float = 0.5) -> pd
     with fsspec.open(href, "rb", block_size=2 ** 20, cache_type="blockcache",
                      client_kwargs={"trust_env": True}) as f:
         # large chunk cache: chunks (2087 x 225) are shared by neighbouring sites
-        h = h5py.File(f, "r", rdcc_nbytes=512 * 2 ** 20, rdcc_nslots=10007)
+        h = h5py.File(f, "r", rdcc_nbytes=96 * 2 ** 20, rdcc_nslots=10007)
         lat = h["PRODUCT/latitude"][0]
         lon = h["PRODUCT/longitude"][0]
         tutc = h["PRODUCT/time_utc"][0]
@@ -116,7 +116,7 @@ def _with_retry(fn, *args, tries: int = 4):
             time.sleep(5 * (k + 1))
 
 
-def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: int = 24,
+def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: int = 8,
                  modes=("OFFL",)) -> Path:
     """Extract one calendar month for all sites; resumable via the cached file."""
     path = out_dir / "s5p_batch" / f"{month}.parquet"
@@ -131,7 +131,9 @@ def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: in
     by_item = orbits.groupby("item_id")
     site_map = {s.id: s for s in sites}
     jobs = {}
-    with ThreadPoolExecutor(workers) as ex:
+    # processes, not threads: h5py serialises every call behind one global lock,
+    # so threads would read the orbits one after the other
+    with ProcessPoolExecutor(workers) as ex:
         for item, g in by_item:
             first = g.iloc[0]
             ss = [site_map[i] for i in g["site_id"].unique()]

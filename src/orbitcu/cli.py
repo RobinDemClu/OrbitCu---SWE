@@ -123,7 +123,7 @@ def main(argv=None):
         if name == "firms":
             sp.add_argument("--wide", action="store_true", help="use the 50 km SO2 box instead of the thermal box")
         if name == "s5p-batch":
-            sp.add_argument("--workers", type=int, default=24)
+            sp.add_argument("--workers", type=int, default=8)
             sp.add_argument("--reverse", action="store_true", help="newest month first")
         if name in ("s5p", "s5p-batch"):
             sp.add_argument("--modes", nargs="*", default=["OFFL"], choices=["OFFL", "NRTI", "RPRO"])
