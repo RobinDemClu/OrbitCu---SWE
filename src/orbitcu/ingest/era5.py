@@ -175,3 +175,35 @@ def to_table(path: Path, site_id: str) -> pd.DataFrame:
     df["available_at"] = df["valid_time"] + LATENCY["era5t"]
     df["pit_basis"] = "latency_rule:era5t"
     return df
+
+
+def retrieve_cloud_timeseries(lat: float, lon: float, name: str, start: str, end: str, out_dir: Path) -> Path:
+    """Hourly ERA5 total cloud cover (0-1) at a point, as a Parquet table.
+
+    Used to normalise satellite heat detections: VIIRS sees a furnace only
+    through clear sky, so the number of hot nights must be divided by the
+    number of clear nights before months are compared.
+    """
+    import io
+    import zipfile
+
+    import cdsapi
+
+    out = out_dir / "era5_tcc" / f"{name}_{start}_{end}.parquet"
+    if out.exists():
+        return out
+    out.parent.mkdir(parents=True, exist_ok=True)
+    c = cdsapi.Client(url=os.environ.get("CDSAPI_URL", CDS_URL), key=os.environ["CDSAPI_KEY"], quiet=True)
+    tmp = out.with_suffix(".zip")
+    c.retrieve(TS_DATASET, {"variable": ["total_cloud_cover"],
+                            "location": {"longitude": round(lon, 3), "latitude": round(lat, 3)},
+                            "date": [f"{start}/{end}"], "data_format": "csv"}, str(tmp))
+    with zipfile.ZipFile(tmp) as z:
+        n = [x for x in z.namelist() if x.endswith(".csv")][0]
+        df = pd.read_csv(io.BytesIO(z.read(n)))
+    tmp.unlink()
+    df["valid_time"] = pd.to_datetime(df["valid_time"], utc=True)
+    df["site_id"] = name
+    df["available_at"] = df["valid_time"] + LATENCY["era5t"]
+    df.to_parquet(out)
+    return out
