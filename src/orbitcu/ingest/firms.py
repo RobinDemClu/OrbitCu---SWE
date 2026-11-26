@@ -185,3 +185,110 @@ def fetch_area(bbox, start: date, end: date, sensors=VIIRS_SENSORS, workers: int
     df = pd.concat(parts, ignore_index=True)
     df = normalise(df)
     return df.drop_duplicates(subset=["latitude", "longitude", "acquired_at", "satellite"]).reset_index(drop=True)
+
+
+# ------------------------------------------------------------ regional backfill
+def region_boxes(sites, pad_deg: float = 0.1, max_span_deg: float = 16.0) -> dict[str, tuple]:
+    """Group sites into a few bounding boxes (one FIRMS request per box and 5 days).
+
+    A multi-year backfill is limited by the number of requests (FIRMS answers
+    each in ~1-10 s), not by data volume, so neighbouring sites share a box.
+    Greedy: sites sorted by longitude join the current box while it stays
+    within ``max_span_deg`` in both directions.
+    """
+    boxes, cur = {}, []
+
+    def close(group):
+        w = min(s.lon for s in group) - pad_deg
+        e = max(s.lon for s in group) + pad_deg
+        so = min(s.lat for s in group) - pad_deg
+        n = max(s.lat for s in group) + pad_deg
+        boxes["+".join(s.id for s in group)] = (round(w, 3), round(so, 3), round(e, 3), round(n, 3))
+
+    for s in sorted(sites, key=lambda x: x.lon):
+        trial = cur + [s]
+        if cur and (max(x.lon for x in trial) - min(x.lon for x in trial) > max_span_deg
+                    or max(x.lat for x in trial) - min(x.lat for x in trial) > max_span_deg):
+            close(cur)
+            trial = [s]
+        cur = trial
+    if cur:
+        close(cur)
+    return boxes
+
+
+def fetch_regions(out_dir, boxes: dict, start: str, end: str, sensor: str = "VIIRS_SNPP",
+                  workers: int = 4) -> list[str]:
+    """Download all detections in each box, month by month, into
+    ``out_dir/<box_name>/<YYYY-MM>.parquet``. Months on disk are skipped; a
+    month with a failed request is not written (rerun to fill it)."""
+    import sys
+    from concurrent.futures import as_completed
+    from pathlib import Path
+
+    out_dir = Path(out_dir)
+    months = [str(p) for p in pd.period_range(start, end, freq="M")]
+    p0, p1 = pd.Period(start, "M"), pd.Period(end, "M")
+    plan = plan_requests(sensor, p0.start_time.date(), p1.end_time.date())
+    todo, jobs = [], []
+    for name, bbox in boxes.items():
+        for m in months:
+            path = out_dir / name / f"{m}.parquet"
+            if path.exists():
+                continue
+            k = len(todo)
+            todo.append((name, m, path))
+            p = pd.Period(m, "M")
+            ms, me = p.start_time.date(), p.end_time.date()
+            for src, d, n in plan:
+                d0, d1 = max(d, ms), min(d + timedelta(days=n - 1), me)
+                if d0 <= d1:
+                    jobs.append((k, src, bbox, d0, (d1 - d0).days + 1))
+    print(f"{sensor}: {len(todo)} box-months, {len(jobs)} requests", flush=True)
+    parts = {k: [] for k in range(len(todo))}
+    left = {k: 0 for k in range(len(todo))}
+    for j in jobs:
+        left[j[0]] += 1
+    failed, done, t0 = set(), 0, time.time()
+    with ThreadPoolExecutor(workers) as ex:
+        futs = {ex.submit(_fetch_one, src, bbox, d, n): k for k, src, bbox, d, n in jobs}
+        for f in as_completed(futs):
+            k = futs[f]
+            try:
+                parts[k].append(f.result())
+            except Exception:
+                failed.add(k)
+            left[k] -= 1
+            done += 1
+            if left[k] == 0:
+                name, m, path = todo[k]
+                got = [p for p in parts.pop(k) if not p.empty]
+                if k not in failed:
+                    df = normalise(pd.concat(got, ignore_index=True)) if got else pd.DataFrame()
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    df.to_parquet(path)
+            if done % 50 == 0 or done == len(jobs):
+                el = time.time() - t0
+                sys.stdout.write(f"{done}/{len(jobs)} requests, ~{el / done * (len(jobs) - done) / 60:.0f} min left\n")
+                sys.stdout.flush()
+    return [f"{todo[k][0]} {todo[k][1]}" for k in sorted(failed)]
+
+
+def split_regions(region_dir, site_dir, sites, boxes: dict) -> None:
+    """Write per-site month caches (``site_dir/<site_id>/<YYYY-MM>.parquet``,
+    detections inside the site's thermal box) from the regional downloads."""
+    from pathlib import Path
+
+    region_dir, site_dir = Path(region_dir), Path(site_dir)
+    by_id = {s.id: s for s in sites}
+    for name in boxes:
+        ids = [i for i in name.split("+") if i in by_id]
+        for f in sorted((region_dir / name).glob("*.parquet")):
+            df = pd.read_parquet(f)
+            for i in ids:
+                w, s_, e, n = by_id[i].thermal_bbox()
+                sub = df[(df["longitude"] >= w) & (df["longitude"] <= e)
+                         & (df["latitude"] >= s_) & (df["latitude"] <= n)] if not df.empty else df
+                out = site_dir / i / f.name
+                out.parent.mkdir(parents=True, exist_ok=True)
+                sub.to_parquet(out)

@@ -143,14 +143,19 @@ def fetch_history(firms_dir: Path, start: str, end: str, ids: list[str] | None =
     # One FIRMS request covers at most 5 days: split each (site, month).
     plan = firms.plan_requests(sensor, pd.Period(start, freq="M").start_time.date(),
                                pd.Period(end, freq="M").end_time.date())
-    jobs = []  # (task index, source, day, n_days)
-    for k, (s, m, _) in enumerate(todo):
+    # clip each planned chunk to each month once (computed per month, not per
+    # site: a multi-year backfill has thousands of site-months)
+    by_month: dict[str, list] = {}
+    for m in {m for _, m, _ in todo}:
         p = pd.Period(m, freq="M")
+        ms, me = p.start_time.date(), p.end_time.date()
+        chunks = []
         for src, d, n in plan:
-            # clip each planned chunk to this month
-            d0, d1 = max(d, p.start_time.date()), min(d + timedelta(days=n - 1), p.end_time.date())
+            d0, d1 = max(d, ms), min(d + timedelta(days=n - 1), me)
             if d0 <= d1:
-                jobs.append((k, src, d0, (d1 - d0).days + 1))
+                chunks.append((src, d0, (d1 - d0).days + 1))
+        by_month[m] = chunks
+    jobs = [(k, src, d0, n) for k, (_, m, _) in enumerate(todo) for src, d0, n in by_month[m]]
     print(f"VIIRS history: {len(todo)} site-months to download ({len(jobs)} requests, "
           f"{workers} in parallel). Already downloaded months are kept.", flush=True)
 
