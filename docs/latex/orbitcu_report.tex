@@ -108,8 +108,9 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
   \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). \SOtwo{} emissions 2022--2026 are computed for all 29 sites, but only 3 old smelters (Norilsk, Sarcheshmeh, Jinchang) are seen clearly: modern plants capture almost all their \SOtwo.
   \item \textbf{Copper output from heat (new):} with the full 2018--2026 VIIRS history and a cloud correction, a point-in-time estimate cuts the error on 100 hidden published figures at 9 units from 11.3\,\% (naive) to 8.2\,\%, by catching shutdowns (Hamburg 2024, Pirdop 2025) without false alarms; normal periods are not improved, and adding \SOtwo{} at Norilsk did not help (Section~\ref{sec:production}).
-  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 31 automated tests pass.
-  \item \textbf{Still to build:} the daily ``running or not'' estimate, the activity index, the copper output estimate, the trading test and the full dashboard.
+  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 34 automated tests pass.
+  \item \textbf{Activity index (new):} a weekly share of smelter capacity running and a list of 57 dated stops and 59 restarts (2019--2026); in China it follows official output ($\rho=0.45$) about 11 days ahead of the statistics (Section~\ref{sec:index}).
+  \item \textbf{Still to build:} the trading test on past prices and the full dashboard.
 \end{itemize}
 \end{keybox}
 
@@ -315,9 +316,9 @@ Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, tha
 1 & keep a list of the 30 largest smelters & 29 sites, each with operator evidence and furnace position (Section~\ref{sec:registry}) & \done\\
 2 & download the 5 data sources, from 2018 and every day & All 5 sources work; \SOtwo{} and wind history 2022--2026 downloaded & \done\\
 3 & give a heat score and an \SOtwo{} emission per smelter & Hot-pixel rule works; cloud-corrected VIIRS activity per smelter and month 2018--2026 (both satellites); \SOtwo{} emission per smelter and month 2022--2026 (clear signal at 3 sites) & \wip\\
-4 & estimate daily ``running or not'' and publish activity indices & Planned (step 4--5 above) & \todo\\
+4 & estimate daily ``running or not'' and publish activity indices & Weekly status per smelter, capacity-weighted world index and dated stop/restart list 2019--2026 (Section~\ref{sec:index}) & \wip\\
 5 & check results against known events and official figures & 197 published output figures (KGHM, Aurubis, Ilo, Nornickel, Yunnan Copper, China Daye, Adani, Kamoa); point-in-time test of the output estimate on 9 units, heat + \SOtwo{} test at Norilsk (Section~\ref{sec:production}) & \wip\\
-6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 6.3\,\% vs 11.7\,\% naive); market data not yet loaded & \wip\\
+6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 8.2\,\% vs 11.3\,\% naive); official monthly statistics loaded (China NBS, Japan METI); market prices not yet loaded & \wip\\
 7 & test futures strategies on past data & Planned & \todo\\
 8 & show everything on a web dashboard & Interactive status map available & \wip\\
 \bottomrule
@@ -582,6 +583,46 @@ Only 4 large drops exist in the test set, so the shutdown result rests on few ca
 \end{enumerate}
 \end{keybox}
 
+
+\subsection{World activity index and dated events}\label{sec:index}
+
+\textbf{Why.} The copper estimate (Section~\ref{sec:production}) shows that heat tells reliably whether a smelter runs, stops or restarts, but not small changes in throughput. Copper prices react to supply \emph{surprises} (unplanned stops, restarts, faster or slower start-ups), not to a plant running 3\,\% lower. We therefore built two products that use only what heat measures well: a weekly capacity-weighted index and a list of dated events. Both are point-in-time and computed by \code{orbitcu.activity\_index}.
+
+\textbf{Weekly status per smelter.} For each week, activity is the share of clear days that are hot over the last 8 weeks (cloud test as in Section~\ref{sec:production}). It is compared with the \emph{same calendar weeks} ($\pm$2) of the three previous years; a smelter is \emph{stopped} if the ratio is below 0.6 (the threshold of the copper estimate), \emph{running} otherwise, and \emph{unknown} if there are fewer than 5 clear days or the site is too dim (usual activity below 0.3: Toyo, Onahama, Dahej, Gresik, Manyar, Kamoa, Saganoseki, Daye). An unknown week keeps the last known status for up to 4 weeks. The seasonal comparison was chosen after a first version with a trailing 12-month reference flagged a ``stop'' every year at the same season (Ilo every austral winter, when coastal fog hides the furnace, and Polish sites in mid-winter); it also ignores yearly planned maintenance, which the market already knows.
+
+\textbf{Index.} Share of the watched capacity with a known status that is running, every week (Figure~\ref{fig:index}). Between 2020 and 2025 it averages 81--86\,\%, with 75--83\,\% of capacity having a known status. The low of mid-2020 matches the pandemic period.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/activity_index.png}
+\caption{Top: weekly share of watched smelter capacity running (blue) and share of capacity with a known status (grey). Bottom: stops and restarts detected per quarter.}
+\label{fig:index}
+\end{figure}
+
+\textbf{Events.} A \emph{stop} is at least 3 stopped weeks after a running spell; it is dated on the day the third stopped week is known (plus 5 days for the cloud data). A \emph{restart} is the first running spell of at least 3 weeks after a stop. From May 2019 to October 2026 the list holds 57 stops and 59 restarts (about one stop every three years per visible smelter); the first year only sets the reference.
+
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Known events.} Hamburg's 2024 shutdown is seen 37 days after it began and Pirdop's 2025 shutdown 80 days after the start of the quarter (the exact start date is not published). Manyar's 2024 fire and Kamoa's start-up are not seen (both sites too dim), nor Ilo's 15\,\% lower year (no stop).
+  \item \textbf{Stops against published figures.} 15 stops fall in a period with a published figure. 5 come with output at least 10\,\% below the naive forecast (Hamburg $-63$\,\%, Pirdop $-62$\,\%, Chifeng Yunjin $-12$\,\%, Ilo twice $-11$\,\%). The other 10 show no drop: 8 are at KGHM (Glogow 2020 and 2024, Legnica five times), where heat stopped for 3 to 16 weeks while the reported cathode output did not move, probably because the refinery runs on anode stocks and scrap during furnace repairs. A stop seen from space is therefore a real furnace stop in most cases, but not always a loss of copper on the market.
+\end{itemize}
+
+\textbf{Comparison with official statistics.} Monthly official figures with their release dates were collected for China (NBS refined copper, 2018--2026) and Japan (METI blister and electrolytic copper, 2021--2025) [36, 37]. ICSG, Cochilco and Indian monthly reports are only available as file downloads and were not used yet.
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{China.} The monthly share of Chinese capacity running correlates with NBS output relative to its trailing 12-month median: $\rho=0.45$ over 68 months (95\,\% block-bootstrap interval 0.23--0.65); for month-to-month changes $\rho=0.25$ (Figure~\ref{fig:china}). The plain heat activity, without the stop rule, does not follow the NBS year-on-year growth ($\rho=0.17$): Chinese growth comes mostly from new and expanded plants, which a fixed list of sites and a ``share of hot days'' cannot measure. The satellite month is ready about 5 days after month end, the NBS figure about 16 days after: a lead of roughly 11 days.
+  \item \textbf{Japan.} Only Saganoseki is (dimly) seen. Of the 5 months with Japanese blister output 20\,\% below normal (refinery maintenance), the satellite shows one (November 2023, activity 0).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/china_index_vs_nbs.png}
+\caption{China: satellite share of smelter capacity running (top) and NBS refined copper output relative to its trailing 12-month median (bottom), monthly.}
+\label{fig:china}
+\end{figure}
+
+\begin{notebox}[What this means for a trading strategy]
+The index and events carry a real but moderate signal: they follow Chinese official output with a correlation of about 0.45 and are available 1--2 weeks earlier in China and 1--3 months earlier than company reports. About one stop in three is followed by a visible loss of output. This supports a strategy built on \emph{events and index changes}, tested on past prices with costs, rather than on exact tonnes per smelter. Whether it earns money is not known until that test is run; no trading signal has been built.
+\end{notebox}
+
 % =====================================================================
 \section{What comes next}
 
@@ -596,7 +637,7 @@ Only 4 large drops exist in the test set, so the shutdown result rests on few ca
 3 & Download the full image and heat history since 2018 for all sites (about 60\,000 images, around 10\,h) & Radu\\
 4 & Heat score for every image, with a quality flag & Radu\\
 5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
-6 & Market data (futures prices, exchange stocks, official statistics with their publication dates); more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
+6 & Market data (futures prices, exchange stocks); remaining official statistics (ICSG world, Cochilco, India) with their publication dates; more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
 7 & Trading test on past data, with contract rolls and costs & Robin\\
 8 & Web dashboard (map, site charts, indices, estimates, test results) & Robin\\
 9 & Automated runs in containers, tests on GitHub at every change & Baptiste\\
@@ -642,7 +683,7 @@ cd OrbitCu---SWE\\
 pip install -e ".[dev,era5,s5p,emissions]"\\
 \$env:FIRMS\_MAP\_KEY = "your\_key"\qquad \# free: firms.modaps.eosdis.nasa.gov/api/map\_key\\
 \$env:CDSAPI\_KEY = "your\_token"\qquad \# Copernicus CDS account\\
-pytest\qquad\qquad\qquad\qquad\qquad\quad \# 31 tests, no internet needed
+pytest\qquad\qquad\qquad\qquad\qquad\quad \# 34 tests, no internet needed
 \end{tcolorbox}
 On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{set FIRMS\_MAP\_KEY=...}. To keep a key on Windows: \code{setx FIRMS\_MAP\_KEY "..."}, then open a new terminal. Keys are never committed.
 
@@ -726,6 +767,8 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \item China Daye Non-Ferrous Metals Mining (HKEX 00661), annual and interim results 2024--2026. \url{https://www.hkexnews.hk}
 \item Adani Enterprises Ltd., quarterly results press releases FY26--FY27 (copper sales). \url{https://www.adanienterprises.com/investors}
 \item Ivanhoe Mines, Kamoa-Kakula quarterly production releases 2026 (smelter anode output). \url{https://www.ivanhoemines.com}
+\item National Bureau of Statistics of China, monthly industrial output: refined copper, 2018--2026 (release calendar for dates). \url{https://data.stats.gov.cn}
+\item Ministry of Economy, Trade and Industry (Japan), Non-ferrous metals statistics (e-Stat), blister and electrolytic copper, 2021--2025. \url{https://www.e-stat.go.jp}
 \end{enumerate}
 
 \end{document}
