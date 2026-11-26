@@ -107,8 +107,8 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{29 smelters selected} (about 11.7 Mt of copper per year, roughly 47\,\% of world smelting capacity), each checked against its operator's own documents.
   \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
   \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). \SOtwo{} emissions 2022--2026 are computed for all 29 sites, but only 3 old smelters (Norilsk, Sarcheshmeh, Jinchang) are seen clearly: modern plants capture almost all their \SOtwo.
-  \item \textbf{Copper output from heat (new):} with the full 2018--2026 VIIRS history and a cloud correction, a point-in-time estimate cuts the error on 58 hidden published figures from 11.7\,\% (naive) to 6.3\,\%, by catching shutdowns (Hamburg 2024, Pirdop 2025) without false alarms; normal months are not improved (Section~\ref{sec:production}).
-  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 29 automated tests pass.
+  \item \textbf{Copper output from heat (new):} with the full 2018--2026 VIIRS history and a cloud correction, a point-in-time estimate cuts the error on 100 hidden published figures at 9 units from 11.3\,\% (naive) to 8.2\,\%, by catching shutdowns (Hamburg 2024, Pirdop 2025) without false alarms; normal periods are not improved, and adding \SOtwo{} at Norilsk did not help (Section~\ref{sec:production}).
+  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 31 automated tests pass.
   \item \textbf{Still to build:} the daily ``running or not'' estimate, the activity index, the copper output estimate, the trading test and the full dashboard.
 \end{itemize}
 \end{keybox}
@@ -316,7 +316,7 @@ Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, tha
 2 & download the 5 data sources, from 2018 and every day & All 5 sources work; \SOtwo{} and wind history 2022--2026 downloaded & \done\\
 3 & give a heat score and an \SOtwo{} emission per smelter & Hot-pixel rule works; cloud-corrected VIIRS activity per smelter and month 2018--2026 (both satellites); \SOtwo{} emission per smelter and month 2022--2026 (clear signal at 3 sites) & \wip\\
 4 & estimate daily ``running or not'' and publish activity indices & Planned (step 4--5 above) & \todo\\
-5 & check results against known events and official figures & 141 published output figures (KGHM monthly 2018--2026, Aurubis, Ilo); point-in-time test of the output estimate (Section~\ref{sec:production}) & \wip\\
+5 & check results against known events and official figures & 197 published output figures (KGHM, Aurubis, Ilo, Nornickel, Yunnan Copper, China Daye, Adani, Kamoa); point-in-time test of the output estimate on 9 units, heat + \SOtwo{} test at Norilsk (Section~\ref{sec:production}) & \wip\\
 6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 6.3\,\% vs 11.7\,\% naive); market data not yet loaded & \wip\\
 7 & test futures strategies on past data & Planned & \todo\\
 8 & show everything on a web dashboard & Interactive status map available & \wip\\
@@ -508,7 +508,7 @@ Dahej, Kutch (India) & 12, 20 & yes & Mostly coal power plants 20--25\,km away\\
 
 \textbf{Goal.} Turn the heat seen at each smelter into an estimate of its copper output, and measure how good this estimate is on published figures that the model has not seen.
 
-\textbf{Data.} The full VIIRS heat-spot history of both satellites (S-NPP from January 2018, NOAA-20 from April 2018, to October 2026) was downloaded from NASA FIRMS [17] for the 29 smelters plus Legnica, the second KGHM smelter, which we located from the heat data itself (densest persistent cluster at 51.180\,N, 16.115\,E, 577 hot days). The area API returns at most 5 days per request, so the 12 regional boxes needed about 17\,000 requests. Cloud cover at the two VIIRS overpasses (about 01:30 and 13:30 local solar time) comes from ERA5 hourly total cloud cover at each site [18]. Ground truth: KGHM monthly electrolytic copper 2018--2026 [28] (Glogow and Legnica reported together, used as quarterly sums), Aurubis quarterly concentrate throughput at Hamburg and Pirdop [29], and Southern Copper yearly anode output at Ilo [30]. Each figure keeps its publication date, so the model only uses figures that were public at the time.
+\textbf{Data.} The full VIIRS heat-spot history of both satellites (S-NPP from January 2018, NOAA-20 from April 2018, to October 2026) was downloaded from NASA FIRMS [17] for the 29 smelters plus Legnica, the second KGHM smelter, which we located from the heat data itself (densest persistent cluster at 51.180\,N, 16.115\,E, 577 hot days). The area API returns at most 5 days per request, so the 12 regional boxes needed about 17\,000 requests. Cloud cover at the two VIIRS overpasses (about 01:30 and 13:30 local solar time) comes from ERA5 hourly total cloud cover at each site [18]. Ground truth (197 published figures): KGHM monthly electrolytic copper 2018--2026 [28] (Glogow and Legnica reported together, used as quarterly sums), Aurubis quarterly concentrate throughput at Hamburg and Pirdop [29], Southern Copper yearly anode output at Ilo [30], Nornickel quarterly copper 2021--2026 [31] (group metal minus Trans-Baikal concentrate, which is the Norilsk smelting output plus small Kola volumes), Yunnan Copper half-year cathode output of Chifeng Yunjin and Southeast Copper 2019--2026 [32], China Daye half-year cathode output 2024--2026 [33], Adani Kutch Copper quarterly sales [34] and Kamoa smelter anode output [35]. Codelco and Cochilco do not publish output per smelter, and the Iranian, Japanese and Korean operators' monthly figures could not be obtained (the Iranian exchange site is blocked from outside Iran). Each figure keeps its publication date, so the model only uses figures that were public at the time.
 
 \textbf{Activity measure.} For each site and month, a day counts as \emph{clear} if the cloud cover at one of the overpass hours is below 50\,\%, and as \emph{hot} if either satellite saw a heat spot within 1.5\,km of the furnace. The activity is the share of clear days that are hot. Without this correction a cloudy month looks like a shutdown.
 
@@ -527,14 +527,19 @@ $R_{\text{norm}}$ is the median published monthly rate over the previous 12 mont
 \textbf{Reported unit} & \textbf{Figures} & \textbf{Naive error} & \textbf{Satellite error} & \textbf{Satellite bias}\\
 \midrule
 KGHM (Glogow + Legnica), quarters & 32 & 3.2\,\% & 3.2\,\% & $-0.9$\,\%\\
+Norilsk, quarters & 19 & 9.4\,\% & 9.4\,\% & $+1.1$\,\%\\
+Chifeng Yunjin, half-years & 11 & 9.5\,\% & 9.5\,\% & $-6.0$\,\%\\
+Southeast Copper, half-years & 7 & 9.7\,\% & 9.7\,\% & $-5.0$\,\%\\
 Hamburg, quarters & 10 & 32.4\,\% & 16.7\,\% & $-0.1$\,\%\\
 Pirdop, quarters & 10 & 19.5\,\% & 4.2\,\% & $-3.1$\,\%\\
 Ilo, years & 6 & 9.0\,\% & 9.0\,\% & $+4.0$\,\%\\
+Daye (group proxy), half-years & 4 & 18.1\,\% & 18.1\,\% & $+9.7$\,\%\\
+Kutch (sales), quarter & 1 & 31.6\,\% & 31.6\,\% & $-31.6$\,\%\\
 \midrule
-\textbf{All} & \textbf{58} & \textbf{11.7\,\%} & \textbf{6.3\,\%} & \\
+\textbf{All} & \textbf{100} & \textbf{11.3\,\%} & \textbf{8.2\,\%} & \\
 \bottomrule
 \end{tabular}
-\caption{Mean absolute error on published figures not seen by the model (both VIIRS satellites, cloud-corrected). With NOAA-20 alone the satellite error is 6.9\,\%. Threshold 0.5: 6.3\,\%; 0.7: 7.9\,\%.}
+\caption{Mean absolute error on published figures not seen by the model (both VIIRS satellites, cloud-corrected), 9 reported units. The first test on 4 units (58 figures) gave 6.3\,\% against 11.7\,\%. Threshold 0.5: 8.2\,\%; 0.7: 9.1\,\%. Figures need 12 months of earlier heat and an earlier published figure, so some periods drop out.}
 \label{tab:production}
 \end{table}
 
@@ -547,14 +552,25 @@ Ilo, years & 6 & 9.0\,\% & 9.0\,\% & $+4.0$\,\%\\
 
 \textbf{Findings.}
 \begin{itemize}[leftmargin=1.2em]
-  \item \textbf{Shutdowns are caught.} Of the 3 quarters where output fell by more than 30\,\%, 2 were flagged (Hamburg Q2 2024: 111\,kt published, 299 naive, 125 satellite; Pirdop Q2 2025: 131, 341, 123). No false alarm in 58 figures. With one satellite only, Hamburg Q4 2023 was a false alarm; the second satellite removed it.
-  \item \textbf{Normal periods are not improved.} For KGHM and Ilo the satellite never moves the estimate; their error equals the naive one. Small changes in output (a few per cent) are below what heat can measure.
-  \item \textbf{Missed:} the Hamburg restart in Q3 2024 (167\,kt, heat already back to normal), and the low ``normal'' rate after a shutdown (Hamburg 2025), which comes from the published figures, not the satellite.
+  \item \textbf{Shutdowns are caught.} Of the 4 periods where output fell by more than 30\,\% below the naive forecast, 2 were flagged (Hamburg Q2 2024: 111\,kt published, 299 naive, 125 satellite; Pirdop Q2 2025: 131, 341, 123). No false alarm in 100 figures. With one satellite only, Hamburg Q4 2023 was a false alarm; the second satellite removed it. The two misses are the Hamburg restart (Q3 2024) and Daye H2 2024, a figure derived from a year-on-year change and probably not a real stop.
+  \item \textbf{Normal periods are not improved.} At the 5 new units (Norilsk, Chifeng Yunjin, Southeast, Daye, Kutch) no shutdown happened, so the estimate equals the naive one. Changes of 10--20\,\% (Norilsk Q2 2021 mine flooding, Q2 2023) move the heat ratio a little (0.73--0.77) but a similar ratio also occurs in a normal quarter (Q2 2024), so heat alone cannot size them.
+  \item \textbf{Start-ups are seen but not used.} In the 4 periods where heat rose by more than 30\,\% above its usual level (Ilo 2022, Hamburg Q2 2026, Chifeng Yunjin H1 2020 ramp-up, Kutch Q3 2026 ramp-up) output also rose (by 10--51\,\%). The rule ignores rises; a rule for start-ups is a next step, to be fixed in advance and checked on new figures.
   \item \textbf{Per-site estimates for all 29 sites} (quarterly, 2022 to Q3 2026, with totals by country) are produced by \code{production.estimate\_sites}. Where no output is published, the level is capacity\,$\times$\,0.8 and only shutdowns are detected, so the error cannot be measured; 5 sites are too dim for VIIRS (Toyo, Onahama, Dahej, Gresik, Manyar) and Kamoa's new smelter (first anode 29 December 2025) is not seen yet.
 \end{itemize}
 
+\textbf{Heat combined with \SOtwo{} at old smelters.} Where a smelter lets its sulfur escape, the \SOtwo{} emission rate should follow the amount of concentrate smelted and so carry the partial changes that heat cannot size. Only Norilsk has both a clear plume and published figures (Sarcheshmeh and Jinchang have no usable output series). The combined estimate keeps the heat shutdown rule; otherwise it takes last year's figure for the same quarter and scales it by the year-on-year change in \SOtwo{} emissions, damped by a weight $w$ (0.5 fixed in advance):
+\[
+\widehat{Cu}_P = Cu_{P-1\,\text{yr}}\times\bigl(1 + w\,(r^{\SOtwo}_P-1)\bigr),\qquad r^{\SOtwo}_P=\frac{\text{mean monthly \SOtwo{} rate in }P}{\text{same months one year earlier}}.
+\]
+The year-on-year ratio removes the season (the satellite sees nothing at Norilsk from October to February, polar night) and is computed only from months already processed at the decision date with a significant plume fit ($t\geq4$).
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Result: no gain.} On the 5 quarters where it applies (Q2 and Q3 of 2023--2025), the error is 16.4\,\% against 9.5\,\% for heat alone ($w=0.25$: 11.6\,\%; $w=1$: 28.1\,\%). The direction is right in 2023 (\SOtwo{} down, output down) but wrong in 2024--2025 (\SOtwo{} up by 18--92\,\%, output flat).
+  \item \textbf{Likely causes.} The Norilsk plume mixes the Copper Plant with the Nadezhda nickel smelter 10\,km away, whose sulfur capture programme (``Sulfur Programme'', ramp-up 2023--2025) changes the \SOtwo{} with no link to copper. The TROPOMI processor version also changes each year (Section~\ref{sec:so2}), which biases year-on-year ratios.
+  \item \textbf{Decision:} the combined estimate is coded (\code{production.evaluate\_fusion}) and tested, but heat alone stays the default. \SOtwo{} should be retried at Sarcheshmeh once NICICO monthly figures can be obtained, and with a processor-consistent reprocessing of the \SOtwo{} data.
+\end{itemize}
+
 \begin{notebox}[Limits of this test]
-Only 3 large drops exist in the test set, so the shutdown result rests on few cases. Aurubis figures are concentrate throughput, not copper. The KGHM split between Glogow and Legnica uses an approximate Legnica capacity (160\,kt/yr). The trading signal is deliberately not built yet.
+Only 4 large drops exist in the test set, so the shutdown result rests on few cases. Aurubis figures are concentrate throughput, not copper; Nornickel and Yunnan Copper figures are refined copper, which lags smelting by a few weeks; Daye is a group figure and Kutch a sales figure. The \SOtwo{} test rests on 5 quarters at one site. The KGHM split between Glogow and Legnica uses an approximate Legnica capacity (160\,kt/yr). The trading signal is deliberately not built yet.
 \end{notebox}
 
 \begin{keybox}[What the first tests tell us]
@@ -580,7 +596,7 @@ Only 3 large drops exist in the test set, so the shutdown result rests on few ca
 3 & Download the full image and heat history since 2018 for all sites (about 60\,000 images, around 10\,h) & Radu\\
 4 & Heat score for every image, with a quality flag & Radu\\
 5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
-6 & Market data (futures prices, exchange stocks, official statistics with their publication dates); more published output figures to test the copper estimate on more shutdowns; review of the estimates before any trading signal & Robin\\
+6 & Market data (futures prices, exchange stocks, official statistics with their publication dates); more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
 7 & Trading test on past data, with contract rolls and costs & Robin\\
 8 & Web dashboard (map, site charts, indices, estimates, test results) & Robin\\
 9 & Automated runs in containers, tests on GitHub at every change & Baptiste\\
@@ -626,7 +642,7 @@ cd OrbitCu---SWE\\
 pip install -e ".[dev,era5,s5p,emissions]"\\
 \$env:FIRMS\_MAP\_KEY = "your\_key"\qquad \# free: firms.modaps.eosdis.nasa.gov/api/map\_key\\
 \$env:CDSAPI\_KEY = "your\_token"\qquad \# Copernicus CDS account\\
-pytest\qquad\qquad\qquad\qquad\qquad\quad \# 24 tests, no internet needed
+pytest\qquad\qquad\qquad\qquad\qquad\quad \# 31 tests, no internet needed
 \end{tcolorbox}
 On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{set FIRMS\_MAP\_KEY=...}. To keep a key on Windows: \code{setx FIRMS\_MAP\_KEY "..."}, then open a new terminal. Keys are never committed.
 
@@ -705,6 +721,11 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \item KGHM Polska Mied\'z, ``Financial and operating data: production volume by month'' (xlsx). \url{https://kghm.com/en/investors/results-center/financial-data}
 \item Aurubis AG, quarterly and annual reports FY 2022/23--2025/26 (concentrate throughput by site). \url{https://www.aurubis.com/en/investor-relations/publications}
 \item Southern Copper Corp., Form 10-K annual reports 2018--2025 (Ilo smelter anode production). \url{https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001001838&type=10-K}
+\item PJSC MMC Norilsk Nickel, consolidated production results press releases 1Q 2019--9M 2026. \url{https://nornickel.com/news-and-media/press-releases-and-news/}
+\item Yunnan Copper Co.\ (000878), annual and half-year reports 2019--2026 (cathode output per smelter). \url{http://www.cninfo.com.cn}
+\item China Daye Non-Ferrous Metals Mining (HKEX 00661), annual and interim results 2024--2026. \url{https://www.hkexnews.hk}
+\item Adani Enterprises Ltd., quarterly results press releases FY26--FY27 (copper sales). \url{https://www.adanienterprises.com/investors}
+\item Ivanhoe Mines, Kamoa-Kakula quarterly production releases 2026 (smelter anode output). \url{https://www.ivanhoemines.com}
 \end{enumerate}
 
 \end{document}

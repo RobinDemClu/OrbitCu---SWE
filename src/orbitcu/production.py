@@ -352,6 +352,95 @@ def evaluate(cases: pd.DataFrame, cut: float = CUT) -> pd.DataFrame:
     return t
 
 
+# --- SO2 + heat fusion (old smelters without full sulphur capture) ---------------------------
+# Heat (VIIRS) says whether the furnaces run; it saturates when a plant is busy and cannot see a
+# 20 % slowdown.  SO2 (TROPOMI, Fioletov EMG fit, see emissions.py) scales with the sulphur
+# burnt, so at plants that vent their gas it carries the partial changes.  The fusion keeps the
+# heat shutdown rule and, when the plant runs, nudges the normal rate by a damped SO2 ratio.
+SO2_W = 0.5          # weight on the SO2 ratio (0 = heat only, 1 = take the SO2 ratio at face value)
+SO2_MIN_T = 4.0      # a month is used only if the EMG fit is significant (t >= 4)
+
+
+def so2_ratio(so2: pd.DataFrame, site_id: str, p0: pd.Period, p1: pd.Period,
+              decision: pd.Timestamp, mode: str = "yoy", ref_months: int = 12, min_cur: int = 2,
+              min_ref: int = 3, min_t: float = SO2_MIN_T) -> float:
+    """SO2 activity ratio of months p0..p1.
+
+    mode="yoy": mean rate over the months of p0..p1 divided by the mean rate over the SAME
+    calendar months one year earlier (only months present in both years).  This cancels the
+    season (Norilsk is dark from October to February) and slow changes in the background.
+    mode="trailing": mean rate divided by the median of the ref_months before p0.
+    Only months available at the decision time with a significant fit (t >= min_t) count."""
+    d = so2[(so2["site_id"] == site_id) & (so2["t_stat"] >= min_t)].copy()
+    if d.empty:
+        return np.nan
+    av = pd.to_datetime(d["available_at"], utc=True, format="mixed")
+    d = d[av <= decision]
+    e = pd.Series(d["E_kt_yr"].to_numpy(), index=pd.PeriodIndex(d["period"], freq="M"))
+    e = e[~e.index.duplicated()]
+    months = pd.period_range(p0, p1, freq="M")
+    if mode == "yoy":
+        pairs = [(m, m - 12) for m in months if m in e.index and (m - 12) in e.index]
+        if len(pairs) < min_cur:
+            return np.nan
+        prev = np.mean([e[b] for _, b in pairs])
+        return float(np.mean([e[a] for a, _ in pairs]) / prev) if prev > 0 else np.nan
+    cur = e[(e.index >= p0) & (e.index <= p1)]
+    ref = e[(e.index >= p0 - ref_months) & (e.index < p0)]
+    if len(cur) < min_cur or len(ref) < min_ref or ref.median() <= 0:
+        return np.nan
+    return float(cur.mean() / ref.median())
+
+
+def fused_factor(r_heat, r_so2, cut: float = CUT, w: float = SO2_W, lo: float = 0.5, hi: float = 1.5):
+    """Heat shutdown rule first; if the plant runs and an SO2 ratio exists, scale by
+    1 + w (clip(r_so2) - 1)."""
+    f = shutdown_factor(np.asarray(r_heat, dtype=float), cut)
+    rs = np.asarray(r_so2, dtype=float)
+    adj = 1.0 + w * (np.clip(rs, lo, hi) - 1.0)
+    return np.where((f == 1.0) & np.isfinite(rs), adj, f)
+
+
+def _prev_year_figure(rep: pd.DataFrame, entity: str, p_start, p_end, decision) -> float:
+    """Published output of the same period one year earlier, known at the decision time."""
+    R = rep[(rep["site_id"] == entity)]
+    s0 = pd.Timestamp(p_start) - pd.DateOffset(years=1); s1 = pd.Timestamp(p_end) - pd.DateOffset(years=1)
+    m = R[(R["period_start"] == s0) & (R["period_end"].dt.normalize() == s1.normalize())
+          & (R["published_at"] < decision)]
+    return float(m["cu_kt"].iloc[-1]) if len(m) else np.nan
+
+
+def evaluate_fusion(test: pd.DataFrame, so2: pd.DataFrame, rep: pd.DataFrame, site_of: dict,
+                    cut: float = CUT, w: float = SO2_W) -> pd.DataFrame:
+    """Add the SO2 + heat estimate to an evaluate() table.
+
+    For entities in site_of (old smelters whose SO2 plume is seen):
+      heat says shut (r < cut)       -> heat estimate (naive x r)
+      else, SO2 year-on-year ratio and last year's figure for the same period both known
+                                     -> last_year x (1 + w (r_so2_yoy - 1))
+      else                           -> heat estimate.
+    Other entities keep the heat estimate."""
+    t = test.copy()
+    rs, base = [], []
+    for c in t.itertuples(index=False):
+        sid = site_of.get(c.entity)
+        if sid is None:
+            rs.append(np.nan); base.append(np.nan); continue
+        p0 = pd.Timestamp(c.period_start).to_period("M"); p1 = pd.Timestamp(c.period_end).to_period("M")
+        dec = pd.Timestamp(c.decision_time)
+        rs.append(so2_ratio(so2, sid, p0, p1, dec, mode="yoy"))
+        base.append(_prev_year_figure(rep, c.entity, c.period_start, c.period_end, dec))
+    t["r_so2"] = rs
+    t["last_year_kt"] = base
+    shut = np.asarray(t["r"], dtype=float) < cut
+    ok = np.isfinite(t["r_so2"]) & np.isfinite(t["last_year_kt"]) & ~shut
+    adj = 1.0 + w * (np.clip(t["r_so2"], 0.5, 1.5) - 1.0)
+    t["fused_kt"] = np.where(ok, t["last_year_kt"] * adj, t["sat_kt"])
+    t["so2_used"] = ok
+    t["err_fused_pct"] = 100 * (t["fused_kt"] - t["cu_kt"]) / t["cu_kt"]
+    return t
+
+
 def estimate_sites(act: pd.DataFrame, rep: pd.DataFrame, sites, col: str = "hot_frac",
                    start: str = "2019Q1", end: str = "2026Q3", cut: float = CUT,
                    min_ref: float = 0.05, start_dates: dict | None = None) -> pd.DataFrame:

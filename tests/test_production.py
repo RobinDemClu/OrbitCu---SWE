@@ -61,3 +61,25 @@ def test_norm_rate_ignores_unpublished_figures():
                         "published_at": pd.to_datetime(["2020-04-20", "2020-07-20", "2020-10-20", "2021-06-01"], utc=True)})
     rate = P._norm_rate(rep, pd.Timestamp("2021-01-02", tz="UTC"), pd.Period("2021-01", "M"), 12)
     assert abs(rate - 30 / (91 / 30.4375)) < 0.5  # Q4 (90 kt) not yet published
+
+
+def _so2(values, start="2022-01", t=10.0, lag_days=5):
+    per = pd.period_range(start, periods=len(values), freq="M")
+    return pd.DataFrame({"site_id": "A", "period": per.astype(str), "E_kt_yr": values, "t_stat": t,
+                         "available_at": (per.end_time.normalize() + pd.Timedelta(days=lag_days)).tz_localize("UTC")})
+
+
+def test_so2_ratio_year_on_year_and_point_in_time():
+    so2 = _so2([100.0] * 12 + [80.0] * 3)               # 2023 Q1 emissions 20 % below 2022 Q1
+    dec = pd.Timestamp("2023-04-10", tz="UTC")
+    r = P.so2_ratio(so2, "A", pd.Period("2023-01", "M"), pd.Period("2023-03", "M"), dec, mode="yoy")
+    assert abs(r - 0.8) < 1e-9
+    early = pd.Timestamp("2023-04-01", tz="UTC")       # March estimate not yet available -> only Jan, Feb
+    assert abs(P.so2_ratio(so2, "A", pd.Period("2023-01", "M"), pd.Period("2023-03", "M"), early) - 0.8) < 1e-9
+    weak = _so2([100.0] * 15, t=2.0)                    # insignificant fits are ignored
+    assert np.isnan(P.so2_ratio(weak, "A", pd.Period("2023-01", "M"), pd.Period("2023-03", "M"), dec))
+
+
+def test_fused_factor_keeps_heat_shutdown_and_damps_so2():
+    f = P.fused_factor([0.2, 1.0, 1.0, 1.0], [1.0, 0.8, np.nan, 3.0], cut=0.6, w=0.5)
+    assert np.allclose(f, [0.2, 0.9, 1.0, 1.25])
