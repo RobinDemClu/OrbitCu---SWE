@@ -354,14 +354,16 @@ def evaluate(cases: pd.DataFrame, cut: float = CUT) -> pd.DataFrame:
 
 def estimate_sites(act: pd.DataFrame, rep: pd.DataFrame, sites, col: str = "hot_frac",
                    start: str = "2019Q1", end: str = "2026Q3", cut: float = CUT,
-                   min_ref: float = 0.05) -> pd.DataFrame:
+                   min_ref: float = 0.05, start_dates: dict | None = None) -> pd.DataFrame:
     """Quarterly copper estimate per site, point-in-time.
 
     Sites inside a reported entity get the entity's normal rate split by capacity;
     sites without published output get ``capacity * U0``. When the site is too dim
     for VIIRS (median activity < ``min_ref``) the estimate is the normal rate and
-    flagged ``visible=False``.
+    flagged ``visible=False``. ``start_dates`` (site -> first production date)
+    sets the estimate to 0 before a plant started.
     """
+    start_dates = start_dates or {}
     ent_of = {s: e for e, ss in ENTITY_SITES.items() for s in ss}
     cap = {s.id: s.capacity_kt for s in sites}
     rows = []
@@ -385,6 +387,8 @@ def estimate_sites(act: pd.DataFrame, rep: pd.DataFrame, sites, col: str = "hot_
             vis = a_ref == a_ref and a_ref >= min_ref and not cur.isna().any()
             r = float(cur.mean()) / a_ref if vis and a_ref > 0 else np.nan
             f = float(shutdown_factor([r], cut)[0]) if vis else 1.0
+            if s.id in start_dates and q.start_time < pd.Timestamp(start_dates[s.id]):
+                f, basis = 0.0, "not_started"
             rows.append({"site_id": s.id, "quarter": str(q), "rate_basis": basis, "visible": vis,
                          "r": r, "factor": f, "normal_kt": rate * 3, "est_kt": rate * 3 * f})
     return pd.DataFrame(rows)
