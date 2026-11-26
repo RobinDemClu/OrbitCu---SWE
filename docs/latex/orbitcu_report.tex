@@ -108,8 +108,10 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
   \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). \SOtwo{} emissions 2022--2026 are computed for all 29 sites, but only 3 old smelters (Norilsk, Sarcheshmeh, Jinchang) are seen clearly: modern plants capture almost all their \SOtwo.
   \item \textbf{Copper output from heat (new):} with the full 2018--2026 VIIRS history and a cloud correction, a point-in-time estimate cuts the error on 100 hidden published figures at 9 units from 11.3\,\% (naive) to 8.2\,\%, by catching shutdowns (Hamburg 2024, Pirdop 2025) without false alarms; normal periods are not improved, and adding \SOtwo{} at Norilsk did not help (Section~\ref{sec:production}).
-  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 34 automated tests pass.
+  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 40 automated tests pass.
   \item \textbf{Activity index (new):} a weekly share of smelter capacity running and a list of 57 dated stops and 59 restarts (2019--2026); in China it follows official output ($\rho=0.45$) about 11 days ahead of the statistics (Section~\ref{sec:index}).
+  \item \textbf{Every image scored (new):} heat score and quality flag for all 29\,315 Sentinel-2 and Landsat images 2018--2026, with a hot-pixel rule tested on four boxes without industry; the Hamburg and Pirdop shutdowns and the Manyar restart are seen directly (Section~\ref{sec:images}).
+  \item \textbf{\SOtwo{} software correction (new):} the step of each Sentinel-5P software upgrade is measured on orbits processed in both versions; the November 2025 upgrade alone added 19\,\%, about 40\,\% of the 2026 jumps (Section~\ref{sec:so2}).
   \item \textbf{Still to build:} the trading test on past prices and the full dashboard.
 \end{itemize}
 \end{keybox}
@@ -131,8 +133,8 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
 \node[d] (gas) at (0,0.2) {\textbf{\SOtwo{} gas}\\[-1pt]{\scriptsize Sentinel-5P}};
 \node[d] (wind) at (0,-1.3) {\textbf{Wind}\\[-1pt]{\scriptsize ERA5}};
 % per smelter
-\node[w] (heat) at (4.3,2.45) {\textbf{Heat score}};
-\node[w] (so2) at (4.3,-0.55) {\textbf{\SOtwo{} emission}};
+\node[d] (heat) at (4.3,2.45) {\textbf{Heat score}};
+\node[d] (so2) at (4.3,-0.55) {\textbf{\SOtwo{} emission}};
 \node[draw=muted,dashed,rounded corners=4pt,inner sep=7pt,fit=(heat)(so2),label={[lab]below:PER SMELTER}] (grp) {};
 \node[d] (reg) at (4.3,4.55) {\textbf{Smelter list}\\[-1pt]{\scriptsize 29 sites}};
 % fusion
@@ -315,7 +317,7 @@ Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, tha
 \midrule
 1 & keep a list of the 30 largest smelters & 29 sites, each with operator evidence and furnace position (Section~\ref{sec:registry}) & \done\\
 2 & download the 5 data sources, from 2018 and every day & All 5 sources work; \SOtwo{} and wind history 2022--2026 downloaded & \done\\
-3 & give a heat score and an \SOtwo{} emission per smelter & Hot-pixel rule works; cloud-corrected VIIRS activity per smelter and month 2018--2026 (both satellites); \SOtwo{} emission per smelter and month 2022--2026 (clear signal at 3 sites) & \wip\\
+3 & give a heat score and an \SOtwo{} emission per smelter & Heat score and quality flag for all 29\,315 Sentinel-2/Landsat images 2018--2026 (Section~\ref{sec:images}); cloud-corrected VIIRS activity per smelter and month 2018--2026; \SOtwo{} emission per smelter and month 2022--2026, corrected for software versions (clear signal at 3 sites) & \done\\
 4 & estimate daily ``running or not'' and publish activity indices & Weekly status per smelter, capacity-weighted world index and dated stop/restart list 2019--2026 (Section~\ref{sec:index}) & \wip\\
 5 & check results against known events and official figures & 197 published output figures (KGHM, Aurubis, Ilo, Nornickel, Yunnan Copper, China Daye, Adani, Kamoa); point-in-time test of the output estimate on 9 units, heat + \SOtwo{} test at Norilsk (Section~\ref{sec:production}) & \wip\\
 6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 8.2\,\% vs 11.3\,\% naive); official monthly statistics loaded (China NBS, Japan METI); market prices not yet loaded & \wip\\
@@ -463,6 +465,28 @@ Kamoa-Kakula (DR Congo) & low & 102 (53) & \textbf{8 / 53} & 19\\
 
 \textbf{What it says.} \textbf{8 of the 10 are clearly active} and \textbf{2 likely active} (Onsan and Toyo: no or few VIIRS days, but hot pixels in Sentinel-2 images). The monthly view also shows \textbf{drops in activity}: Chuquicamata falls from about 23 hot days to 3 in June and 6 in July 2026, then returns to normal; Norilsk drops to 3 days in May 2026; Chifeng Jintong is almost cold from December 2025 to February 2026. These are exactly the events a trading desk wants to know about. Their causes (maintenance, incident, weather) still have to be confirmed with news and company reports.
 
+\subsection{Heat score of every image, with a quality flag}\label{sec:images}
+\textbf{What is computed.} For every Sentinel-2 and Landsat 8/9 image of a smelter's 3\,$\times$\,3\,km box since 2018, the code returns a heat score and a quality flag (\code{hotspot}, \code{image\_scores}). The score counts the \emph{hot pixels}: pixels much brighter at 2.2\,$\mu$m than at 1.6\,$\mu$m, which only very hot surfaces (molten metal, slag, open furnaces) produce in daylight. It also gives the hot area, the summed excess brightness and, for Landsat, the excess surface temperature. The quality flag says whether a low score can be trusted: \emph{clear} (less than 10\,\% of the box under cloud or shadow), \emph{partial} (less than 50\,\%), \emph{cloudy}, or \emph{no data}. A hot pixel seen through thin cloud still counts; a ``cold'' image counts only when it is clear. Two technical points: Sentinel-2 images processed since January 2022 carry an offset of 1000 that must be removed, and duplicate copies of the same pass (overlapping tiles) are merged.
+
+\textbf{A stricter hot-pixel rule.} The usual rule (Thermal Anomaly Index above 0.45 [21]) fired on 95\,\% of clear Sentinel-2 images over central Paris (metal roofs) and on 71\,\% over the Hamburg container port. We tested it on four boxes with no hot industry (central Paris, Hamburg port, Atacama desert, Katanga bush), against the ratio rule of Murphy et al.\ [39] and stricter versions. We kept: index above 3 \emph{and} a 2.2\,$\mu$m excess above 0.40. False alarms fall to 0--11\,\% of clear images, while 78--100\,\% of clear images at Glogow and Hamburg stay hot.
+
+\textbf{History.} 29\,315 images over 29 smelters, January 2018 to November 2026 (one smelter-year of Landsat at Chifeng Yunjin is missing, 4 images). The run took about 1\,h\,15 on a laptop (about 390 images per minute, one failed image): only the box is downloaded and only the score is kept. 47\,\% of Sentinel-2 images and 41\,\% of Landsat images are clear; a smelter gets 3 to 15 usable images a month.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/image_scores_events.png}
+\caption{Monthly share of usable images with hot pixels at three smelters with a published shutdown.}
+\label{fig:imgevents}
+\end{figure}
+
+\textbf{What it shows.}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Shutdowns are seen directly.} Hamburg 2024: hot on 90\,\% of usable images in the year before, 33\,\% during the shutdown, 86\,\% after. Pirdop 2025: 100\,\%, then 42\,\%, then 92\,\%.
+  \item \textbf{Images see what night heat misses.} Manyar was never seen by VIIRS. On images it is cold before start-up, hot in the month of the fire (October 2024), cold during the suspension, and hot again after the restart (from June 2025). Its cold spell from December 2025 to July 2026 and its return in August 2026 are new information to check against Freeport's reports.
+  \item \textbf{Agreement with VIIRS.} Month by month, the image score and the VIIRS activity agree (rank correlation 0.71 over 2\,624 site-months). Months where images are cold while VIIRS is hot are rare (0--7\,\% at most sites; 26\,\% at Onsan).
+  \item \textbf{Boxes in the wrong place.} Toyo and Onahama are never hot (0--1\,\%), Dahej, Kamoa and Gresik almost never (7--12\,\%). At Kutch the box is hot until mid-2024 and cold since, while the plant has been running: the box is probably on another installation. These are exactly the sites on the list to place by hand.
+\end{itemize}
+
 \subsection{The interactive status map}
 The command \code{orbitcu statusmap --open} repeats Test 2 for the last 12 months and draws the result on a world map. For each smelter and month, it compares the number of hot days with the site's usual level and gives one of four statuses: \textbf{active} (at least half the usual level), \textbf{reduced}, \textbf{no heat detected}, or \textbf{signal too weak} when the satellite cannot decide. Downloads are kept month by month, so a second run only fetches the new month.
 
@@ -501,8 +525,45 @@ Dahej, Kutch (India) & 12, 20 & yes & Mostly coal power plants 20--25\,km away\\
   \item \textbf{Only 3 smelters are seen clearly every year} (Norilsk, Sarcheshmeh, Jinchang). They are old plants that let a large part of their sulfur escape. Modern smelters capture more than 99\,\% of it in acid plants, so the satellite sees almost nothing: Glogow, Hamburg, Pirdop, Ilo, Guixi, the Japanese plants. For them, \SOtwo{} cannot give copper output; heat must be used instead.
   \item \textbf{Checks against published output.} Sarcheshmeh: \SOtwo{} $+7\,\%$ from 2022 to 2023, Iran's primary copper $+11\,\%$ [15]. Norilsk: with the factor set on 2022 only, 2024 copper is predicted 15\,\% too low against the Nornickel figure. A full test against Aurubis (Hamburg, Pirdop) and Southern Copper (Ilo) quarterly figures is not possible, because these plants are not seen.
   \item \textbf{Known events.} The Manyar fire (October 2024 to May 2025) and the Pirdop shutdown (spring 2025) both show a significant fall. The Hamburg shutdown (mid-2024) goes the right way but is within the noise. The Kamoa start-up (end of 2025) and the 15\,\% fall at Ilo in 2025 are not seen.
-  \item \textbf{Main limit: the satellite product changes every year.} Each year was processed with a different version of the Sentinel-5P software (v2.3 in 2022 to v2.8 in 2026), and no single consistent version exists in the archive we use. The background level halves from 2025, and in 2026 Norilsk ($+62\,\%$), Sarcheshmeh ($+46\,\%$) and Saganoseki rise together. Real changes cannot yet be told apart from software changes, so comparisons should for now be made only inside one version.
+  \item \textbf{Main limit: the satellite product changes every year.} Each year was processed with a different version of the Sentinel-5P software (v2.2 in early 2022 to v2.8 in 2026), and the archive is not reprocessed. The background level halves from 2025, and in 2026 Norilsk ($+62\,\%$), Sarcheshmeh ($+46\,\%$) and Saganoseki rise together. The correction is described just below.
   \item \textbf{Precision.} Even at the best sites, yearly values move by 20--40\,\% from one year to the next, more than copper output does. \SOtwo{} is therefore an \emph{activity check} for a few large, leaky smelters, not a precise copper counter.
+\end{itemize}
+
+\subsubsection*{Correcting the software version changes}
+\textbf{The idea.} At each upgrade of the Sentinel-5P \SOtwo{} software, the near-real-time copy of the data and the offline copy switch to the new version a few days apart. For those few days, the \emph{same orbits and the same ground pixels} exist in the old and the new version. Comparing them measures the step caused by the software alone, with no real emission change mixed in. We dated every upgrade from the file names of the archive (8 upgrades, March 2022 to November 2026 [38]) and read all overlapping orbits over our 29 sites (7--18 orbits per upgrade).
+
+\textbf{Measure.} On clearly enhanced pixels (column above $1.5\times10^{-3}$\,mol\,m$^{-2}$ in both versions, within 20\,km of a site), the step is the ratio of the summed columns, new over old, measured twice (offline copy and near-real-time copy) and averaged; the uncertainty comes from re-drawing whole orbits. Selecting pixels on both versions avoids favouring pixels that happen to be high in one of them. The rule was fixed in advance: a step is applied only when its 90\,\% interval excludes 1. All columns are then put on the scale of v2.8 (the version of 2026) before the emission fit.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/so2_version_gains.png}
+\caption{Step at each upgrade. The two estimates agree closely (v2.8: $\times1.19$ from the offline copy, $\times1.18$ from the near-real-time copy). The December 2024 upgrade cannot be measured: both copies switched on the same day after a month without data.}
+\label{fig:so2versions}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l r r r r r X@{}}
+\toprule
+\textbf{Smelter} & \textbf{2022} & \textbf{2023} & \textbf{2024} & \textbf{2025} & \textbf{2026} & \textbf{2026 vs 2025}\\
+\midrule
+Sarcheshmeh, raw & 143 & 153 & 150 & 134 & 196 & $+46\,\%$\\
+Sarcheshmeh, corrected & 181 & 194 & 178 & 154 & 196 & $+27\,\%$\\
+Norilsk, raw & 408 & 239 & 333 & 466 & 756 & $+62\,\%$\\
+Norilsk, corrected & 499 & 308 & 395 & 552 & 756 & $+37\,\%$\\
+Jinchang, raw & 37 & 28 & 38 & 18 & 17 & $-6\,\%$\\
+Jinchang, corrected & 47 & 35 & 45 & 21 & 17 & $-19\,\%$\\
+\bottomrule
+\end{tabularx}
+\caption{Yearly \SOtwo{} emission (kt/yr) before and after the correction (2026: January to October). All years are on the v2.8 scale.}
+\end{table}
+
+\textbf{What it changes.}
+\begin{itemize}[leftmargin=1.2em]
+  \item The November 2025 upgrade alone raises the columns by about 19\,\% (90\,\% interval 15--30\,\%). It explains about 40\,\% of the 2026 jump at Norilsk and Sarcheshmeh. After correction, Sarcheshmeh stays within about $\pm12\,\%$ of its mean over 2022--2025.
+  \item Norilsk still rises by 37\,\% in 2026. This is either real or a site effect the average step does not capture (Norilsk is at 69$^\circ$N, with snow and low sun, where the software's surface and cloud inputs matter most; no overlapping orbit could be used there, because the upgrade fell in the polar night).
+  \item The December 2024 upgrade (where the background halves) stays uncorrected. Comparisons across that date remain less reliable.
+  \item In the Norilsk copper test (5 hidden quarters), the corrected \SOtwo{} does not improve the heat-only estimate (fused error 17.8\,\% vs 16.4\,\% raw, heat alone 9.5\,\%). Heat stays the default for copper; \SOtwo{} stays an activity check.
 \end{itemize}
 
 \subsection{Copper output from heat: estimates tested on hidden figures}\label{sec:production}
@@ -633,9 +694,9 @@ The index and events carry a real but moderate signal: they follow Chinese offic
 \textbf{\#} & \textbf{Task} & \textbf{Owner}\\
 \midrule
 1 & Place the 14 low-confidence smelters by hand (Kamoa first); choose slot 30 and Manyar's capacity & Baptiste\\
-2 & \SOtwo: correct for software version changes; add country statistics to test more sites; use \SOtwo{} with heat in the daily estimate & Ethan\\
-3 & Download the full image and heat history since 2018 for all sites (about 60\,000 images, around 10\,h) & Radu\\
-4 & Heat score for every image, with a quality flag & Radu\\
+2 & \SOtwo: measure the December 2024 software step (and a Norilsk-specific step); add country statistics to test more sites; use \SOtwo{} with heat in the daily estimate & Ethan\\
+3 & Re-run the image scores once the 14 smelters are placed by hand (about 1\,h); use the image score with VIIRS in the weekly status & Radu\\
+4 & Add the daily image score to the dashboard data & Radu\\
 5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
 6 & Market data (futures prices, exchange stocks); remaining official statistics (ICSG world, Cochilco, India) with their publication dates; more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
 7 & Trading test on past data, with contract rolls and costs & Robin\\
@@ -683,7 +744,7 @@ cd OrbitCu---SWE\\
 pip install -e ".[dev,era5,s5p,emissions]"\\
 \$env:FIRMS\_MAP\_KEY = "your\_key"\qquad \# free: firms.modaps.eosdis.nasa.gov/api/map\_key\\
 \$env:CDSAPI\_KEY = "your\_token"\qquad \# Copernicus CDS account\\
-pytest\qquad\qquad\qquad\qquad\qquad\quad \# 34 tests, no internet needed
+pytest\qquad\qquad\qquad\qquad\qquad\quad \# 40 tests, no internet needed
 \end{tcolorbox}
 On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{set FIRMS\_MAP\_KEY=...}. To keep a key on Windows: \code{setx FIRMS\_MAP\_KEY "..."}, then open a new terminal. Keys are never committed.
 
@@ -701,6 +762,7 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \code{orbitcu s5p-batch --start 2022-01 --end 2026-10} & \SOtwo{} pixels for all smelters, month by month\\
 \code{orbitcu era5 --sites PL-GLOGOW --start ... --end ...} & Hourly wind and boundary-layer height\\
 \code{orbitcu so2-copper --data output --out output/so2\_copper} & \SOtwo{} emissions per site and copper estimates\\
+\code{orbitcu image-scores --start-year 2018 --end-year 2026 --out output/image\_scores} & Heat score and quality flag of every Sentinel-2 and Landsat image since 2018 (resumable; about 3\,h on a laptop)\\
 \bottomrule
 \end{tabularx}
 \caption{Main commands. Results go to \code{output/}, downloads are kept in \code{cache/}.}
@@ -721,6 +783,9 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \code{statusmap} & Status map (Test 2 on the last 12 months)\\
 \code{emissions}, \code{copper}, \code{so2\_copper} & \SOtwo{} emission per smelter and conversion to copper\\
 \code{production} & Cloud-corrected heat activity, copper output estimate and its point-in-time test\\
+\code{activity\_index} & Weekly running/stopped status, world index, dated events\\
+\code{hotspot}, \code{image\_scores} & Heat score and quality flag for every Sentinel-2/Landsat image; history download\\
+\code{so2\_versions} & Sentinel-5P software version of each orbit and correction of the version steps\\
 \code{cli} & The \code{orbitcu} command\\
 \bottomrule
 \end{tabularx}
@@ -769,6 +834,8 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \item Ivanhoe Mines, Kamoa-Kakula quarterly production releases 2026 (smelter anode output). \url{https://www.ivanhoemines.com}
 \item National Bureau of Statistics of China, monthly industrial output: refined copper, 2018--2026 (release calendar for dates). \url{https://data.stats.gov.cn}
 \item Ministry of Economy, Trade and Industry (Japan), Non-ferrous metals statistics (e-Stat), blister and electrolytic copper, 2021--2025. \url{https://www.e-stat.go.jp}
+\item ESA / BIRA-IASB, ``Sentinel-5 Precursor Level 2 \SOtwo{} Product Readme File,'' processor versions 2.2.1 to 3.0.1, with the Planetary Computer archive file names (processor version and orbit) used to date each upgrade. \url{https://sentinels.copernicus.eu/web/sentinel/technical-guides/sentinel-5p/products-algorithms}
+\item S. W. Murphy et al., ``Automated global detection of high-temperature anomalies from Landsat-8 OLI,'' \emph{Remote Sens.\ Environ.}, vol.\ 179, pp.\ 152--163, 2016.
 \end{enumerate}
 
 \end{document}
