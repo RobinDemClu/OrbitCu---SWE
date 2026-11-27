@@ -113,7 +113,7 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{Every image scored (new):} heat score and quality flag for all 29\,315 Sentinel-2 and Landsat images 2018--2026, with a hot-pixel rule tested on four boxes without industry; the Hamburg and Pirdop shutdowns and the Manyar restart are seen directly (Section~\ref{sec:images}).
   \item \textbf{\SOtwo{} software correction (new):} the step of each Sentinel-5P software upgrade is measured on orbits processed in both versions; the November 2025 upgrade alone added 19\,\%, about 40\,\% of the 2026 jumps (Section~\ref{sec:so2}).
   \item \textbf{Finer changes (new):} when a plant runs, the share of hot images follows output changes ($\rho=0.37$), which night heat does not; a fine adjustment cuts the error on large moves from 18.3\,\% to 15.2\,\%, with no overall gain yet (Section~\ref{sec:production}).
-  \item \textbf{Trading test (new):} a weekly long/short strategy on COMEX copper driven by the satellite supply surprise, with volatility targeting and 2\,bp costs, was tested on 2019--2026 with a training/test split. It does \emph{not} beat buy-and-hold: test Sharpe $-0.02$ (world index) and $0.82$ (China index, interval $-0.26$ to $1.57$) against $0.60$ for buy-and-hold at the same risk; a placebo test finds no signal (Section~\ref{sec:trading}).
+  \item \textbf{Trading test (new):} a weekly long/short strategy on COMEX copper driven by the satellite supply surprise, with volatility targeting and 2\,bp costs, was tested on 2019--2026 with a training/test split. It does \emph{not} beat buy-and-hold: test Sharpe $-0.02$ (world index) and $0.82$ (China index, interval $-0.26$ to $1.57$) against $0.60$ for buy-and-hold at the same risk; a placebo test finds no signal. Trading only in the 11 days before the Chinese statistics fails too: the satellites anticipate the NBS figure ($\rho=0.33$) but prices do not react to it (Section~\ref{sec:trading}).
   \item \textbf{Still to build:} the full dashboard.
 \end{itemize}
 \end{keybox}
@@ -323,7 +323,7 @@ Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, tha
 4 & estimate daily ``running or not'' and publish activity indices & Weekly status per smelter, capacity-weighted world index and dated stop/restart list 2019--2026 (Section~\ref{sec:index}) & \wip\\
 5 & check results against known events and official figures & 197 published output figures (KGHM, Aurubis, Ilo, Nornickel, Yunnan Copper, China Daye, Adani, Kamoa); point-in-time test of the output estimate on 9 units, heat + \SOtwo{} test at Norilsk (Section~\ref{sec:production}) & \wip\\
 6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 8.2\,\% vs 11.3\,\% naive; with the image fine adjustment, 15.2\,\% vs 18.3\,\% on large moves); official monthly statistics loaded (China NBS, Japan METI); weekly COMEX and LME copper prices 2018--2026 loaded & \wip\\
-7 & test futures strategies on past data & Weekly long/short test on COMEX HG (LME as a check), 2019--2026, costs, training/test split, placebo; no gain over buy-and-hold (Section~\ref{sec:trading}) & \done\\
+7 & test futures strategies on past data & Weekly long/short test on COMEX HG (LME as a check), 2019--2026, costs, training/test split, placebo; NBS-window event test; no gain over buy-and-hold (Section~\ref{sec:trading}) & \done\\
 8 & show everything on a web dashboard & Interactive status map available & \wip\\
 \bottomrule
 \end{tabularx}
@@ -781,8 +781,29 @@ Buy-and-hold, 1 contract & 2023--26 & $12.7$\,\% & 26.1\,\% & $0.59$ ($-0.22$; $
 
 \textbf{Why the signal does not trade.} (1) The index moves when smelters stop, but most stops are planned maintenance or are buffered by anode and concentrate stocks (Section~\ref{sec:index}); the market learns about them from company notices. (2) Smelters are the middle of the chain: a stopped smelter leaves concentrate unprocessed but refined copper on the market comes from stocks, other smelters and scrap, so the price effect is small and slow. (3) Copper prices in 2019--2026 were driven by demand, the dollar, Chinese stimulus and US tariffs, which are far larger than the supply changes we see. (4) The signal is often near zero, so the strategy runs at only 5--7\,\% volatility instead of 10\,\%.
 
+\textbf{Event test: the days before the Chinese statistics.} The index follows Chinese official output (Section~\ref{sec:index}), and the satellite month is ready about 11 days before the NBS figure. We therefore traded only in that window: for each month, enter at the close of the day the satellite month is ready (month end + 5 days) and exit at the close of the NBS release day (release dates from the NBS calendar), 68 months from March 2020 to October 2026 (January and February are published together and were skipped). Position: long if the Chinese running share is below its trailing 12-month median, short if above (``sign''), or proportional to the surprise in standard deviations (``scaled''); size set for 10\,\% annual volatility, at most 1; 2\,bp to enter and 2\,bp to exit. Nothing was tuned. Daily prices for these dates were read from the same two sources.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}l l r r r r@{}}
+\toprule
+\textbf{Rule (COMEX HG)} & \textbf{Period} & \textbf{Windows} & \textbf{Mean per window} & \textbf{Sharpe/yr} & \textbf{Permutation $p$}\\
+\midrule
+Sign    & 2020--22 & 29 & $-18$\,bp & $-0.36$ & 0.65\\
+Sign    & 2023--26 & 39 & $+4$\,bp  & $0.08$  & 0.54\\
+Sign    & all      & 68 & $-5$\,bp  & $-0.10$ & 0.62\\
+Scaled  & all      & 62 & $+2$\,bp  & $0.10$  & 0.41\\
+Long in every window & all & 68 & $+46$\,bp & $0.83$ & --\\
+\bottomrule
+\end{tabular}
+\caption{Trading only between the satellite month and the NBS release. Permutation $p$: share of 5\,000 random reshufflings of the signal across windows that do at least as well. LME: sign $-0.13$, scaled $0.27$ ($p=0.26$).}
+\label{tab:nbs}
+\end{table}
+
+The first link holds: over these 68 months the satellite surprise anticipates the NBS deviation ($\rho=0.33$, $p=0.007$). The second does not: the NBS surprise itself does not move copper on the release day ($\rho=0.02$, $p=0.87$ on COMEX; $0.05$ on LME). Knowing the Chinese figure 11 days early is worth nothing if the market does not react to it; the gain of ``long in every window'' is only the 2020--2026 rise of copper.
+
 \begin{notebox}[Conclusion of the trading test]
-With the rules fixed in advance, the satellite supply surprise does not beat buy-and-hold on COMEX or LME copper over 2019--2026, and a placebo test cannot tell it from noise. This is a negative but clean result: no parameter was tuned on the test years. The more promising uses are narrower: trading only in the 11 days between the satellite month and the Chinese NBS release (where the index does follow official output), or around large unplanned stops, and using properly rolled futures prices from LSEG.
+With the rules fixed in advance, the satellite supply surprise does not beat buy-and-hold on COMEX or LME copper over 2019--2026, and a placebo test cannot tell it from noise. This is a negative but clean result: no parameter was tuned on the test years. Trading only in the 11 days before the Chinese NBS release does not help either: the satellites do anticipate the official figure, but copper prices do not react to that figure. Remaining ideas: large unplanned stops one by one, physical-market prices that react to smelter supply (treatment charges, regional premiums, exchange stocks) rather than futures, and properly rolled futures prices from LSEG.
 \end{notebox}
 
 % =====================================================================
@@ -800,7 +821,7 @@ With the rules fixed in advance, the satellite supply surprise does not beat buy
 4 & Add the daily image score to the dashboard data & Radu\\
 5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
 6 & Exchange stocks; remaining official statistics (ICSG world, Cochilco, India) with their publication dates; more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
-7 & Trading: event-driven variant (trade only in the days between the satellite month and the NBS release, and around detected stops); properly rolled futures prices (LSEG); exchange stocks as a control & Robin\\
+7 & Trading: large unplanned stops one by one; physical-market prices (treatment charges, premiums, exchange stocks); properly rolled futures prices (LSEG) & Robin\\
 8 & Web dashboard (map, site charts, indices, estimates, test results) & Robin\\
 9 & Automated runs in containers, tests on GitHub at every change & Baptiste\\
 \bottomrule
