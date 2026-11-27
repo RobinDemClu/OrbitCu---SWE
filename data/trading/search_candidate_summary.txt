@@ -1,0 +1,23 @@
+[candidate] AmericasAF share chg8, smooth 4, sign, hold 8, long the JP cable basket vs Nikkei when the share rises: Sharpe 1.42 (2013-19 1.57, 2020-26 1.36); return 6.7 %/yr
+[signal] Americas share defined on 98% of weeks; distinct values 6; share of weeks the 8-week change is non-zero 19%
+[grid] 128 neighbours on the JP basket: share Sharpe > 0 0.88, median 0.63, > 0.5 0.62
+[grid] median Sharpe by change window: 2w 0.18, 4w 0.57, 6w 0.77, 8w 0.83, 10w 0.98, 13w 0.96, 17w 0.50, 26w 0.47
+[grid] median Sharpe by hold: 1w 0.50, 4w 0.63, 8w 0.95, 16w 0.54
+[instruments] same rule: Fab_Furukawa +1.11, Fab_SumitomoElec +1.19, Fab_Fujikura +0.97, Fab_Prysmian +0.27, Fab_Nexans +0.19, Fab_Mueller -0.33, Fab_Hailiang -0.19, COMEX -0.11, LME -0.05, SHFE +0.08, CuAl +0.05
+[sites] one country: Chile +0.93, Peru +0.56
+[sites] leave one out: without CL-CHUQUI +0.47, without CL-CALETONES +1.35, without PE-ILO +0.93
+[sites] other regions, same rule on JP basket: China +0.27, AsiaExCN +nan, EuropeRU -0.16, world +0.33
+[drift] always long the JP basket vs Nikkei: Sharpe 0.55; mean weight of the rule +0.01, share of weeks long 26%
+[exposure] P&L on copper and on the long-only basket: betas -0.015 / +0.018; residual Sharpe 1.42; corr with copper -0.07
+[costs] per leg 4 (base) / 8 / 20 / 40 bp: 1.42 / 1.40 / 1.35 / 1.28; turnover 1.7 per year
+[bootstrap] 8-week blocks, 90 % interval of the Sharpe: 0.98 to 1.81; P(Sharpe <= 0) 0.000
+[placebo] 1,000 time shifts of the Americas signal, this rule only: share >= real 0.000, median +0.00
+[new stocks] same frozen rule, untouched Japanese stocks vs Nikkei: SWCC (cables) 5805.T +0.64, Mitsubishi Materials 5711.T +0.25, Sumitomo Metal Mining 5713.T +0.46, Mitsui Kinzoku 5706.T +0.72, Dowa 5714.T +0.09; smelter basket +0.53
+[new stocks] 5805.T: 2013-19 +0.79, 2020-26 +0.58; placebo share >= real 0.002
+[new stocks] JP_new_smelters: 2013-19 +0.57, 2020-26 +0.52; placebo share >= real 0.022
+[by year] 2014 +3.12, 2015 +2.20, 2016 +1.15, 2017 +nan, 2018 +nan, 2019 +2.14, 2020 +1.09, 2021 +0.70, 2022 +2.21, 2023 +0.92, 2024 +1.07, 2025 +3.04, 2026 +0.82
+[episodes] 27 separate positions (8-week holds after a change in the Americas share); 24 gained; mean +3.09 % per position
+[by year] positive years 11 of 13
+[calendar] signal moved by whole years (24 shifts): median Sharpe -0.01, max +0.35, real 1.42
+[calendar] share of position weeks by month: 1 5%, 2 7%, 3 9%, 4 8%, 5 8%, 6 7%, 7 7%, 8 12%, 9 10%, 10 9%, 11 8%, 12 9%
+[delay] trading 1 (base) / 2 / 3 / 4 / 6 weeks after the satellite week: 1.42 / 1.40 / 1.25 / 1.00 / 0.23

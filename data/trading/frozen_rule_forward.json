@@ -1,0 +1,13 @@
+{
+  "frozen_on": "2026-11-27",
+  "purpose": "Forward (live) test of the only family that survived the 2013-2026 search placebo. Nothing below may be changed after this date; results are judged on weeks after 2026-11-30 only.",
+  "signal": "running share of the Americas smelters (CL-CHUQUI, CL-CALETONES, PE-ILO; CD-KAMOA from 2025-12-29), S-NPP-only index of scripts/activity_index_snpp_2012_2026.py (56-day window, seasonal reference, cut 0.6, min_ref 0.3, carry 4 weeks), defined when known capacity >= 50 % of the region",
+  "transform": "8-week change divided by the standard deviation of past 8-week changes (52 weeks, min 26, lagged one week), then 4-week moving average",
+  "position": "sign of the transformed signal, averaged over the last 8 weeks (hold 8), traded on the Monday 8 days after the satellite week ends",
+  "instrument": "equal-weight basket of Furukawa Electric 5801.T, Sumitomo Electric 5802.T, Fujikura 5803.T, each minus the Nikkei 225, weekly Monday-to-Monday returns",
+  "sizing": "10 % annual volatility target on past 26-week volatility, |weight| <= 1",
+  "costs": "4 bp per unit of turnover (two legs)",
+  "secondary_checks": ["SWCC 5805.T minus Nikkei", "basket of 5711.T, 5713.T, 5706.T, 5714.T minus Nikkei"],
+  "success_criterion": "after 104 forward weeks: Sharpe > 0.5 and more than half of the new 8-week positions gaining (about 4 to 5 are expected); anything else counts as a failure",
+  "in_sample_reference": "2013-2026 Sharpe 1.42; 24 of 27 positions gained"
+}
