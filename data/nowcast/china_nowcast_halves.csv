@@ -1,0 +1,13 @@
+model,period,n,mape_pct,mae_kt,dir_hit
+B1,first half,24,3.4,34.479,0.0
+B1,second half,24,3.259,40.979,0.042
+B2,first half,24,3.747,38.889,0.5
+B2,second half,24,3.023,37.302,0.667
+B3,first half,24,3.148,31.712,0.708
+B3,second half,24,2.754,34.483,0.625
+S1,first half,24,3.124,31.49,0.75
+S1,second half,24,2.431,30.478,0.625
+S2,first half,24,3.135,31.574,0.75
+S2,second half,24,2.41,30.209,0.625
+S3,first half,24,3.563,36.809,0.5
+S3,second half,24,2.885,35.531,0.667
