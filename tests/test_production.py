@@ -126,3 +126,37 @@ def test_pit_fine_adjust_waits_for_publication_and_skips_zero_output():
     d.loc[3, "cu_kt"] = 0.0                                       # zero output: no -inf in the fit
     t = P.pit_fine_adjust(d.drop(columns="published_at"), min_train=15)
     assert len(t) == n - 1 and np.isfinite(t["y"]).all()
+
+
+def _scores(months_vals, site="S"):
+    rows = []
+    for m, vals in months_vals.items():
+        for i, v in enumerate(vals):
+            t = pd.Timestamp(f"{m}-{i + 1:02d}", tz="UTC")
+            rows.append({"site_id": site, "quality": "clear", "acquired_at": t, "available_at": t + pd.Timedelta(days=1),
+                         "swir_excess": v, "hot_area_m2": 400.0 * v})
+    return pd.DataFrame(rows)
+
+
+def test_intensity_ratio_median_point_in_time_and_yoy():
+    mv = {str(p): [2.0, 2.0, 2.0] for p in pd.period_range("2023-01", "2023-12", freq="M")}
+    mv.update({"2024-01": [1.0, 1.0, 50.0], "2024-02": [1.0, 1.0, 1.0], "2024-03": [1.0, 1.0, 1.0]})
+    sc = _scores(mv)
+    p0, p1 = pd.Period("2024-01", "M"), pd.Period("2024-03", "M")
+    r, n = P.intensity_ratio(sc, ["S"], p0, p1)
+    assert n == 9 and abs(r - 0.5) < 1e-9                       # median ignores the 50
+    # images not yet available at the decision time are dropped -> too few images
+    r2, _ = P.intensity_ratio(sc, ["S"], p0, p1, as_of=pd.Timestamp("2024-01-02", tz="UTC"))
+    assert r2 != r2
+    r3, _ = P.intensity_ratio(sc, ["S"], p0, p1, ref="yoy")
+    assert abs(r3 - 0.5) < 1e-9
+
+
+def test_surprise_flags_hits_and_false_alarms():
+    d = pd.DataFrame({"naive_kt": 100.0, "cu_kt": [70.0, 100.0, 125.0, 100.0],
+                      "x": [0.5, 0.5, 1.5, 1.0], "decision_time": pd.Timestamp("2024-01-01", tz="UTC"),
+                      "published_at": pd.Timestamp("2024-02-15", tz="UTC")})
+    t = P.surprise_flags(d, "x", 0.75, 1.33)
+    s = P.surprise_score(t)
+    assert (s["surprises"], s["flags"], s["hits"], s["false_alarms"]) == (2, 3, 2, 1)
+    assert s["median_lead_days_hits"] == 45

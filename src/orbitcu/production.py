@@ -586,6 +586,111 @@ def add_image_ratio(cases: pd.DataFrame, scores: pd.DataFrame, sites) -> pd.Data
     return c
 
 
+INT_MIN_CUR = 3         # clear images needed in the period (per site)
+INT_MIN_REF = 12        # clear images needed in the 12-month reference (per site)
+
+
+def _clear_images(scores: pd.DataFrame, as_of=None) -> pd.DataFrame:
+    s = scores[scores["quality"] == "clear"].copy()
+    if as_of is not None and "available_at" in s.columns:
+        av = pd.to_datetime(s["available_at"], utc=True, format="mixed", errors="coerce")
+        s = s[av.notna() & (av <= pd.Timestamp(as_of))]
+    s["month"] = pd.to_datetime(s["acquired_at"], utc=True, format="mixed").dt.tz_localize(None).dt.to_period("M")
+    return s
+
+
+def intensity_ratio(scores: pd.DataFrame, site_ids, p0: pd.Period, p1: pd.Period, col: str = "swir_excess",
+                    ref_months: int = 12, as_of=None, ref: str = "trailing") -> tuple[float, int]:
+    """Heat *intensity* of a period against the 12 months before (images, point-in-time).
+
+    Instead of "hot or not" per image, each clear image gives a number: ``swir_excess``
+    (summed B12 - B11 over hot pixels, a proxy of radiated power; 0 on a cold clear image)
+    or ``hot_area_m2``. Per site, the median over the clear images of the period is
+    divided by the median over the reference; medians because a few images are 5x the
+    typical value (plumes, saturation). Sites of an entity are added (sum of medians).
+    Returns (ratio, clear images in period); NaN if a site has fewer than INT_MIN_CUR /
+    INT_MIN_REF clear images or a zero reference.
+    ``ref="yoy"``: the reference is the same months one year earlier (removes the season:
+    sun height and snow change the SWIR signal; needs INT_MIN_CUR images there)."""
+    s = _clear_images(scores[scores["site_id"].isin(list(site_ids))], as_of)
+    cur_sum = ref_sum = 0.0
+    n = 0
+    for sid in site_ids:
+        d = s[s["site_id"] == sid]
+        cur = d.loc[(d["month"] >= p0) & (d["month"] <= p1), col].dropna()
+        if ref == "yoy":
+            rf = d.loc[(d["month"] >= p0 - 12) & (d["month"] <= p1 - 12), col].dropna()
+            need = INT_MIN_CUR
+        else:
+            rf = d.loc[(d["month"] >= p0 - ref_months) & (d["month"] < p0), col].dropna()
+            need = INT_MIN_REF
+        n += len(cur)
+        if len(cur) < INT_MIN_CUR or len(rf) < need:
+            return np.nan, n
+        cur_sum += float(cur.median()); ref_sum += float(rf.median())
+    return (cur_sum / ref_sum if ref_sum > 0 else np.nan), n
+
+
+def add_intensity_ratio(cases: pd.DataFrame, scores: pd.DataFrame,
+                        cols=(("r_int", "swir_excess", "trailing"), ("r_int_area", "hot_area_m2", "trailing"),
+                              ("r_int_yoy", "swir_excess", "yoy"))) -> pd.DataFrame:
+    """Add intensity ratios (``intensity_ratio``) to ``robust_cases`` output, with only the
+    images available at each decision time."""
+    c = cases.copy()
+    out = {k: [] for k, _, _ in cols}
+    n_int = []
+    for r in c.itertuples(index=False):
+        ids = ENTITY_SITES.get(r.entity, [r.entity])
+        p0, p1 = pd.Period(r.period_start, "M"), pd.Period(r.period_end, "M")
+        n_first = None
+        for k, col, ref in cols:
+            x, n = intensity_ratio(scores, ids, p0, p1, col, as_of=r.decision_time, ref=ref)
+            out[k].append(x)
+            n_first = n if n_first is None else n_first
+        n_int.append(n_first)
+    for k in out:
+        c[k] = out[k]
+    c["n_int"] = n_int
+    return c
+
+
+def surprise_flags(cases: pd.DataFrame, col: str, low: float, high: float | None = None,
+                   vis_col: str | None = None, move: float = 0.10) -> pd.DataFrame:
+    """Does a satellite ratio flag the large surprises (published output more than ``move``
+    away from the naive forecast) before the figure is published?
+
+    Flag "down" when ``col`` < low, "up" when ``col`` > high (thresholds fixed in advance).
+    Returns one row per case with ``surprise`` (-1, 0, +1), ``flag`` (-1, 0, +1),
+    ``lead_days`` (publication minus decision time)."""
+    t = cases[(cases["naive_kt"] > 0) & (cases["cu_kt"] > 0)].copy()
+    dev = t["cu_kt"] / t["naive_kt"] - 1
+    t["surprise"] = np.where(dev < -move, -1, np.where(dev > move, 1, 0))
+    x = t[col]
+    ok = x.notna() & np.isfinite(x)
+    if vis_col is not None:
+        ok &= t[vis_col].fillna(False).astype(bool)
+    f = np.where(ok & (x < low), -1, 0)
+    if high is not None:
+        f = np.where(ok & (x > high), 1, f)
+    t["flag"], t["seen"] = f, ok
+    if "published_at" in t:
+        t["lead_days"] = (pd.to_datetime(t["published_at"], utc=True, format="mixed")
+                          - pd.to_datetime(t["decision_time"], utc=True, format="mixed")).dt.days
+    return t
+
+
+def surprise_score(t: pd.DataFrame) -> dict:
+    """Hits, misses and false alarms of ``surprise_flags`` output."""
+    big = t["surprise"] != 0
+    flagged = t["flag"] != 0
+    hit = big & flagged & (np.sign(t["flag"]) == np.sign(t["surprise"]))
+    return {"n": int(len(t)), "seen": int(t["seen"].sum()), "surprises": int(big.sum()),
+            "surprises_seen": int((big & t["seen"]).sum()), "flags": int(flagged.sum()),
+            "hits": int(hit.sum()), "wrong_direction": int((big & flagged & ~hit).sum()),
+            "false_alarms": int((flagged & ~big).sum()),
+            "median_lead_days_hits": float(t.loc[hit, "lead_days"].median()) if "lead_days" in t and hit.any() else np.nan}
+
+
 def evaluate_ratio(cases: pd.DataFrame, r_col: str, vis_col: str, cut: float = CUT) -> pd.DataFrame:
     """Same as ``evaluate`` for any ratio column."""
     t = cases[cases[vis_col].fillna(False).astype(bool) & cases[r_col].notna() & (cases["naive_kt"] > 0)].copy()
