@@ -33,6 +33,9 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 from orbitcu.sites import load_sites
 
 D = os.environ.get("ORBITCU_DATA", "/mnt/project-files/data/").rstrip("/") + "/"
+# NOWCAST_EXTRA=1: also use the Chinese smelters added from the ICSG list (china_extra_sites.py)
+EXTRA = os.environ.get("NOWCAST_EXTRA") == "1"
+TAG = "_extra" if EXTRA else ""
 OUT = os.path.join(ROOT, "data", "nowcast")
 FIG = os.path.join(ROOT, "docs", "latex", "figures")
 LAG_DAYS = 5
@@ -57,8 +60,14 @@ jf_pub = jf.set_index("month").pub
 
 # ---------------- satellite features ----------------
 sites = {s.id: s for s in load_sites()}
+if EXTRA:
+    class _S:
+        def __init__(self, r): self.id, self.capacity_kt, self.country = r.id, r.capacity_kt_cu, "China"
+    for r in pd.read_csv(os.path.join(ROOT, "data", "registry", "china_extra_sites.csv")).itertuples():
+        sites[r.id] = _S(r)
 cn = [k for k, v in sites.items() if v.country == "China"]
-st = pd.read_csv(D + "activity_index/weekly_status.csv", parse_dates=["week_end"])
+st = pd.read_csv(os.path.join(ROOT, "data", "activity_index", "china_extra", "weekly_status_with_extra.csv") if EXTRA
+                 else D + "activity_index/weekly_status.csv", parse_dates=["week_end"])
 s = st[st.site_id.isin(cn) & (st.status != "unknown")].copy()
 s["cap"] = s.site_id.map(lambda x: sites[x].capacity_kt)
 s["run"] = (s.status == "running") * s.cap
@@ -227,11 +236,11 @@ placebo = dict(real_mae_kt=real, placebo_median_mae_kt=float(np.median(plac)), n
 print("placebo", placebo)
 
 os.makedirs(OUT, exist_ok=True)
-R.round(3).to_csv(os.path.join(OUT, "china_nowcast_backtest.csv"), index=False)
-S.round(4).to_csv(os.path.join(OUT, "china_nowcast_summary.csv"), index=False)
-H.round(3).to_csv(os.path.join(OUT, "china_nowcast_halves.csv"), index=False)
-pd.DataFrame(coefs).round(5).to_csv(os.path.join(OUT, "china_nowcast_coefficients.csv"), index=False)
-F.drop(columns=["z"]).round(4).to_csv(os.path.join(OUT, "china_nowcast_inputs.csv"))
+R.round(3).to_csv(os.path.join(OUT, "china_nowcast_backtest" + TAG + ".csv"), index=False)
+S.round(4).to_csv(os.path.join(OUT, "china_nowcast_summary" + TAG + ".csv"), index=False)
+H.round(3).to_csv(os.path.join(OUT, "china_nowcast_halves" + TAG + ".csv"), index=False)
+pd.DataFrame(coefs).round(5).to_csv(os.path.join(OUT, "china_nowcast_coefficients" + TAG + ".csv"), index=False)
+F.drop(columns=["z"]).round(4).to_csv(os.path.join(OUT, "china_nowcast_inputs" + TAG + ".csv"))
 extra = dict(spearman_share_dev_vs_B3_error=rho.statistic, p=rho.pvalue, n=int(naive_err.notna().sum()),
              big_miss_months=int(big.sum()),
              big_miss_push_right_S1=float((np.sign(R[R.model == "S1"].set_index("month").nowcast_kt - b3.nowcast_kt)
@@ -239,7 +248,7 @@ extra = dict(spearman_share_dev_vs_B3_error=rho.statistic, p=rho.pvalue, n=int(n
              big_miss_mean_push_kt=float((R[R.model == "S1"].set_index("month").nowcast_kt - b3.nowcast_kt)[big].abs().mean()),
              big_miss_mean_miss_kt=float((b3.actual_kt - b3.nowcast_kt)[big].abs().mean()),
              median_lead_days=float(E.lead_days.median()), placebo=placebo, mean_coverage=float(E.coverage.mean()))
-json.dump(extra, open(os.path.join(OUT, "china_nowcast_extra.json"), "w"), indent=1, default=float)
+json.dump(extra, open(os.path.join(OUT, "china_nowcast_extra" + TAG + ".json"), "w"), indent=1, default=float)
 pd.set_option("display.width", 220)
 print(S.round(3).to_string()); print(H.round(2).to_string()); print(extra)
 
@@ -259,7 +268,7 @@ for name in ["B1", "B2", "B3", "S1"]:
     ax[1].plot(t, x.ape.rolling(12, min_periods=6).mean().to_numpy(), color=C[name], lw=1.4 if name == "S1" else 1, label=name)
 ax[1].set_ylabel("% abs. error\n(12-month mean)"); ax[1].legend(fontsize=7.5, frameon=False, ncol=4)
 for a in ax: a.spines[["top", "right"]].set_visible(False); a.grid(axis="y", color="#eee")
-plt.tight_layout(); plt.savefig(os.path.join(FIG, "china_nowcast_backtest.png"), dpi=160); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "china_nowcast_backtest" + TAG + ".png"), dpi=160); plt.close()
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 3.6))
 ax[0].scatter(sd_, 100 * naive_err, s=14, color=C["S1"])
@@ -272,4 +281,4 @@ ax[1].bar(lab, v.mape_pct, color=[C.get(k, "#7fa7d6") for k in lab])
 for i, k in enumerate(lab): ax[1].text(i, v.mape_pct[k] + 0.05, f"{v.mape_pct[k]:.2f}", ha="center", fontsize=8)
 ax[1].set_ylabel("Mean abs. error (%)"); ax[1].set_title("Out-of-sample error by model", fontsize=8.5, loc="left")
 for a in ax: a.spines[["top", "right"]].set_visible(False)
-plt.tight_layout(); plt.savefig(os.path.join(FIG, "china_nowcast_models.png"), dpi=160); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "china_nowcast_models" + TAG + ".png"), dpi=160); plt.close()

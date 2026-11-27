@@ -1,0 +1,17 @@
+{
+ "spearman_share_dev_vs_B3_error": 0.15841907147757822,
+ "p": 0.28217900590717215,
+ "n": 48,
+ "big_miss_months": 12,
+ "big_miss_push_right_S1": 0.6666666666666666,
+ "big_miss_mean_push_kt": 5.109992952265107,
+ "big_miss_mean_miss_kt": 70.31889574204713,
+ "median_lead_days": 11.0,
+ "placebo": {
+  "real_mae_kt": 32.13950443991432,
+  "placebo_median_mae_kt": 33.74419848906376,
+  "n_shifts": 56,
+  "p_value": 0.017857142857142856
+ },
+ "mean_coverage": 0.8009945357453327
+}
