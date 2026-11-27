@@ -946,6 +946,40 @@ So the nickel price is driven by news about \emph{future} supply (quotas, export
 \end{itemize}
 So the three China-local prices (Shanghai/London ratio, calendar spread, sulphuric acid) all move the expected way one to two months after a Chinese shortfall, which the world copper price does not; but each link is at the edge of significance on 5 to 7 years of data, and none survives the placebo and multiple-testing checks. This is the most promising lead to re-test as data accumulate.
 
+\textbf{China-local markets: one rule fixed in advance.} Building on the previous result, a single rule was written down before it was run, to avoid another search (\texttt{scripts/trading\_china\_local.py}): signal = Chinese running-share surprise (level against the trailing 26-week median), known one week late; position $=\mathrm{clip}(-z/2,-1,1)$, long tightness when China runs below normal; each weekly signal held 8 weeks (where the lead appeared); 10\,\% volatility target, maximum weight 1; 4\,bp per unit of turnover (two legs). Figure~\ref{fig:china-horizon} shows the lead by horizon: for all three local prices the correlation is negative from 3--4 weeks on and leaves the band of 90\,\% of placebos around 8--12 weeks (most negative: calendar spread $-0.37$ at 12 weeks, Shanghai/London $-0.38$ at 12 weeks, acid $-0.41$ at 10 weeks).
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}l r r r r r@{}}
+\toprule
+\textbf{Market (8-week holding)} & \textbf{2019--26} & \textbf{2019--22} & \textbf{2023--26} & \textbf{Placebo $p$} & \textbf{1-week holding}\\
+\midrule
+SHFE calendar spread (next vs third month) & $0.41$ & $0.31$ & $0.50$ & $0.01$ & $-0.40$\\
+Long SHFE / short LME & $0.03$ & $0.59$ & $-0.62$ & $0.44$ & $-0.11$\\
+Mix of the two & $0.28$ & $0.60$ & $-0.01$ & $0.08$ & $-0.34$\\
+SHFE copper outright (check) & $-0.57$ & $-1.36$ & $0.32$ & $0.92$ & $-0.20$\\
+\bottomrule
+\end{tabular}
+\caption{Sharpe ratios of the fixed China-local rule. Placebo $p$: share of 1\,000 time-shifted signals giving a full-period Sharpe at least as high.}
+\label{tab:china-local}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/china_local_horizon.png}
+\caption{Rank correlation between the Chinese running-share surprise and the later change of each China-local price, by horizon; grey: 90\,\% band of 300 time-shifted placebo signals.}
+\label{fig:china-horizon}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/china_local_equity.png}
+\caption{Growth of 1 for the fixed China-local rule, 2019--2026.}
+\label{fig:china-equity}
+\end{figure}
+
+The calendar-spread rule is the first result of this chapter that is positive in both halves and passes the placebo test ($p=0.01$); as expected the effect is local (the same rule on the SHFE price itself loses money). It must still be read with care: (1) the idea (China-local prices, about 8 weeks) came from earlier looks at the same 2019--2026 data, so the placebo $p$ does not count that exploration; (2) it depends on the reference window (26 weeks: $0.41$; 13 weeks: $-0.39$; 52 weeks: $0.15$) and on the holding period (4 weeks $0.21$, 8--16 weeks $0.37$--$0.41$, 1 week $-0.40$); (3) without the last three months (the November 2026 squeeze) the Sharpe falls to $0.22$, and yearly Sharpe ratios swing from $-1.29$ (2023) to $1.44$ (2025); (4) the spread moves little, so the return is small ($0.7\,\%$ a year at $1.8\,\%$ volatility with weight capped at 1) and at 20\,bp per turnover it disappears. It is a candidate to follow forward with these exact rules (paper trading from December 2026), not yet a strategy to fund.
+
 \subsubsection*{Summary: why no trading strategy was found}\label{sec:trading-summary}
 Table~\ref{tab:trading-summary} gathers every test of this section. In total about 9\,200 rule-based strategies were backtested in five large searches (copper futures 1\,152, fabricator shares 4\,608, copper against aluminium and zinc 1\,440, Shanghai against London 1\,344, Shanghai calendar spread 672), plus 18 versions of a combined model, the fixed-rule strategy, the NBS window, two event studies (weekly events and fast VIIRS alerts, 214 events in all), 265 monthly trades on operator shares and a risk-timing test. Each search was repeated 30 to 40 times on time-shifted satellite signals (placebos) to see what chance alone finds.
 
@@ -970,6 +1004,7 @@ Combined ridge model & COMEX, LME, Cu vs base & 18 & out of sample $-0.76$ to $-
 Risk timing & COMEX & 2 & $0.45$ vs $0.49$ without satellite & -- & --\\
 Shanghai vs London & SHFE, LME & 1\,344 & top 10 $\rightarrow -0.08$; $\rho=-0.11$ & 73\,\% beat the best & 0.62\\
 Shanghai calendar spread & SHFE & 672 & top 10 $1.16 \rightarrow -0.11$; lead 8 weeks $\rho=-0.30$ & 7\,\% beat the best & 0.28\\
+Fixed China-local rule (8-week hold) & SHFE spreads & 4 & calendar spread $0.31$ / $0.50$ (halves), full $0.41$ & placebo $p=0.01$ & --\\
 Chinese sulphuric acid & NBS price & 3 + 31 events & lead 30 days $\rho=-0.24$ ($p=0.08$) & 8\,\% of placebos as strong & --\\
 \bottomrule
 \end{tabularx}
@@ -1016,7 +1051,7 @@ Chinese sulphuric acid & NBS price & 3 + 31 events & lead 30 days $\rho=-0.24$ (
 The same check on nickel (above) shows that even where supply is concentrated, prices follow news about \emph{future} supply rather than current plant activity.
 
 \begin{notebox}[Conclusion of the trading test]
-With rules fixed in advance and about 9\,200 strategies tested on copper futures, fabricator shares, other base metals and Shanghai spreads (Table~\ref{tab:trading-summary}), no strategy driven by satellite smelter activity beats buy-and-hold or chance over 2019--2026: the best strategies on 2019--2022 do not hold in 2023--2026, placebo searches on time-shifted signals find equally good strategies, and deflated Sharpe probabilities stay between 0.53 and 0.73, below 0.95. The data describe smelters well and anticipate official Chinese output by about 11 days, but exchange prices do not react to that information at a weekly horizon (Figure~\ref{fig:trading-corr}). The markets most directly tied to smelters, treatment charges and cathode premiums, have no free history and remain the main untested idea; the most promising lead is the China-local prices (Shanghai/London ratio, Shanghai calendar spread, sulphuric acid), which all move the expected way after Chinese shortfalls but are not yet significant, together with a re-test of the restart effect on events after November 2026.
+With rules fixed in advance and about 9\,200 strategies tested on copper futures, fabricator shares, other base metals and Shanghai spreads (Table~\ref{tab:trading-summary}), no strategy driven by satellite smelter activity beats buy-and-hold or chance over 2019--2026: the best strategies on 2019--2022 do not hold in 2023--2026, placebo searches on time-shifted signals find equally good strategies, and deflated Sharpe probabilities stay between 0.53 and 0.73, below 0.95. The data describe smelters well and anticipate official Chinese output by about 11 days, but exchange prices do not react to that information at a weekly horizon (Figure~\ref{fig:trading-corr}). The markets most directly tied to smelters, treatment charges and cathode premiums, have no free history and remain the main untested idea; the most promising lead is the China-local prices: a rule fixed in advance on the Shanghai calendar spread (8-week holding) is positive in both halves and passes the placebo test ($p=0.01$, Sharpe $0.41$), but it was inspired by the same data, is sensitive to its settings and earns little, so it should be followed forward before any money is committed, together with a re-test of the restart effect on events after November 2026.
 \end{notebox}
 
 % =====================================================================
