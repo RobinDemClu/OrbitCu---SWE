@@ -115,9 +115,9 @@ def search_scenes(site: Site, sensor: Sensor, start: str, end: str, max_cloud: f
         return df
     # Sentinel-2 MGRS tiles and Landsat WRS-2 rows overlap: the same acquisition
     # can appear in two items (seconds apart). Keep the tile that fully covers the AOI (or the first one).
-    df = df.sort_values(["acquired_at", "covers_aoi"], ascending=[True, False])
     df["acq_key"] = df["acquired_at"].dt.round("5min").astype(str) + "_" + df["platform"].astype(str)
-    df = df.drop_duplicates("acq_key").drop(columns="acq_key")
+    df = df.sort_values(["acq_key", "covers_aoi", "acquired_at"], ascending=[True, False, True])
+    df = df.drop_duplicates("acq_key").drop(columns="acq_key").sort_values("acquired_at")
     if cover_only:
         df = df[df["covers_aoi"]]
     return df.reset_index(drop=True)

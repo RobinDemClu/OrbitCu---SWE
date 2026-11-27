@@ -29,7 +29,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .production import CUT, clear_days
+from .production import CUT, clear_days, read_tcc
 
 WINDOW_DAYS = 56   # 8 weeks: fewer cloud-driven flips than 4 weeks
 REF_WEEKS = 52
@@ -51,10 +51,10 @@ def daily_flags(masks: pd.DataFrame, sites, tcc_dir, start: str, end: str,
         for r in m.itertuples(index=False):
             p, bits = pd.Period(r.month, "M"), int(str(r.mask), 16)
             hot.update(p.start_time + pd.Timedelta(days=d) for d in range(p.days_in_month) if bits >> d & 1)
-        f = sorted(Path(tcc_dir).glob(f"{s.id}_*.parquet")) if tcc_dir is not None else []
-        if not f:
+        t = read_tcc(tcc_dir, s.id)
+        if t is None:
             continue
-        c = clear_days(pd.read_parquet(f[0]), s.lon, max_cloud).reindex(days)
+        c = clear_days(t, s.lon, max_cloud).reindex(days)
         out.append(pd.DataFrame({"site_id": s.id, "day": days,
                                  "hot": days.isin(sorted(hot)), "clear": c.fillna(False).to_numpy(bool),
                                  "has_cloud": c.notna().to_numpy()}))
@@ -139,7 +139,7 @@ def detect_events(status: pd.DataFrame, min_stop_weeks: int = 3, min_run_weeks: 
     cloud data). A restart is the first running week after a stop, confirmed by
     ``min_run_weeks`` running weeks. A start-up is the first confirmed running spell of a site
     that was never visible before (new plant). ``est_start`` is the earliest day inside the
-    first stopped (or running) 28-day window, i.e. the earliest possible start."""
+    first stopped (or running) 56-day window, i.e. the earliest possible start."""
     ev = []
     for sid, d in status.sort_values("week_end").groupby("site_id"):
         st = d["status"].to_numpy(); we = d["week_end"].to_numpy(); r = d["r"].to_numpy()

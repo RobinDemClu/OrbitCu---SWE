@@ -116,6 +116,10 @@ def site_estimates(em: pd.DataFrame, sites, rep: pd.DataFrame | None = None, anc
     Uses the 'reported' calibration when the site has published output, the
     'capacity' anchor otherwise. ``detectable`` = annual-mean emission at
     least 3 standard errors above zero.
+
+    ``k`` uses every reported pair (descriptive, in-sample). ``k_pit`` / ``cu_kt_pit`` use
+    only the pairs that ended and were published before the period starts, so they are the
+    figures that could have been computed at the time (NaN until such a pair exists).
     """
     rows = []
     for s in sites:
@@ -130,6 +134,7 @@ def site_estimates(em: pd.DataFrame, sites, rep: pd.DataFrame | None = None, anc
         se_rate = float(np.sqrt(np.sum((w * m["E_se_kt_yr"]) ** 2)))
         detectable = mean_rate > 3 * se_rate and mean_rate > 0
         method, k = "none", np.nan
+        pairs = None
         if rep is not None and (rep["site_id"] == s.id).any():
             pairs = reported_vs_satellite(em, rep[rep["site_id"] == s.id])
             pairs = pairs[pairs["E_kt"].notna() & (pairs["months"] >= 0.45 * pairs["months_expected"])]
@@ -143,6 +148,14 @@ def site_estimates(em: pd.DataFrame, sites, rep: pd.DataFrame | None = None, anc
         per = m["month"].dt.asfreq(freq) if hasattr(m["month"], "dt") else m["month"].apply(lambda x: x.asfreq(freq))
         for p, g in m.groupby(per):
             rate = np.average(g["E_kt_yr"], weights=g["n_pixels"])
+            k_pit = np.nan
+            if method == "reported" and pairs is not None:
+                t0 = p.start_time
+                pub = pd.to_datetime(pairs["published_at"], errors="coerce", utc=True).dt.tz_localize(None)
+                pend = pd.to_datetime(pairs["period_end"])
+                past = pairs[(pend < t0) & pub.notna() & (pub < t0)]
+                if not past.empty and past["cu_kt"].sum() > 0 and past["E_kt"].sum() > 0:
+                    k_pit = past["E_kt"].sum() / past["cu_kt"].sum()
             ww = g["n_pixels"] / g["n_pixels"].sum()
             se = float(np.sqrt(np.sum((ww * g["E_se_kt_yr"]) ** 2)))
             frac = len(pd.period_range(p.start_time, p.end_time, freq="M")) / 12
@@ -151,5 +164,7 @@ def site_estimates(em: pd.DataFrame, sites, rep: pd.DataFrame | None = None, anc
                          "cu_kt": rate * frac / k if k == k else np.nan,
                          "cu_se_kt": se * frac / k if k == k else np.nan,
                          "cu_kt_annualised": rate / k if k == k else np.nan,
+                         "k_pit": k_pit,
+                         "cu_kt_pit": rate * frac / k_pit if k_pit == k_pit else np.nan,
                          "capacity_kt": s.capacity_kt, "available_at": g["available_at"].max()})
     return pd.DataFrame(rows)

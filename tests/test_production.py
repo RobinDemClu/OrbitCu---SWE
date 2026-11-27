@@ -110,3 +110,19 @@ def test_pit_fine_adjust_uses_only_past_cases():
     assert t["beta"].iloc[:15].isna().all()                       # not enough past cases yet
     assert abs(t["beta"].iloc[-1] - 0.5) < 1e-6
     assert t["err_fine_pct"].iloc[15:].abs().max() < 1e-6
+
+
+def test_pit_fine_adjust_waits_for_publication_and_skips_zero_output():
+    n = 30
+    d = pd.DataFrame({"decision_time": pd.date_range("2020-01-01", periods=n, freq="90D", tz="UTC"),
+                      "visible": True, "r": 1.0, "naive_kt": 100.0,
+                      "r_img": np.tile([0.8, 1.0, 1.25], 10)})
+    d["cu_kt"] = 100.0 * d["r_img"] ** 0.5
+    # every figure is published two years after its decision time: far fewer past cases
+    d["published_at"] = d["decision_time"] + pd.Timedelta(days=730)
+    t = P.pit_fine_adjust(d, min_train=15)
+    first = t["beta"].first_valid_index()
+    assert first is not None and first >= 15 + 8                 # ~8 quarters of publication lag
+    d.loc[3, "cu_kt"] = 0.0                                       # zero output: no -inf in the fit
+    t = P.pit_fine_adjust(d.drop(columns="published_at"), min_train=15)
+    assert len(t) == n - 1 and np.isfinite(t["y"]).all()

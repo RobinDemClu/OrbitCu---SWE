@@ -81,6 +81,18 @@ def viirs_monthly(df: pd.DataFrame, lat: float, lon: float, radius_km: float = 1
     return out
 
 
+def read_tcc(tcc_dir, site_id: str) -> pd.DataFrame | None:
+    """All ERA5 cloud files of a site (one file per downloaded range), duplicates dropped."""
+    from pathlib import Path
+
+    fs = sorted(Path(tcc_dir).glob(f"{site_id}_*.parquet")) if tcc_dir is not None else []
+    if not fs:
+        return None
+    d = pd.concat([pd.read_parquet(f) for f in fs], ignore_index=True)
+    tcol = "valid_time" if "valid_time" in d.columns else ("time" if "time" in d.columns else None)
+    return d.drop_duplicates(tcol) if tcol else d.drop_duplicates()
+
+
 def clear_days(tcc: pd.DataFrame, lon: float, max_cloud: float = 0.5) -> pd.Series:
     """Daily flag: was the sky clear at a VIIRS overpass (~01:30 or ~13:30 local solar time)?
 
@@ -114,21 +126,23 @@ def site_activity(firms_dirs: list, sites, start: str, end: str, radius_km: floa
 
     rows = []
     for s in sites:
-        parts, have = [], set()
+        parts, have = [], []
         for d in firms_dirs:
+            hd = set()
             for f in sorted((Path(d) / s.id).glob("*.parquet")):
-                have.add(f.stem)
+                hd.add(f.stem)
                 p = pd.read_parquet(f)
                 if not p.empty:
                     parts.append(p)
+            have.append(hd)
         df = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
         clear = None
-        if tcc_dir is not None:
-            f = sorted(Path(tcc_dir).glob(f"{s.id}_*.parquet"))
-            if f:
-                clear = clear_days(pd.read_parquet(f[0]), s.lon)
+        t = read_tcc(tcc_dir, s.id)
+        if t is not None:
+            clear = clear_days(t, s.lon)
         m = viirs_monthly(df, s.lat, s.lon, radius_km, start, end, clear)
-        m.loc[[p for p in m.index if str(p) not in have]] = np.nan
+        # a month counts only if every satellite has it cached (else fewer hot days)
+        m.loc[[p for p in m.index if not all(str(p) in h for h in have)]] = np.nan
         m["site_id"] = s.id
         rows.append(m.rename_axis("month").reset_index())
     return pd.concat(rows, ignore_index=True)
@@ -287,9 +301,9 @@ def activity_from_masks(masks: pd.DataFrame, sites, tcc_dir, start: str, end: st
         a["hot_days"] = pd.Series(1.0, index=hot).groupby(hot.to_period("M")).sum().reindex(idx).fillna(0.0)
         a["n_det"] = g["n_det"].sum().reindex(idx).fillna(0.0)
         a["frp_sum"] = g["frp_sum"].sum().reindex(idx).fillna(0.0)
-        f = sorted(Path(tcc_dir).glob(f"{s.id}_*.parquet")) if tcc_dir is not None else []
-        if f:
-            c = clear_days(pd.read_parquet(f[0]), s.lon, max_cloud)
+        t = read_tcc(tcc_dir, s.id)
+        if t is not None:
+            c = clear_days(t, s.lon, max_cloud)
             c = c[c]
             hc = pd.Series(c.index.isin(hot).astype(float), index=c.index)
             a["clear_days"] = pd.Series(1.0, index=c.index).groupby(c.index.to_period("M")).sum().reindex(idx).fillna(0.0)
@@ -335,6 +349,7 @@ def robust_cases(act: pd.DataFrame, rep: pd.DataFrame, sites, col: str = "hot_fr
             rate = _norm_rate(R, decision, p0, ref_months)
             rows.append({"entity": e, "period_start": r.period_start, "period_end": r.period_end,
                          "months": n, "decision_time": decision, "cu_kt": r.cu_kt,
+                         "published_at": getattr(r, "published_at", pd.NaT),
                          "a_cur": float(cur.mean()) if ok else np.nan, "a_ref": a_ref,
                          "naive_kt": rate * n})
     c = pd.DataFrame(rows)
@@ -404,8 +419,8 @@ def fused_factor(r_heat, r_so2, cut: float = CUT, w: float = SO2_W, lo: float = 
 def _prev_year_figure(rep: pd.DataFrame, entity: str, p_start, p_end, decision) -> float:
     """Published output of the same period one year earlier, known at the decision time."""
     R = rep[(rep["site_id"] == entity)]
-    s0 = pd.Timestamp(p_start) - pd.DateOffset(years=1); s1 = pd.Timestamp(p_end) - pd.DateOffset(years=1)
-    m = R[(R["period_start"] == s0) & (R["period_end"].dt.normalize() == s1.normalize())
+    m0, m1 = pd.Period(p_start, "M") - 12, pd.Period(p_end, "M") - 12
+    m = R[(R["period_start"].dt.to_period("M") == m0) & (R["period_end"].dt.to_period("M") == m1)
           & (R["published_at"] < decision)]
     return float(m["cu_kt"].iloc[-1]) if len(m) else np.nan
 
@@ -493,9 +508,16 @@ IMG_MIN_REF = 12       # usable images needed in the 12-month reference
 IMG_MIN_REF_ACT = 0.2  # a site hot on fewer than 20 % of its images is not visible on images
 
 
-def image_monthly(scores: pd.DataFrame) -> pd.DataFrame:
-    """Per site and month: usable / hot image counts and intensity sums (clear images)."""
+def image_monthly(scores: pd.DataFrame, as_of: pd.Timestamp | None = None) -> pd.DataFrame:
+    """Per site and month: usable / hot image counts and intensity sums (clear images).
+
+    ``as_of``: keep only images whose ``available_at`` is at or before this time
+    (point-in-time: a scene acquired on the last day of a quarter may be published
+    days later)."""
     s = scores.copy()
+    if as_of is not None and "available_at" in s.columns:
+        av = pd.to_datetime(s["available_at"], utc=True, format="mixed", errors="coerce")
+        s = s[av.notna() & (av <= pd.Timestamp(as_of))]
     for c in ("hot_seen", "cold_seen"):
         s[c] = s[c].astype("boolean").fillna(False).astype(bool)
     s = s[s["quality"].isin(["clear", "partial", "cloudy"])]
@@ -538,18 +560,22 @@ def image_ratio(e_img: pd.DataFrame, p0: pd.Period, p1: pd.Period, ref_months: i
     return (a_cur / a_ref if a_ref > 0 else np.nan), a_ref, n_cur
 
 
-def add_image_ratio(cases: pd.DataFrame, img: pd.DataFrame, sites) -> pd.DataFrame:
+def add_image_ratio(cases: pd.DataFrame, scores: pd.DataFrame, sites) -> pd.DataFrame:
     """Add r_img (images), r_comb (VIIRS and images) to ``robust_cases`` output.
 
+    ``scores``: per-image scores (``hotspot`` output, with ``available_at``). For each
+    case only the images available at its decision time are used.
     r_comb: mean of the two ratios when both sources see the site; the visible one
     otherwise (fixed in advance, no fitting)."""
     c = cases.copy()
-    cache = {}
+    ids = {i for e in c["entity"].unique() for i in ENTITY_SITES.get(e, [e])}
+    sc = scores[scores["site_id"].isin(ids)]
     r_img, a_ref_img, n_img = [], [], []
     for r in c.itertuples(index=False):
-        if r.entity not in cache:
-            cache[r.entity] = _entity_img(img, sites, r.entity)
-        x = image_ratio(cache[r.entity], pd.Period(r.period_start, "M"), pd.Period(r.period_end, "M"))
+        ent_ids = ENTITY_SITES.get(r.entity, [r.entity])
+        img = image_monthly(sc[sc["site_id"].isin(ent_ids)], as_of=r.decision_time)
+        e_img = _entity_img(img, sites, r.entity)
+        x = image_ratio(e_img, pd.Period(r.period_start, "M"), pd.Period(r.period_end, "M"))
         r_img.append(x[0]); a_ref_img.append(x[1]); n_img.append(x[2])
     c["r_img"], c["a_ref_img"], c["n_img"] = r_img, a_ref_img, n_img
     c["visible_img"] = c["a_ref_img"] >= IMG_MIN_REF_ACT
@@ -569,29 +595,34 @@ def evaluate_ratio(cases: pd.DataFrame, r_col: str, vis_col: str, cut: float = C
     return t
 
 
-def pit_fine_adjust(cases: pd.DataFrame, m: str = "r_img", stop_col: str = "r", cut: float = CUT,
-                    lo: float = 0.7, hi: float = 1.3, min_train: int = 15) -> pd.DataFrame:
+def pit_fine_adjust(cases: pd.DataFrame, m: str = "r_img", stop_col: str = "r", vis_col: str = "visible",
+                    m_vis_col: str | None = "visible_img", cut: float = CUT, lo: float = 0.7, hi: float = 1.3,
+                    min_train: int = 15) -> pd.DataFrame:
     """Shutdown rule, then a fine adjustment while the plant runs (point-in-time).
 
     If the plant runs (``stop_col`` >= cut) and the measure ``m`` (default: share of images
-    with hot pixels vs the previous 12 months) exists, the estimate is
-    ``naive * clip(r_m ** beta, lo, hi)``; ``beta`` is the least-squares slope of
-    log(output / naive) on log(r_m) over running cases decided earlier (pooled, at least
-    ``min_train``), clipped to [0, 1.5].  Adds ``fine_kt``, ``beta`` and ``err_fine_pct``."""
-    t = cases[cases["visible"] & cases[stop_col].notna() & (cases["naive_kt"] > 0)].copy()
+    with hot pixels vs the previous 12 months) exists and is usable (``m_vis_col``), the
+    estimate is ``naive * clip(r_m ** beta, lo, hi)``; ``beta`` is the least-squares slope of
+    log(output / naive) on log(r_m) over running cases whose published figure was already
+    public at the decision time (``published_at`` < decision; pooled, at least
+    ``min_train``), clipped to [0, 1.5]. Adds ``fine_kt``, ``beta`` and ``err_fine_pct``."""
+    t = cases[cases[vis_col].fillna(False).astype(bool) & cases[stop_col].notna()
+              & (cases["naive_kt"] > 0) & (cases["cu_kt"] > 0)].copy()
     t = t.sort_values("decision_time").reset_index(drop=True)
     t["y"] = np.log(t["cu_kt"] / t["naive_kt"])
+    ok_m = t[m].notna() & (t[m] > 0) & np.isfinite(t[m])
+    if m_vis_col is not None and m_vis_col in t:
+        ok_m &= t[m_vis_col].fillna(False).astype(bool)
+    known = pd.to_datetime(t["published_at"], utc=True, format="mixed") if "published_at" in t else t["decision_time"]
     est, betas = [], []
-    for r in t.itertuples(index=False):
+    for i, r in enumerate(t.itertuples(index=False)):
         f, b = float(shutdown_factor([getattr(r, stop_col)], cut)[0]), np.nan
-        x = getattr(r, m)
-        if f == 1.0 and np.isfinite(x) and x > 0:
-            tr = t[(t["decision_time"] < r.decision_time) & (t[stop_col] >= cut)][[m, "y"]].dropna()
-            tr = tr[tr[m] > 0]
+        if f == 1.0 and ok_m.iloc[i]:
+            tr = t[(known < r.decision_time) & (t[stop_col] >= cut) & ok_m & np.isfinite(t["y"])]
             if len(tr) >= min_train:
                 X = np.log(tr[m].clip(0.5, 2.0))
                 b = float(np.clip((X * tr["y"]).sum() / (X * X).sum(), 0.0, 1.5)) if (X * X).sum() > 0 else 0.0
-                f = float(np.clip(np.exp(b * np.log(np.clip(x, 0.5, 2.0))), lo, hi))
+                f = float(np.clip(np.exp(b * np.log(np.clip(getattr(r, m), 0.5, 2.0))), lo, hi))
         est.append(r.naive_kt * f); betas.append(b)
     t["fine_kt"], t["beta"] = est, betas
     t["err_naive_pct"] = 100 * (t["naive_kt"] - t["cu_kt"]) / t["cu_kt"]

@@ -42,7 +42,9 @@ def run(sites, sensors, years, out: Path, workers: int = 16, max_cloud: float | 
         for sen in sensors:
             for y in years:
                 f = out / f"{s.id}_{sen.key}_{y}.parquet"
-                if f.exists():
+                # a year that is not over (plus 30 days of Landsat latency) is scored again
+                done = pd.Timestamp(f"{y + 1}-01-31") < pd.Timestamp.utcnow().tz_localize(None)
+                if f.exists() and done:
                     continue
                 t0 = time.time()
                 try:

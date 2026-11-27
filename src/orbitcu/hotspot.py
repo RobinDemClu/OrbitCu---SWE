@@ -176,8 +176,9 @@ def score_manifest(manifest: pd.DataFrame, clip_root: Path | str) -> pd.DataFram
 
 def site_image_summary(scores: pd.DataFrame, freq: str = "M") -> pd.DataFrame:
     """Per site and period: images by quality, share of usable images with hot pixels,
-    median hot area on clear images. ``hot_share`` uses clear + partial images with a hot
-    pixel and clear images without one (a zero on a partly cloudy image is not counted)."""
+    median hot area on clear images. ``hot_share`` uses every image with a hot pixel
+    (clear, partial or cloudy: heat seen through cloud is real) and clear images without one
+    (a zero on a partly or fully cloudy image is not counted)."""
     s = scores[scores["quality"].isin(["clear", "partial", "cloudy"])].copy()
     s["period"] = pd.to_datetime(s["acquired_at"], utc=True).dt.tz_localize(None).dt.to_period(freq)
     s["usable"] = s["hot_seen"] | s["cold_seen"]

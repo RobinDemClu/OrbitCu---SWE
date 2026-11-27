@@ -70,7 +70,7 @@ def cmd_s5p(a):
         out = a.out / s.id / "s5p_so2.parquet"
         out.parent.mkdir(parents=True, exist_ok=True)
         (pd.concat(parts) if parts else pd.DataFrame()).to_parquet(out)
-        orbits.drop(columns="href").to_parquet(a.out / s.id / "s5p_orbits.parquet")
+        orbits.drop(columns="href", errors="ignore").to_parquet(a.out / s.id / "s5p_orbits.parquet")
         print(f"{s.id}: {len(orbits)} orbits, {sum(len(p) for p in parts)} pixels -> {out}")
 
 
