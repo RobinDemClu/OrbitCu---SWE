@@ -175,10 +175,10 @@ footer p { margin: 0; }
 
   <footer>
     <p><strong>Statut hebdomadaire.</strong> Activité = jours chauds VIIRS (375 m) sur jours clairs (couverture nuageuse ERA5 &lt; 0,5), fenêtre de 8 semaines, comparée aux mêmes semaines (± 2) des 3 années précédentes. Rapport r &lt; 0,6 : arrêt. Moins de 5 jours clairs ou référence trop faible : inconnu. Un arrêt ou un redémarrage est daté s'il dure au moins 3 semaines.</p>
-    <p><strong>Production.</strong> Estimation trimestrielle = rythme publié des 12 derniers mois (sinon 80 % de la capacité) × facteur d'activité (r si r &lt; 0,6, sinon 1), calculée sans regarder l'avenir. Erreur moyenne 8,2 % contre 11,3 % pour la prévision naïve sur 100 chiffres publiés.</p>
+    <p><strong>Production.</strong> Estimation trimestrielle = rythme publié des 12 derniers mois (sinon 80 % de la capacité) × facteur d'activité (r si r &lt; 0,6, sinon 1), calculée sans regarder l'avenir. Erreur moyenne 8,0 % contre 11,1 % pour la prévision naïve sur 99 chiffres publiés.</p>
     <p><strong>Alertes de surprise.</strong> Une surprise est un chiffre publié à plus de 10 % de la prévision naïve. L'alerte vient de VIIRS (r &lt; 0,6 ou &gt; 1,3), sinon de la part d'images chaudes (&lt; 0,75 ou &gt; 1,33), seuils fixés à l'avance. <span id="surScore"></span></p>
     <p><strong>Images et SO2.</strong> Score image = part des images claires Sentinel-2 / Landsat avec un point chaud confirmé (TAI &gt; 3 et B12 − B11 &gt; 0,40). SO2 = ajustement de panache sur TROPOMI avec vents ERA5, corrigé des changements de version du traitement ; visible seulement à Norilsk, Sarcheshmeh et Jinchang.</p>
-    <p><strong>Limites.</strong> Cercles en pointillés : position de faible confiance. Sept positions ont été corrigées le 27/11/2026 (cercle creux = ancienne position) : tant que les calculs n'ont pas été relancés, leurs séries viennent encore de l'ancienne position. Données générées le <span id="gen"></span>. Fond de carte Natural Earth 1:50m.</p>
+    <p><strong>Limites.</strong> Cercles en pointillés : position de faible confiance. Sept positions ont été corrigées le 27/11/2026 (cercle creux = ancienne position) ; toutes les séries ont été recalculées aux nouvelles positions. À Kutch, le nouveau point ne montre presque aucune chaleur : l'usine y est invisible pour l'instant. Données générées le <span id="gen"></span>. Fond de carte Natural Earth 1:50m.</p>
   </footer>
 </div>
 <div id="tip" hidden></div>
