@@ -156,6 +156,31 @@ input[type="search"] { min-width: 180px; }
 .statusline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 12px; margin: 0 0 12px; border: 1px solid var(--ink); }
 .statusline .big { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
 .statusline .big .dot { width: 14px; height: 14px; }
+.idhead { display: flex; flex-wrap: wrap; gap: 12px 18px; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.cc { font-family: var(--font-data); font-size: 0.7rem; border: 1px solid var(--border); padding: 0 4px; }
+.stbadge { display: flex; flex-direction: column; gap: 2px; padding: 8px 14px; border: 2px solid var(--sc); border-left-width: 8px; min-width: 190px; }
+.stbadge .big { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; color: var(--sc); }
+.stbadge .big .dot { width: 14px; height: 14px; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.tiles .tile.wide { grid-column: span 2; }
+@media (max-width: 700px) { .tiles { grid-template-columns: 1fr 1fr; } }
+.tile { border: 1px solid var(--rule); padding: 8px 10px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.tile .v { font-family: var(--font-data); font-size: 1.25rem; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.tile .v small { font-size: 0.7rem; color: var(--muted); font-weight: 400; }
+.tile .s { font-size: 0.74rem; color: var(--muted); }
+.tile svg { width: 100%; display: block; }
+.gauge { height: 7px; background: var(--plate); position: relative; overflow: hidden; }
+.gauge span { position: absolute; left: 0; top: 0; bottom: 0; }
+.ranks { height: 18px; } .evl { height: 22px; } .yb { height: 30px; }
+.yrs { display: flex; justify-content: space-between; font-family: var(--font-data); font-size: 0.66rem; color: var(--muted); }
+.pips { display: flex; gap: 3px; } .pips span { flex: 1; height: 7px; background: var(--plate); } .pips span.on { background: var(--ink); }
+.grade { display: inline-grid; place-items: center; width: 30px; height: 30px; font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: #fff; }
+.g-A { background: var(--run); } .g-B { background: var(--c4); } .g-C { background: var(--stop); }
+.cos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.co { border: 1px solid var(--rule); padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; font-size: 0.85rem; }
+.co .cov { display: flex; justify-content: space-between; gap: 8px; } .co svg { width: 100%; height: 26px; display: block; }
+details.src { margin-top: 12px; } details.src summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 4px 0; }
+details.src dl.kv { margin-top: 6px; }
 dl.kv { display: grid; grid-template-columns: minmax(130px, auto) 1fr; gap: 0; margin: 0; font-size: 0.85rem; border-top: 1px solid var(--ink); }
 dl.kv dt, dl.kv dd { padding: 5px 0; border-bottom: 1px solid var(--rule); }
 dl.kv dt { color: var(--muted); font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.74rem; padding-right: 14px; }
@@ -610,12 +635,38 @@ document.querySelectorAll("#subtabs button").forEach(b => b.addEventListener("cl
 let thumbMode = "rgb";
 function openSite(id) { state.sel = id; setTab("site"); }
 
+const maxCap = d3.max(sites, x => x.capacity_kt || 0);
+function eventLine(s) {
+  const W0 = 300, h = 22, X = i => 2 + i / (NW - 1) * (W0 - 4);
+  let o = `<line x1="2" x2="${W0 - 2}" y1="11" y2="11" stroke="${css("--rule")}" stroke-width="2"></line>`;
+  let ly = null; W.forEach((w, i) => { const y = w.slice(0, 4); if (y !== ly) { if (i) o += `<line x1="${X(i)}" x2="${X(i)}" y1="7" y2="15" stroke="${css("--border")}"></line>`; ly = y; } });
+  s.events.forEach(e => { const i = wIndex(e.start); o += `<circle cx="${X(i)}" cy="11" r="4.5" fill="${css(e.event === "stop" ? "--stop" : "--run")}" stroke="${css("--panel")}" data-tip="${EV[e.event] || e.event} · ${fdate(e.start)}"></circle>`; });
+  o += `<line x1="${X(state.w)}" x2="${X(state.w)}" y1="2" y2="20" stroke="${css("--ink")}" stroke-width="1.5"></line>`;
+  return `<svg class="evl" viewBox="0 0 ${W0} ${h}" preserveAspectRatio="none">${o}</svg><div class="yrs"><span>2019</span><span>${W[NW - 1].slice(0, 4)}</span></div>`;
+}
+function yearBars(s) {
+  const e = s.est_year ? Object.entries(s.est_year).filter(([, v]) => v != null) : [];
+  if (!e.length) return `<div class="v">–</div>`;
+  const full = e.filter(([k]) => k.length === 4), mx = d3.max(e, ([, v]) => v) || 1, last = full.length ? full[full.length - 1] : e[e.length - 1];
+  const bw = 100 / e.length;
+  return `<div class="v">${fr(last[1])}<small> kt in ${last[0]}</small></div><svg class="yb" viewBox="0 0 100 26" preserveAspectRatio="none">${e.map(([k, v], j) => `<rect x="${j * bw + 1}" y="${26 - 24 * v / mx}" width="${bw - 2}" height="${24 * v / mx}" fill="${css("--est")}" opacity="${k.length === 4 ? 1 : 0.5}" data-tip="${esc(k)}: ${fr(v)} kt"></rect>`).join("")}</svg>`;
+}
+function coCard(t) {
+  const ser = (DATA.markets.shares?.series || []).find(x => x.t === t.t);
+  if (!ser) return `<div class="co"><b>${esc(t.name)}</b><span class="code">${t.t}</span></div>`;
+  const v = ser.v.slice(-13).filter(x => x != null), lastV = v[v.length - 1], ch = v.length > 1 ? (lastV / v[0] - 1) * 100 : null;
+  const lo = d3.min(v), hi = d3.max(v), col = css(ch >= 0 ? "--run" : "--stop");
+  const d = v.map((x, k) => `${k ? "L" : "M"}${(k / (v.length - 1) * 100).toFixed(1)},${(22 - (x - lo) / ((hi - lo) || 1) * 20).toFixed(1)}`).join("");
+  return `<div class="co"><div><b>${esc(t.name)}</b> <span class="code">${t.t}</span></div><div class="cov"><span class="m">${fr(lastV, lastV < 10 ? 2 : 0)} ${t.ccy || ""}</span><span class="m" style="color:${col}">${ch != null ? (ch > 0 ? "+" : "") + fr(ch) + " %" : ""}</span></div><svg viewBox="0 0 100 24" preserveAspectRatio="none" aria-label="12-month price"><path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"></path></svg><span class="code">12 months</span></div>`;
+}
 function renderSite() {
   const s = byId[state.sel], i = state.w, c = stAt(s, i), ev = activeStop(s, i), p = s.profile || {};
   pick.value = s.id;
   const last = s.events.filter(e => e.start <= W[i]).slice(-1)[0];
   const known = s.status.split("").filter(x => x !== "u").length / NW;
   const th = s.thumb;
+  const run52 = (() => { const seg = s.status.slice(Math.max(0, i - 51), i + 1).split(""), k = seg.filter(x => x !== "u"); return k.length ? k.filter(x => x === "r").length / k.length : 0; })();
+  const nStops = s.events.filter(e => e.event === "stop").length, nRest = s.events.length - nStops;
   const tick = p.tickers || [];
   const shareRow = t => { const ser = (DATA.markets.shares?.series || []).find(x => x.t === t.t); if (!ser) return esc(t.name);
     const v = ser.v, lastV = v[v.length - 1], yAgo = v[v.length - 13]; const ch = yAgo ? (lastV / yAgo - 1) * 100 : null;
@@ -627,24 +678,43 @@ function renderSite() {
         <span class="scale">${fr(th.half_km * 2, 1)} km across</span>` : `<p class="empty" style="padding:12px">No clear image.</p>`}</div>
       ${th ? `<div class="seg"><button class="btn small" data-th="rgb" aria-pressed="${thumbMode === "rgb"}">True colour</button><button class="btn small" data-th="swir" aria-pressed="${thumbMode === "swir"}">Infrared (heat)</button></div>
       <div class="code">Sentinel-2 · ${fdate(th.date)} · ${th.hot ? "hot spot confirmed" : "no hot spot on this image"}</div>
-      <div class="hint" style="margin:0">${thumbMode === "swir" ? "Short-wave infrared (B12, B11, B8A): furnaces and hot slag show as bright orange-white spots." : "Most recent clear image; the cross marks the registry position."}</div>` : ""}
+      ${thumbMode === "swir" ? `<div class="hint" style="margin:0">Hot furnaces and slag show as bright spots.</div>` : ""}` : ""}
     </div>
     <div class="facts">
-      <span class="code">${s.id} · rank ${p.rank ?? "–"} of ${sites.length} by capacity</span>
-      <h2>${esc(s.name)}</h2>
-      <div class="meta">${esc(s.country)} · ${esc(s.operator)}</div>
-      <div class="statusline"><span class="big"><span class="dot ${ST[c].cls}"></span>${ST[c].label}</span><span class="code">week ending ${fdate(W[i])}${s.r[i] != null ? ` · activity ratio ${fr(s.r[i], 2)}` : ""}${ev ? ` · stopped since ${fdate(ev.start)}` : ""}</span></div>
+      <div class="idhead">
+        <div style="min-width:0"><span class="code">${s.id}</span><h2>${esc(s.name)}</h2><div class="meta"><span class="cc">${s.id.slice(0, 2)}</span> ${esc(s.country)} · ${esc(s.operator)}</div></div>
+        <div class="stbadge" style="--sc:var(${ST[c].v})"><span class="big"><span class="dot ${ST[c].cls}"></span>${ST[c].label}</span><span class="code">${fdate(W[i])}${s.r[i] != null ? ` · ratio ${fr(s.r[i], 2)}` : ""}</span>${ev ? `<span class="code">stopped since ${fdate(ev.start)}</span>` : ""}</div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="lbl">Capacity</div><div class="v">${s.capacity_kt ? fr(s.capacity_kt) : "–"}<small> kt/yr</small></div>
+          <div class="gauge"><span style="width:${(s.capacity_kt || 0) / maxCap * 100}%;background:var(--est)"></span></div><div class="s">${p.reg_share != null ? fr(p.reg_share, 1) + " % of the 29 smelters" : "not published"}</div></div>
+        <div class="tile"><div class="lbl">Rank by capacity</div><div class="v">#${p.rank ?? "–"}<small> / ${sites.length}</small></div>
+          <svg class="ranks" viewBox="0 0 ${sites.length * 6} 14" preserveAspectRatio="none" aria-hidden="true">${sites.map((x, k) => `<rect x="${k * 6}" y="${14 - 12 * (x.capacity_kt || 0) / maxCap}" width="4.5" height="${12 * (x.capacity_kt || 0) / maxCap}" fill="${x.id === s.id ? css("--ink") : css("--rule")}"></rect>`).join("")}</svg></div>
+        <div class="tile"><div class="lbl">Operator confirms</div><div class="v"><span class="grade g-${esc(s.grade)}">${esc(s.grade)}</span></div>
+          <div class="pips">${["A", "B", "C"].map(g => `<span class="${"ABC".indexOf(s.grade) <= "ABC".indexOf(g) ? "on" : ""}"></span>`).join("")}</div><div class="s">${{ A: "named, recent document", B: "named, older or indirect", C: "indirect evidence" }[s.grade] || ""}</div></div>
+        <div class="tile"><div class="lbl">Position confidence</div><div class="v" style="text-transform:capitalize">${esc(s.confidence)}</div>
+          <div class="pips">${["low", "medium", "high"].map((g, k) => `<span class="${["low", "medium", "high"].indexOf(s.confidence) >= k ? "on" : ""}"></span>`).join("")}</div><div class="s">${s.moved ? `corrected, moved ${fr(d3.geoDistance([s.lon, s.lat], [s.moved.lon, s.moved.lat]) * 6371, 1)} km` : `${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}`}</div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile wide"><div class="lbl">Last 52 weeks</div><div class="v">${fr(run52 * 100)}<small> % running</small></div>${stripSvg(s, Math.max(0, i - 51), i, 10)}</div>
+        <div class="tile wide"><div class="lbl">Stops and restarts since 2019</div><div class="v">${nStops}<small> stops</small> · ${nRest}<small> restarts</small></div>${eventLine(s)}</div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="lbl">VIIRS status known</div><div class="v">${fr(known * 100)}<small> % of weeks</small></div><div class="gauge"><span style="width:${known * 100}%;background:var(--run)"></span></div></div>
+        <div class="tile"><div class="lbl">Clear images</div><div class="v">${s.img_cov ? fr(s.img_cov.per_month, 1) : "–"}<small> per month</small></div><div class="gauge"><span style="width:${s.img_cov ? Math.min(100, s.img_cov.per_month / 8 * 100) : 0}%;background:var(--rep)"></span></div></div>
+        <div class="tile"><div class="lbl">Estimated output</div>${yearBars(s)}</div>
+        <div class="tile"><div class="lbl">Published output</div><div class="v">${s.reported.length ? `<span class="ok">Yes</span>` : `<span style="color:var(--muted)">No</span>`}</div><div class="s">${s.reported.length ? `${s.reported.length} figures` : "estimate not checkable"}</div></div>
+      </div>
+      ${tick.length ? `<div class="lbl" style="margin:12px 0 6px">Listed companies</div><div class="cos">${tick.map(coCard).join("")}</div>` : `<div class="s" style="margin-top:10px;color:var(--muted)">No listed company (state-owned or private).</div>`}
+      <details class="src"><summary>Sources and notes</summary>
       <dl class="kv">
-        <dt>Capacity</dt><dd>${s.capacity_kt ? `<span class="m">${fr(s.capacity_kt)} kt Cu/yr</span> · ${fr(p.reg_share, 1)} % of the 29 smelters` : "not published"}${p.capacity_basis ? ` <span class="code">(${esc(p.capacity_basis)})</span>` : ""}</dd>
-        <dt>Operator evidence</dt><dd>Grade ${esc(s.grade)}${p.evidence ? ` · ${esc(p.evidence)}` : ""}${p.evidence_source ? ` · <a href="${esc(p.evidence_source)}" target="_blank" rel="noopener">source${p.evidence_date ? `, ${fdate(p.evidence_date)}` : ""}</a>` : ""}</dd>
-        ${p.capacity_evidence ? `<dt>Capacity evidence</dt><dd>${esc(p.capacity_evidence)}</dd>` : ""}
-        <dt>Listed companies</dt><dd>${tick.length ? tick.map(shareRow).join("<br>") : "none (state-owned or private)"}</dd>
-        <dt>Position</dt><dd><span class="m">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</span> · confidence ${CONF[s.confidence] || esc(s.confidence)}${s.moved ? ` · corrected ${fdate(s.moved.on)} (moved ${fr(d3.geoDistance([s.lon, s.lat], [s.moved.lon, s.moved.lat]) * 6371, 1)} km)` : (p.geo_method ? ` · ${esc(p.geo_method)}` : "")}</dd>
-        <dt>Satellite coverage</dt><dd>VIIRS status known ${fr(known * 100)} % of weeks${s.img_cov ? ` · ${fr(s.img_cov.n)} images, ${fr(s.img_cov.per_month, 1)} usable per month` : ""}</dd>
+        ${p.evidence ? `<dt>Operator evidence</dt><dd>${esc(p.evidence)}${p.evidence_source ? ` · <a href="${esc(p.evidence_source)}" target="_blank" rel="noopener">source${p.evidence_date ? `, ${fdate(p.evidence_date)}` : ""}</a>` : ""}</dd>` : ""}
+        ${p.capacity_basis || p.capacity_evidence ? `<dt>Capacity</dt><dd>${esc(p.capacity_basis || "")}${p.capacity_evidence ? ` · ${esc(p.capacity_evidence)}` : ""}</dd>` : ""}
+        <dt>Position</dt><dd><span class="m">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</span>${p.geo_method ? ` · ${esc(p.geo_method)}` : ""}${s.moved ? ` · previous ${s.moved.lat.toFixed(4)}, ${s.moved.lon.toFixed(4)} (corrected ${fdate(s.moved.on)})` : ""}</dd>
+        ${s.reported.length ? `<dt>Published metric</dt><dd>${esc([...new Set(s.reported.map(r => r.metric))].join(", "))}${s.entity_note ? ` · ${esc(s.entity_note)}` : ""}</dd>` : ""}
         <dt>Last event</dt><dd>${last ? `${EV[last.event] || last.event}, ${fdate(last.start)} (seen ${fdate(last.seen)})` : "none dated"}</dd>
-        <dt>Published output</dt><dd>${s.reported.length ? `${s.reported.length} figures (${esc([...new Set(s.reported.map(r => r.metric))].join(", "))})${s.entity_note ? ` · ${esc(s.entity_note)}` : ""}` : "none per smelter"}</dd>
-        ${s.so2_last ? `<dt>SO2 plume</dt><dd>visible · <span class="m">${fr(s.so2_last.e)} ± ${fr(s.so2_last.se)} kt SO2/yr</span> in ${s.so2_last.y}</dd>` : ""}
-      </dl>
+        ${s.so2_last ? `<dt>SO2 plume</dt><dd><span class="m">${fr(s.so2_last.e)} ± ${fr(s.so2_last.se)} kt SO2/yr</span> in ${s.so2_last.y}</dd>` : ""}
+      </dl></details>
     </div>`;
   document.querySelectorAll("#idcard [data-th]").forEach(b => b.addEventListener("click", () => { thumbMode = b.dataset.th; renderSite(); }));
   document.querySelectorAll("#subtabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.sub === state.sub)));
