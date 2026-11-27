@@ -27,3 +27,10 @@ def test_correct_pixels_keeps_raw():
     c = sv.correct_pixels(px)
     assert list(c["version"]) == ["020701", "020800"]
     assert c["so2_1km"].round(3).tolist() == [1.185, 1.0] and c["so2_1km_raw"].tolist() == [1.0, 1.0]
+
+
+def test_missing_orbit_left_uncorrected():
+    assert sv.version_of(float("nan"), "OFFL") is None and sv.version_of(None, "NRTI") is None
+    px = pd.DataFrame({"orbit": [float("nan"), 42000], "mode": ["OFFL", "OFFL"], "so2_1km": [1.0, 1.0]})
+    c = sv.correct_pixels(px)
+    assert c["version_factor"].tolist()[0] == 1.0 and c["so2_1km"].round(3).tolist() == [1.0, 1.185]

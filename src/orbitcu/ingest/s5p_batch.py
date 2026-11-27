@@ -145,7 +145,9 @@ def ingest_month(sites: list[Site], month: pd.Period, out_dir: Path, workers: in
                  modes=("OFFL", "RPRO", "NRTI")) -> Path:
     """Extract one calendar month for all sites; resumable via the cached file."""
     path = out_dir / "s5p_batch" / f"{month}.parquet"
-    if path.exists():
+    # offline products arrive up to ~5 days after sensing: an unfinished month is redone
+    done = month.end_time + pd.Timedelta(days=5) < pd.Timestamp.utcnow().tz_localize(None)
+    if path.exists() and done:
         return path
     path.parent.mkdir(parents=True, exist_ok=True)
     start, end = month.start_time.date().isoformat(), month.end_time.date().isoformat()

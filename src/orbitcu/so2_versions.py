@@ -50,10 +50,17 @@ ORDER = list(VERSIONS)
 REFERENCE = "020800"
 
 
-def version_of(orbit, mode: str) -> str:
-    """Processor version of an orbit in a stream (OFFL, NRTI; RPRO files of 2025 are v2.7.1)."""
+def version_of(orbit, mode: str) -> str | None:
+    """Processor version of an orbit in a stream (OFFL, NRTI; RPRO files of 2025 are v2.7.1).
+    ``None`` when the orbit number is missing (the pixel is then left uncorrected)."""
     if mode == "RPRO":
         return "020701"
+    try:
+        orbit = float(orbit)
+    except (TypeError, ValueError):
+        return None
+    if not np.isfinite(orbit):
+        return None
     col = 1 if mode == "NRTI" else 0
     v = ORDER[0]
     for k in ORDER[1:]:
@@ -90,8 +97,8 @@ def correct_pixels(px: pd.DataFrame, column: str = "so2_1km", reference: str = R
     keys = px[["orbit", "mode"]].drop_duplicates()
     keys["version"] = [version_of(o, m) for o, m in zip(keys["orbit"], keys["mode"])]
     px = px.merge(keys, on=["orbit", "mode"], how="left")
-    fac = {v: factor_to_reference(v, reference) for v in px["version"].unique()}
-    px["version_factor"] = px["version"].map(fac)
+    fac = {v: factor_to_reference(v, reference) for v in px["version"].dropna().unique()}
+    px["version_factor"] = px["version"].map(fac).fillna(1.0)
     px[f"{column}_raw"] = px[column]
     px[column] = px[column] * px["version_factor"]
     return px

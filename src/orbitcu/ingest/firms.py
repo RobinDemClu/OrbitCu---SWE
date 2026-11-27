@@ -234,7 +234,9 @@ def fetch_regions(out_dir, boxes: dict, start: str, end: str, sensor: str = "VII
     for name, bbox in boxes.items():
         for m in months:
             path = out_dir / name / f"{m}.parquet"
-            if path.exists():
+            # a month that has not ended (plus 2 days of latency) is fetched again next time
+            done = pd.Period(m, "M").end_time + pd.Timedelta(days=2) < pd.Timestamp.utcnow().tz_localize(None)
+            if path.exists() and done:
                 continue
             k = len(todo)
             todo.append((name, m, path))

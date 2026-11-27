@@ -108,11 +108,11 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
   \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). \SOtwo{} emissions 2022--2026 are computed for all 29 sites, but only 3 old smelters (Norilsk, Sarcheshmeh, Jinchang) are seen clearly: modern plants capture almost all their \SOtwo.
   \item \textbf{Copper output from heat (new):} with the full 2018--2026 VIIRS history and a cloud correction, a point-in-time estimate cuts the error on 100 hidden published figures at 9 units from 11.3\,\% (naive) to 8.2\,\%, by catching shutdowns (Hamburg 2024, Pirdop 2025) without false alarms; normal periods are not improved, and adding \SOtwo{} at Norilsk did not help (Section~\ref{sec:production}).
-  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 42 automated tests pass.
+  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 51 automated tests pass.
   \item \textbf{Activity index (new):} a weekly share of smelter capacity running and a list of 57 dated stops and 59 restarts (2019--2026); in China it follows official output ($\rho=0.45$) about 11 days ahead of the statistics (Section~\ref{sec:index}).
   \item \textbf{Every image scored (new):} heat score and quality flag for all 29\,315 Sentinel-2 and Landsat images 2018--2026, with a hot-pixel rule tested on four boxes without industry; the Hamburg and Pirdop shutdowns and the Manyar restart are seen directly (Section~\ref{sec:images}).
   \item \textbf{\SOtwo{} software correction (new):} the step of each Sentinel-5P software upgrade is measured on orbits processed in both versions; the November 2025 upgrade alone added 19\,\%, about 40\,\% of the 2026 jumps (Section~\ref{sec:so2}).
-  \item \textbf{Finer changes (new):} when a plant runs, the share of hot images follows output changes ($\rho=0.37$), which night heat does not; a fine adjustment cuts the error on large moves from 18.3\,\% to 15.2\,\%, with no overall gain yet (Section~\ref{sec:production}).
+  \item \textbf{Finer changes (new):} when a plant runs, the share of hot images follows output changes ($\rho=0.34$), which night heat does not; but after a point-in-time audit of the code the fine adjustment built on it no longer improves the estimate (18.3 to 17.5\,\% on large moves, no overall gain) (Section~\ref{sec:production}).
   \item \textbf{Trading test (new):} a weekly long/short strategy on COMEX copper driven by the satellite supply surprise, with volatility targeting and 2\,bp costs, was tested on 2019--2026 with a training/test split. It does \emph{not} beat buy-and-hold: test Sharpe $-0.02$ (world index) and $0.82$ (China index, interval $-0.26$ to $1.57$) against $0.60$ for buy-and-hold at the same risk; a placebo test finds no signal. Trading only in the 11 days before the Chinese statistics fails too: the satellites anticipate the NBS figure ($\rho=0.33$) but prices do not react to it (Section~\ref{sec:trading}).
   \item \textbf{Still to build:} the full dashboard.
 \end{itemize}
@@ -322,7 +322,7 @@ Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, tha
 3 & give a heat score and an \SOtwo{} emission per smelter & Heat score and quality flag for all 29\,315 Sentinel-2/Landsat images 2018--2026 (Section~\ref{sec:images}); cloud-corrected VIIRS activity per smelter and month 2018--2026; \SOtwo{} emission per smelter and month 2022--2026, corrected for software versions (clear signal at 3 sites) & \done\\
 4 & estimate daily ``running or not'' and publish activity indices & Weekly status per smelter, capacity-weighted world index and dated stop/restart list 2019--2026 (Section~\ref{sec:index}) & \wip\\
 5 & check results against known events and official figures & 197 published output figures (KGHM, Aurubis, Ilo, Nornickel, Yunnan Copper, China Daye, Adani, Kamoa); point-in-time test of the output estimate on 9 units, heat + \SOtwo{} test at Norilsk (Section~\ref{sec:production}) & \wip\\
-6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 8.2\,\% vs 11.3\,\% naive; with the image fine adjustment, 15.2\,\% vs 18.3\,\% on large moves); official monthly statistics loaded (China NBS, Japan METI); weekly COMEX and LME copper prices 2018--2026 loaded & \wip\\
+6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 8.2\,\% vs 11.3\,\% naive; the image fine adjustment gives no significant gain); official monthly statistics loaded (China NBS, Japan METI); weekly COMEX and LME copper prices 2018--2026 loaded & \wip\\
 7 & test futures strategies on past data & Weekly long/short test on COMEX HG (LME as a check), 2019--2026, costs, training/test split, placebo; NBS-window event test; no gain over buy-and-hold (Section~\ref{sec:trading}) & \done\\
 8 & show everything on a web dashboard & Interactive status map available & \wip\\
 \bottomrule
@@ -652,9 +652,9 @@ Only 4 large drops exist in the test set, so the shutdown result rests on few ca
 
 \textbf{Image activity of a period.} Images with hot pixels divided by usable images, pooled over the quarter or half-year (so a cloudy month does not void it), compared with the same share over the 12 months before. At least 3 usable images in the period and 12 in the reference are required; a site hot on fewer than 20\,\% of its images is not visible on images. Everything is point-in-time, as in the main test.
 
-\textbf{Shutdowns: images do not beat VIIRS.} With the shutdown rule applied to images alone, the error on the 100 hidden figures is 9.8\,\%; with the mean of the VIIRS and image ratios, 8.4\,\%; with VIIRS alone, 8.2\,\%. The images see the Hamburg 2024 shutdown (ratio 0.62) but less sharply than VIIRS (0.42), because the shutdown covers only part of the quarter and summer clouds left 10 usable images.
+\textbf{Shutdowns: images do not beat VIIRS.} With the shutdown rule applied to images alone, the error on the 100 hidden figures is 9.8\,\%; with the mean of the VIIRS and image ratios, 8.4\,\%; with VIIRS alone, 8.2\,\%. The images see the Hamburg 2024 shutdown (ratio 0.64) but less sharply than VIIRS (0.42), because the shutdown covers only part of the quarter and summer clouds left 10 usable images.
 
-\textbf{Finer changes: images carry information that VIIRS does not.} On the 98 figures where the plant was running, the image ratio follows the gap between published output and the naive forecast (rank correlation 0.37, $p<0.001$; 0.31--0.45 when any one company is left out; 0.34 within companies). The VIIRS hot-day ratio does not (0.05), VIIRS fire power a little (0.21). Figure~\ref{fig:fine} shows the pattern: a ratio below 0.8 comes with output 6\,\% below normal, above 1.2 with output 18\,\% above normal (restarts after a stop and ramp-ups: Hamburg end of 2024, Norilsk mid-2021, Chifeng 2020, China Daye 2025, Kutch 2026).
+\textbf{Finer changes: images carry information that VIIRS does not.} On the 89 figures where the plant was running and the image ratio exists, it follows the gap between published output and the naive forecast (rank correlation 0.34, $p=0.001$; 0.29--0.39 when any one company is left out; 0.26 within companies). The VIIRS hot-day ratio does not (0.05), VIIRS fire power a little (0.21). Figure~\ref{fig:fine} shows the pattern: a ratio below 0.8 comes with output 4\,\% below normal (median), above 1.2 with output 7\,\% above normal (restarts after a stop and ramp-ups: Hamburg end of 2024, Norilsk mid-2021, Chifeng 2020, China Daye 2025, Kutch 2026).
 
 \begin{figure}[H]
 \centering
@@ -663,7 +663,7 @@ Only 4 large drops exist in the test set, so the shutdown result rests on few ca
 \label{fig:fine}
 \end{figure}
 
-\textbf{Fine adjustment (\code{production.pit\_fine\_adjust}).} When the plant runs, the estimate becomes naive $\times\, r_{\text{img}}^{\beta}$ (limited to $\pm30\,\%$), with $\beta$ fitted only on earlier figures (pooled over companies; at least 15). $\beta$ stays between 0.37 and 0.57 over time.
+\textbf{Fine adjustment (\code{production.pit\_fine\_adjust}).} When the plant runs, the estimate becomes naive $\times\, r_{\text{img}}^{\beta}$ (limited to $\pm30\,\%$), with $\beta$ fitted only on earlier figures (pooled over companies; at least 15). A figure enters the fit only once it has been \emph{published} before the decision date, not merely once its period has ended. $\beta$ stays between 0.16 and 0.44 over time.
 
 \begin{table}[H]
 \centering\small
@@ -673,18 +673,19 @@ Only 4 large drops exist in the test set, so the shutdown result rests on few ca
 \midrule
 Naive (last published rate) & 11.3\,\% & 27.7\,\% & 3.2\,\%\\
 Shutdown rule, VIIRS (current default) & 8.2\,\% & 18.3\,\% & 3.2\,\%\\
-Shutdown rule + fine adjustment from images & 8.1\,\% & 15.2\,\% & 4.7\,\%\\
+Shutdown rule + fine adjustment from images & 8.3\,\% & 17.5\,\% & 3.8\,\%\\
 \bottomrule
 \end{tabularx}
-\caption{Mean absolute error. The difference between the last two rows over all figures is not significant ($-0.1$ point, 90\,\% interval $-0.9$ to $+0.7$).}
+\caption{Mean absolute error. The difference between the last two rows over all figures is not significant ($+0.1$ point, 90\,\% interval $-0.5$ to $+0.6$). An earlier version of this test reported 8.1\,\% and 15.2\,\%; it trained on figures not yet published at the decision date and used images not yet available (see the audit below).}
 \end{table}
 
 \textbf{What it means.}
 \begin{itemize}[leftmargin=1.2em]
-  \item The images measure finer changes than ``running or stopped'': large moves (more than 10\,\%) are estimated better (15.2\,\% error instead of 18.3\,\%), with gains at China Daye (18.1 to 10.8\,\%), Kutch, Ilo and Norilsk.
-  \item Small moves get worse (4.7\,\% instead of 3.2\,\%), mostly at KGHM (3.2 to 5.1\,\%), where the refinery smooths furnace changes and Legnica's box is only approximate. Overall the two are even.
-  \item Decision: the shutdown rule stays the default; the fine adjustment is available and is the better choice when the question is ``is there a large change?'', which is what matters for a trading signal. It should be re-tested once the 14 smelters are placed by hand and more published figures are added.
+  \item The images do measure something beyond ``running or stopped'' (the correlation above survives the audit), but turned into an estimate the gain on large moves is small (18.3 to 17.5\,\%; gains at Kutch 31.6 to 21.6\,\% and China Daye 18.1 to 14.1\,\%) and small moves get worse (3.2 to 3.8\,\%, mostly KGHM). Overall the two are even.
+  \item Decision: the shutdown rule stays the default. The fine adjustment stays available but is not used. It should be re-tested once the 14 smelters are placed by hand and more published figures are added.
 \end{itemize}
+
+\textbf{Point-in-time audit of the code (27 November 2026).} A fresh review of the whole code base looked for any place where a test could see information that did not exist at the decision date. Fixed: (1) the fine adjustment trained on figures whose period had ended but that were not yet published; (2) the image ratio used every image, including ones made available after the decision date; (3) a period counted as fully observed when only one of the two satellites covered it; (4) a published zero gave an infinite value in the fit; (5) the copper-per-\SOtwo{} calibration of \code{copper.site\_estimates} used all published pairs, including later ones (a point-in-time version \code{k\_pit} is now added); (6) smaller issues: the Sentinel-2 offset in the hot-pixel persistence used for site placement, duplicate Sentinel-2 tiles, cloud files read only in part, months still being completed not re-downloaded, \SOtwo{} pixels without an orbit number. The shutdown-rule result (8.2\,\% vs 11.3\,\%) and the activity index are unchanged; the image fine adjustment lost its gain (above). Each fix has a test.
 
 \subsection{World activity index and dated events}\label{sec:index}
 

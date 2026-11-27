@@ -110,7 +110,11 @@ def s2_hot_pixel_persistence(lat: float, lon: float, half_km: float, start: str,
         if n >= n_scenes:
             break
         with rasterio.open(BytesIO(optical.fetch_clip(site, optical.SENTINEL2, row.item_id, row.proj_code))) as src:
-            b8a, b11, b12, scl = src.read()
+            b8a, b11, b12, scl = src.read().astype(float)
+            # baseline 04.00+ (Jan 2022 on) adds 1000 to every reflectance band
+            from .hotspot import s2_offset
+            off = float(s2_offset(row.processing_baseline))
+            b8a, b11, b12 = b8a - off, b11 - off, b12 - off
             transform_, crs = src.transform, src.crs
         q = optical.quality_fractions(optical.SENTINEL2, scl)
         if q["aoi_cloud_frac"] > max_aoi_cloud or q["aoi_nodata_frac"] > 0.05:
