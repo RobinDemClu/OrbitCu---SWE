@@ -47,21 +47,21 @@ FONT_FAMILIES = {"saira-condensed": "Saira Condensed", "ibm-plex-sans": "IBM Ple
 # Published figures and surprise cases are kept per reporting entity; a few
 # entities cover several registry sites.
 ENTITY_SITE = {"PL-KGHM": "PL-GLOGOW"}
-ENTITY_NOTE = {"PL-GLOGOW": "Chiffres publiés KGHM : Glogow + Legnica (cuivre électrolytique). "
-                            "L'estimation affichée additionne les deux fonderies."}
+ENTITY_NOTE = {"PL-GLOGOW": "KGHM publishes Glogow + Legnica together (electrolytic copper); "
+                            "the estimate shown adds the two smelters."}
 # Sites whose SO2 plume is seen every year (see the SO2 section of the report).
 SO2_SITES = ["RU-NORILSK-CU", "IR-SARCHESHMEH", "CN-JINCHANG"]
-METRIC_FR = {
-    "cathode_cu": "cuivre cathode", "anode_cu": "cuivre anode", "concentrate": "concentré traité",
-    "cu_metal_ex_transbaikal": "cuivre métal (hors Transbaïkal)", "cu_sales": "ventes de cuivre",
-    "cathode_cu_group_proxy": "cathode du groupe (approximation)", "cu_country_proxy": "pays (approximation)",
+METRIC_LABEL = {
+    "cathode_cu": "cathode copper", "anode_cu": "anode copper", "concentrate": "concentrate smelted",
+    "cu_metal_ex_transbaikal": "copper metal (excl. Transbaikal)", "cu_sales": "copper sales",
+    "cathode_cu_group_proxy": "group cathode (proxy)", "cu_country_proxy": "country total (proxy)",
 }
 
 
 def _metric(x) -> str:
     if pd.isna(x.metric):  # KGHM monthly sheet: electrolytic (cathode) copper
-        return METRIC_FR["cathode_cu"] if x.site_id == "PL-KGHM" else "non précisé"
-    return METRIC_FR.get(x.metric, str(x.metric))
+        return METRIC_LABEL["cathode_cu"] if x.site_id == "PL-KGHM" else "not stated"
+    return METRIC_LABEL.get(x.metric, str(x.metric))
 
 
 def _r(x, nd=3):
@@ -101,6 +101,9 @@ def build_data(data_dir: Path, sites_csv: Path = SITES_CSV) -> dict:
 
     # weekly status: one shared week axis, per site a status string + ratio list
     ws = _read(ai / "weekly_status.csv")
+    if not ws.empty:  # the first year has no seasonal reference: start at the first week with a known running site
+        first = ws.loc[ws["status"] == "running", "week_end"].min()
+        ws = ws[ws["week_end"] >= first]
     weeks = sorted(ws["week_end"].unique()) if not ws.empty else []
     wpos = {w: i for i, w in enumerate(weeks)}
     code = {"running": "r", "stopped": "s", "unknown": "u"}
@@ -180,7 +183,10 @@ def build_data(data_dir: Path, sites_csv: Path = SITES_CSV) -> dict:
         })
 
     wi = _read(ai / "weekly_index.csv")
-    world = [{"w": x.week_end, "share": _r(x.running_share, 3), "cov": _r(x.coverage, 3)}
+    if not wi.empty and weeks:
+        wi = wi[wi["week_end"].isin(set(weeks))]
+    world = [{"w": x.week_end, "share": _r(x.running_share, 3), "cov": _r(x.coverage, 3),
+              "run": _r(x.running_kt, 0), "known": _r(x.known_kt, 0), "total": _r(x.total_kt, 0)}
              for x in wi.itertuples(index=False)] if not wi.empty else []
     cn = _read(ai / "china_index_vs_nbs.csv")
     china = [{"m": x.month, "sat": _r(x.sat_running_share, 1), "nbs": _r(x.nbs_dev_pct, 1)}
@@ -192,8 +198,114 @@ def build_data(data_dir: Path, sites_csv: Path = SITES_CSV) -> dict:
                      "lead": None if not hit.any() else int(fl.loc[hit, "lead_days"].median())}
     else:
         sur_score = None
+    _add_profile(out, data_dir)
     return {"generated": datetime.now(timezone.utc).strftime("%Y-%m-%d"), "weeks": weeks,
-            "sites": out, "world": world, "china": china, "surprise_score": sur_score}
+            "sites": out, "world": world, "china": china, "surprise_score": sur_score,
+            "production": _production_totals(prod, sites), "markets": _markets(data_dir)}
+
+
+# Listed companies linked to each smelter (operator or main shareholder), Yahoo tickers.
+SITE_TICKERS = {
+    "CN-GUIXI": ["600362.SS"], "KR-ONSAN": ["006260.KS"], "CD-KAMOA": ["IVN.TO", "2899.HK"],
+    "IN-KUTCH": ["ADANIENT.NS"], "IN-DAHEJ": ["HINDALCO.NS"], "CN-JINGUAN": ["000630.SZ"],
+    "PL-GLOGOW": ["KGH.WA"], "DE-HAMBURG": ["NDA.DE"], "BG-PIRDOP": ["NDA.DE"], "JP-TOYO": ["5713.T"],
+    "JP-SAGANOSEKI": ["5016.T"], "CN-CHIFENG-YJ": ["000878.SZ"], "CN-SOUTHEAST": ["000878.SZ"],
+    "PE-ILO": ["SCCO"], "CN-HEDING": ["600362.SS"], "CN-JINLONG": ["000630.SZ"], "ID-GRESIK": ["FCX", "5711.T"],
+    "CN-DAYE": ["0661.HK"], "CN-CHIFENG-JT": ["000630.SZ"], "JP-ONAHAMA": ["5711.T"], "ID-MANYAR": ["FCX"],
+}
+TICKER_NAMES = {
+    "600362.SS": "Jiangxi Copper", "006260.KS": "LS Corp", "IVN.TO": "Ivanhoe Mines", "2899.HK": "Zijin Mining",
+    "ADANIENT.NS": "Adani Enterprises", "HINDALCO.NS": "Hindalco", "000630.SZ": "Tongling Nonferrous",
+    "KGH.WA": "KGHM", "NDA.DE": "Aurubis", "5713.T": "Sumitomo Metal Mining", "5016.T": "JX Advanced Metals",
+    "000878.SZ": "Yunnan Copper", "SCCO": "Southern Copper", "FCX": "Freeport-McMoRan", "5711.T": "Mitsubishi Materials",
+    "0661.HK": "China Daye Non-Ferrous", "GLEN.L": "Glencore",
+}
+TICKER_CCY = {"600362.SS": "CNY", "006260.KS": "KRW", "IVN.TO": "CAD", "2899.HK": "HKD", "ADANIENT.NS": "INR",
+              "HINDALCO.NS": "INR", "000630.SZ": "CNY", "KGH.WA": "PLN", "NDA.DE": "EUR", "5713.T": "JPY",
+              "5016.T": "JPY", "000878.SZ": "CNY", "SCCO": "USD", "FCX": "USD", "5711.T": "JPY", "0661.HK": "HKD",
+              "GLEN.L": "GBp"}
+FABRICATORS = {"Prysmian": "Prysmian (cables)", "Nexans": "Nexans (cables)", "Mueller": "Mueller Industries (tubes)",
+               "Furukawa": "Furukawa Electric", "SumitomoElec": "Sumitomo Electric", "Fujikura": "Fujikura",
+               "Hailiang": "Hailiang (tubes)"}
+
+
+def _thumb(path: Path) -> str | None:
+    return "data:image/jpeg;base64," + base64.b64encode(path.read_bytes()).decode("ascii") if path.exists() else None
+
+
+def _add_profile(out: list[dict], data_dir: Path) -> None:
+    """Identity-card facts: operator evidence from the registry, linked tickers,
+    satellite thumbnails, yearly output estimates, latest SO2."""
+    reg = _read(REGISTRY_DIR / "smelter_registry.csv")
+    reg = {r["id"]: r for r in reg.to_dict("records")} if not reg.empty else {}
+    sites = _read(SITES_CSV)
+    geo = {r["id"]: r for r in sites.to_dict("records")} if not sites.empty else {}
+    th_dir = REGISTRY_DIR / "thumbnails"
+    th = _read(th_dir / "thumbnails.csv")
+    th = {r["site_id"]: r for r in th.to_dict("records")} if not th.empty else {}
+    yr = _read(data_dir / "production" / "estimates_by_site_year.csv")
+    yr = {r["site_id"]: r for r in yr.to_dict("records")} if not yr.empty else {}
+    total_cap = sum(x["capacity_kt"] or 0 for x in out)
+
+    def clean(v):
+        return None if v is None or (isinstance(v, float) and np.isnan(v)) else v
+
+    for x in out:
+        r, g = reg.get(x["id"], {}), geo.get(x["id"], {})
+        x["profile"] = {
+            "rank": int(g["rank"]) if g.get("rank") is not None and not pd.isna(g.get("rank")) else None,
+            "reg_share": None if not x["capacity_kt"] else round(x["capacity_kt"] / total_cap * 100, 1),
+            "capacity_basis": clean(r.get("capacity_basis")), "capacity_source": clean(r.get("capacity_source")),
+            "evidence": clean(r.get("operator_activity_evidence")), "evidence_source": clean(r.get("operator_activity_source")),
+            "evidence_date": clean(r.get("operator_activity_date")),
+            "capacity_evidence": clean(r.get("operator_capacity_evidence")),
+            "geo_method": clean(g.get("geoloc_method")), "geo_note": clean(g.get("geoloc_note")),
+            "tickers": [{"t": t, "name": TICKER_NAMES.get(t, t), "ccy": TICKER_CCY.get(t)} for t in SITE_TICKERS.get(x["id"], [])],
+        }
+        t = th.get(x["id"])
+        x["thumb"] = None if t is None else {"rgb": _thumb(th_dir / f"{x['id']}_rgb.jpg"), "swir": _thumb(th_dir / f"{x['id']}_swir.jpg"),
+                                             "date": t["acquired"], "hot": bool(t["hot_seen"]), "half_km": float(t["half_km"])}
+        y = yr.get(x["id"])
+        x["est_year"] = None if y is None else {k: _r(v, 0) for k, v in y.items() if k[:4].isdigit()}
+        x["so2_last"] = x["so2"][-1] if x["so2"] else None
+
+
+def _production_totals(prod: Path, sites: pd.DataFrame) -> dict:
+    est = _read(prod / "estimates_quarterly.csv")
+    if est.empty:
+        return {}
+    q = est.groupby(["quarter", "country"])["est_kt"].sum().unstack(fill_value=0).sort_index()
+    order = q.sum().sort_values(ascending=False).index.tolist()
+    return {"quarters": q.index.tolist(), "countries": order,
+            "values": {c: [round(float(v), 0) for v in q[c]] for c in order}}
+
+
+def _markets(data_dir: Path) -> dict:
+    t = data_dir / "trading"
+    out = {}
+    hg, lme = _read(t / "comex_hg_weekly.csv"), _read(t / "lme_cu_3m_weekly.csv")
+    if not hg.empty and not lme.empty:
+        m = hg.merge(lme, on="week_monday", how="outer").sort_values("week_monday")
+        sp = _read(t / "lme_cu_spread_stocks_weekly.csv")
+        if not sp.empty:
+            m = m.merge(sp, on="week_monday", how="left")
+        az = _read(t / "lme_al_zn_3m_weekly.csv")
+        if not az.empty:
+            m = m.merge(az, on="week_monday", how="left")
+        out["weekly"] = {"w": m["week_monday"].tolist(),
+                         **{c: [_r(v, 4) for v in m[c]] for c in m.columns if c != "week_monday"}}
+    sh = _read(t / "operator_shares_monthly.csv")
+    if not sh.empty:
+        out["shares"] = {"w": sh["week_monday"].tolist(),
+                         "series": [{"t": c, "name": TICKER_NAMES.get(c, c), "ccy": TICKER_CCY.get(c),
+                                     "sites": [k for k, v in SITE_TICKERS.items() if c in v],
+                                     "v": [_r(v, 5) for v in sh[c]]} for c in sh.columns if c != "week_monday"]}
+    fb = _read(t / "fabricators_weekly_log.csv")
+    if not fb.empty:
+        out["fabricators"] = {"w": fb["week_monday"].tolist(),
+                              "series": [{"t": k, "name": n, "v": [_r(100 * np.exp(v), 2) for v in fb[f"{k}_stock"]]}
+                                         for k, n in FABRICATORS.items() if f"{k}_stock" in fb]}
+    return out
 
 
 def render(data: dict, out: Path, template: Path = TEMPLATES / "site_map.html") -> Path:

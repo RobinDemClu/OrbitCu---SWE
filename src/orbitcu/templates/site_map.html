@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,13 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Monochrome HUD: off-white field, black ink, grey plates, cut corners, corner brackets,
-   hatching for "stopped" so status reads without colour. Condensed uppercase titles, mono data. */
+/* HUD chrome in black and white (cut corners, corner brackets, condensed caps);
+   data in colour: green running, red stopped, grey unknown, copper estimate, blue published. */
 :root {
-  --bg: #efefec; --panel: #fafaf8; --ink: #111111; --muted: #5d5d5a; --rule: #c8c8c4; --plate: #e1e1dd;
-  --ocean: #e6e6e2; --land: #fafaf8; --border: #8f8f8b; --grid: #e2e2de;
-  --copper: #111111; --est: #a2a29e; --rep: #111111;
-  --active: #111111; --off: #111111; --weak: #b4b4b0; --reduced: #6d6d69;
+  --bg: #eeeeeb; --panel: #fbfbf9; --ink: #121212; --muted: #5f5f5b; --rule: #cfcfca; --plate: #e6e6e1;
+  --ocean: #e3e6e8; --land: #fbfbf9; --border: #9a9c9e; --grid: #e4e4df;
+  --run: #1f8a5b; --stop: #d0342c; --unk: #a3aab0; --est: #b5602b; --rep: #2f6db3; --accent: #121212;
+  --c1: #257de0; --c2: #f47230; --c3: #00b894; --c4: #f2a600; --c5: #ee7fac; --c6: #008a17; --c7: #6a4ce2; --c8: #ec4647; --cother: #9a9c9e;
   --cut: 14px;
   --font-display: "Saira Condensed", "Arial Narrow", sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
@@ -22,223 +22,349 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0c0c0c; --panel: #131313; --ink: #ececea; --muted: #9a9a96; --rule: #2e2e2c; --plate: #1d1d1c;
-    --ocean: #101010; --land: #1a1a19; --border: #5a5a57; --grid: #232322;
-    --copper: #ececea; --est: #6a6a67; --rep: #ececea; --active: #ececea; --off: #ececea; --weak: #4a4a48; --reduced: #9a9a96;
+    --bg: #0c0c0c; --panel: #141414; --ink: #ececea; --muted: #9b9b97; --rule: #2f2f2d; --plate: #1f1f1e;
+    --ocean: #0f1214; --land: #1c1d1e; --border: #55585a; --grid: #242423;
+    --run: #3cc48a; --stop: #f0645c; --unk: #5d646a; --est: #d27a40; --rep: #5b98da; --accent: #ececea;
+    --c1: #338ced; --c2: #e76624; --c3: #00a888; --c4: #d28e05; --c5: #e24d8b; --c6: #0aac23; --c7: #9887ef; --c8: #eb6263; --cother: #6d7073;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0c0c0c; --panel: #131313; --ink: #ececea; --muted: #9a9a96; --rule: #2e2e2c; --plate: #1d1d1c;
-  --ocean: #101010; --land: #1a1a19; --border: #5a5a57; --grid: #232322;
-  --copper: #ececea; --est: #6a6a67; --rep: #ececea; --active: #ececea; --off: #ececea; --weak: #4a4a48; --reduced: #9a9a96;
+  --bg: #0c0c0c; --panel: #141414; --ink: #ececea; --muted: #9b9b97; --rule: #2f2f2d; --plate: #1f1f1e;
+  --ocean: #0f1214; --land: #1c1d1e; --border: #55585a; --grid: #242423;
+  --run: #3cc48a; --stop: #f0645c; --unk: #5d646a; --est: #d27a40; --rep: #5b98da; --accent: #ececea;
+  --c1: #338ced; --c2: #e76624; --c3: #00a888; --c4: #d28e05; --c5: #e24d8b; --c6: #0aac23; --c7: #9887ef; --c8: #eb6263; --cother: #6d7073;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+html { scroll-padding-top: 70px; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14.5px; line-height: 1.45;
-  padding: 20px max(16px, env(safe-area-inset-right, 0px)) 28px max(16px, env(safe-area-inset-left, 0px));
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 48px 48px; }
-.wrap { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-
-/* frames: cut top-right and bottom-left corners, black corner brackets */
-.frame { position: relative; background: var(--panel); border: 1px solid var(--rule);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 48px 48px; }
+.wrap { max-width: 1440px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 28px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.frame { position: relative; background: var(--panel); border: 1px solid var(--rule); min-width: 0;
   clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
-  background-image:
-    linear-gradient(var(--ink), var(--ink)), linear-gradient(var(--ink), var(--ink)),
-    linear-gradient(var(--ink), var(--ink)), linear-gradient(var(--ink), var(--ink)),
+  background-image: linear-gradient(var(--ink), var(--ink)), linear-gradient(var(--ink), var(--ink)), linear-gradient(var(--ink), var(--ink)), linear-gradient(var(--ink), var(--ink)),
     linear-gradient(to bottom left, transparent calc(50% - 0.8px), var(--ink) calc(50% - 0.8px), var(--ink) calc(50% + 0.8px), transparent calc(50% + 0.8px)),
     linear-gradient(to top right, transparent calc(50% - 0.8px), var(--ink) calc(50% - 0.8px), var(--ink) calc(50% + 0.8px), transparent calc(50% + 0.8px));
   background-size: 18px 2px, 2px 18px, 18px 2px, 2px 18px, var(--cut) var(--cut), var(--cut) var(--cut);
-  background-position: 0 0, 0 0, 100% 100%, 100% 100%, 100% 0, 0 100%;
-  background-repeat: no-repeat; }
-.hatch-band { height: 8px; background: repeating-linear-gradient(-45deg, var(--ink) 0 2px, transparent 2px 7px); opacity: 0.85; }
+  background-position: 0 0, 0 0, 100% 100%, 100% 100%, 100% 0, 0 100%; background-repeat: no-repeat; }
+.pad { padding: 16px 18px; }
+.code { font-family: var(--font-data); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.lbl { font-family: var(--font-display); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.13em; color: var(--muted); }
+.sec-title { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 4px; }
+.sec-title .n { font-family: var(--font-data); font-weight: 500; font-size: 0.68rem; padding: 1px 6px; background: var(--ink); color: var(--panel); letter-spacing: 0.06em; }
+.sec-title::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.hint { color: var(--muted); font-size: 0.8rem; margin: 0 0 10px; max-width: 95ch; }
+.empty { color: var(--muted); font-size: 0.85rem; font-style: italic; }
 
-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 16px 32px; align-items: end; }
-@media (max-width: 900px) { header { grid-template-columns: minmax(0, 1fr); } }
-.brand { display: flex; flex-direction: column; gap: 6px; }
-.code { font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 4.2vw, 3.2rem); line-height: 0.95; letter-spacing: 0.04em; text-transform: uppercase; margin: 0; }
-h1 span { font-weight: 400; color: var(--muted); }
-.sub { color: var(--muted); margin: 2px 0 0; max-width: 72ch; }
-.tallies { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 8px; }
-@media (max-width: 640px) { .tallies { grid-template-columns: 1fr 1fr; } }
-.tally { padding: 10px 14px 10px; --cut: 10px; }
-.tally .k { font-family: var(--font-display); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); display: flex; align-items: center; gap: 7px; }
-.tally .v { font-family: var(--font-data); font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums; }
-.tally .v small { display: block; font-size: 0.7rem; color: var(--muted); font-weight: 400; white-space: nowrap; }
+/* top bar with tabs */
+.top { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--ink); }
+.topin { max-width: 1440px; margin: 0 auto; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: flex-end; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 8px; }
+.brand h1 span { font-weight: 400; color: var(--muted); }
+nav.tabs { display: flex; gap: 2px; flex-wrap: wrap; flex: 1; }
+nav.tabs button { font-family: var(--font-display); font-weight: 600; font-size: 0.92rem; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; color: var(--muted);
+  border: 1px solid transparent; border-bottom: 0; padding: 8px 14px 7px; cursor: pointer; clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%); }
+nav.tabs button:hover { color: var(--ink); background: var(--plate); }
+nav.tabs button[aria-selected="true"] { background: var(--ink); color: var(--panel); }
+nav.tabs .badge { font-family: var(--font-data); font-size: 0.68rem; margin-left: 6px; padding: 0 5px; background: var(--stop); color: #fff; letter-spacing: 0; }
+.share { margin-bottom: 6px; }
 
-.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; border: 1.5px solid var(--ink); }
-.s-r { background: var(--ink); }
-.s-s { background: repeating-linear-gradient(-45deg, var(--ink) 0 1.5px, var(--panel) 1.5px 3.5px); }
-.s-u { background: var(--weak); border-color: var(--weak); }
-
-.controls { padding: 12px 18px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
-.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; flex: 1 1 420px; }
-.lbl { font-family: var(--font-display); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
-#week { flex: 1; min-width: 120px; -webkit-appearance: none; appearance: none; background: transparent; height: 22px; }
-#week::-webkit-slider-runnable-track { height: 2px; background: var(--ink); }
-#week::-moz-range-track { height: 2px; background: var(--ink); }
-#week::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 22px; margin-top: -10px; background: var(--ink); border: 3px solid var(--panel); outline: 1px solid var(--ink); cursor: pointer; }
-#week::-moz-range-thumb { width: 10px; height: 20px; background: var(--ink); border: 3px solid var(--panel); border-radius: 0; cursor: pointer; }
-#weekLabel { font-family: var(--font-data); font-variant-numeric: tabular-nums; min-width: 12ch; font-weight: 500; font-size: 1rem; }
-.btn { font-family: var(--font-display); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; color: var(--ink);
-  border: 1px solid var(--ink); padding: 6px 16px; cursor: pointer; clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
+.btn { font-family: var(--font-display); font-weight: 600; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--ink); padding: 5px 12px; cursor: pointer; clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px)); white-space: nowrap; }
 .btn:hover, .btn[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
-button:focus-visible, input:focus-visible, .row:focus-visible, .site:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.btn.small { font-size: 0.74rem; padding: 3px 9px; }
+button:focus-visible, input:focus-visible, select:focus-visible, .row:focus-visible, .site:focus-visible, tr[data-site]:focus-visible { outline: 2px solid var(--rep); outline-offset: 2px; }
+select, input[type="search"] { font: inherit; font-size: 0.86rem; background: var(--panel); color: var(--ink); border: 1px solid var(--border); padding: 5px 8px; min-width: 0; }
+input[type="search"] { min-width: 180px; }
 
-.main { display: grid; grid-template-columns: minmax(0, 1fr) 470px; gap: 14px; align-items: start; }
-@media (max-width: 1080px) { .main { grid-template-columns: minmax(0, 1fr); } }
-.left { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.mapbox { background: var(--ocean); position: relative; overflow: hidden; }
+.weekbar { padding: 10px 18px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+#week { flex: 1 1 260px; min-width: 160px; accent-color: var(--ink); }
+#weekLabel { font-family: var(--font-data); font-variant-numeric: tabular-nums; min-width: 12ch; font-weight: 500; }
+
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } }
+.kpi { padding: 10px 14px; --cut: 10px; }
+.kpi .k { display: flex; align-items: center; gap: 7px; }
+.kpi .v { font-family: var(--font-data); font-size: 1.4rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.kpi .s { font-family: var(--font-data); font-size: 0.72rem; color: var(--muted); }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
+.d-r { background: var(--run); } .d-s { background: var(--stop); } .d-u { background: var(--unk); }
+
+.filters { padding: 10px 18px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.filters .grp { display: flex; align-items: center; gap: 6px; }
+
+.ov { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 14px; align-items: start; }
+@media (max-width: 1080px) { .ov { grid-template-columns: minmax(0, 1fr); } }
+.mapbox { position: relative; overflow: hidden; }
 .mapbox.frame { background-color: var(--ocean); }
-#map { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9.4; cursor: grab; touch-action: none; }
+#map { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9.2; cursor: grab; touch-action: none; }
 .land { fill: var(--land); } .borders { fill: none; stroke: var(--border); stroke-width: 0.5; vector-effect: non-scaling-stroke; }
-.coast { fill: none; stroke: var(--ink); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
-.graticule { fill: none; stroke: var(--border); stroke-opacity: 0.45; stroke-width: 0.5; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
-.site { cursor: pointer; stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.site.u { stroke: var(--panel); }
-.site.low { stroke-dasharray: 2 2; }
-.reticle { fill: none; stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
+.coast { fill: none; stroke: var(--muted); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.graticule { fill: none; stroke: var(--border); stroke-opacity: 0.4; stroke-width: 0.5; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.site { cursor: pointer; stroke: var(--panel); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.site.low { stroke: var(--ink); stroke-dasharray: 2 2; }
+.site.dim { opacity: 0.15; pointer-events: none; }
+.reticle { fill: none; stroke: var(--ink); stroke-width: 1.6; vector-effect: non-scaling-stroke; pointer-events: none; }
 .oldpos { fill: none; stroke: var(--muted); vector-effect: non-scaling-stroke; stroke-width: 1.5; }
 .moveline { stroke: var(--muted); stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; stroke-width: 1; }
-.maptag { position: absolute; left: 14px; top: 12px; font-family: var(--font-data); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); pointer-events: none; }
+.maptag { position: absolute; left: 14px; top: 12px; pointer-events: none; }
 .zoombar { position: absolute; right: 14px; top: 14px; display: flex; flex-direction: column; gap: 4px; }
 .zoombar button { width: 32px; height: 32px; font-family: var(--font-data); font-size: 1rem; background: var(--panel); color: var(--ink); border: 1px solid var(--ink); cursor: pointer; }
-.zoombar button:hover { background: var(--ink); color: var(--panel); }
-.legend { position: absolute; left: 14px; bottom: 14px; background: var(--panel); border: 1px solid var(--ink); padding: 8px 12px; font-size: 0.78rem; display: grid; gap: 4px; }
+.legend { position: absolute; left: 14px; bottom: 14px; background: var(--panel); border: 1px solid var(--ink); padding: 8px 12px; font-size: 0.78rem; display: grid; gap: 3px; }
 .legend div { display: flex; align-items: center; gap: 8px; }
 .legend .ring { width: 11px; height: 11px; border-radius: 50%; border: 1.5px dashed var(--ink); display: inline-block; }
 .legend .hollow { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--muted); display: inline-block; }
 @media (max-width: 640px) { .legend { position: static; border: 0; border-top: 1px solid var(--rule); grid-template-columns: 1fr 1fr; } .maptag { display: none; } }
 
-#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--panel); padding: 7px 10px; font-size: 0.78rem; max-width: 300px; font-family: var(--font-body);
-  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%); }
-#tip b { font-weight: 600; }
-
-.sec-title { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 4px; }
-.sec-title .n { font-family: var(--font-data); font-weight: 500; font-size: 0.7rem; padding: 1px 6px; background: var(--ink); color: var(--panel); letter-spacing: 0.06em; }
-.sec-title::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
-.listhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px 8px; }
-.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); border-top: 1px solid var(--ink); }
-.row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 3px 10px; align-items: center; padding: 8px 18px; border-bottom: 1px solid var(--rule); cursor: pointer; }
+.reg { display: flex; flex-direction: column; max-height: 640px; }
+.reg .head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 8px; gap: 8px; }
+.list { overflow-y: auto; border-top: 1px solid var(--ink); }
+.row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; padding: 7px 16px; border-bottom: 1px solid var(--rule); cursor: pointer; }
 .row:hover { background: var(--plate); }
-.row.sel { background: var(--plate); box-shadow: inset 4px 0 0 var(--ink); }
 .row .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; letter-spacing: 0.04em; text-transform: uppercase; }
-.row .nm span { font-family: var(--font-body); font-weight: 400; font-size: 0.8rem; letter-spacing: 0; text-transform: none; color: var(--muted); }
-.row .cap { font-family: var(--font-data); font-size: 0.76rem; color: var(--muted); text-align: right; }
-.row svg { grid-column: 2 / 4; width: 100%; height: 9px; display: block; }
+.row .nm span { font-family: var(--font-body); font-weight: 400; font-size: 0.78rem; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.row .cap { font-family: var(--font-data); font-size: 0.74rem; color: var(--muted); text-align: right; }
+.row svg { grid-column: 2 / 4; width: 100%; height: 8px; display: block; }
 
-aside.frame { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
-@media (max-width: 1080px) { aside.frame { position: static; max-height: none; } }
-.detail { padding: 16px 18px 12px; }
-.detail .code { display: block; margin-bottom: 2px; }
-.detail h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 4px; }
-.meta { color: var(--muted); font-size: 0.84rem; }
-dl.kv { display: grid; grid-template-columns: auto 1fr; gap: 0; margin: 12px 0 0; font-size: 0.84rem; border-top: 1px solid var(--ink); }
-dl.kv dt, dl.kv dd { padding: 5px 0; border-bottom: 1px solid var(--rule); }
-dl.kv dt { color: var(--muted); font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.74rem; padding-right: 14px; display: flex; align-items: center; }
-dl.kv dd { margin: 0; font-family: var(--font-data); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
-.pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.76rem; padding: 1px 8px; border: 1px solid var(--ink); }
-section.blk { padding: 14px 18px; }
-section.blk + section.blk, .detail + section.blk { border-top: 1px solid var(--ink); }
-.hint { color: var(--muted); font-size: 0.78rem; margin: 0 0 8px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 960px) { .two { grid-template-columns: 1fr; } }
 .chart svg { width: 100%; display: block; overflow: visible; }
-.chart .ax { font-family: var(--font-data); font-size: 9.5px; fill: var(--muted); }
-.keys { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.76rem; color: var(--muted); margin-top: 6px; }
-.keys span { display: inline-flex; align-items: center; gap: 5px; }
-.sw { width: 12px; height: 8px; display: inline-block; }
-.swl { width: 14px; height: 0; border-top: 2px solid; display: inline-block; }
-.tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid var(--ink); display: inline-block; }
-.tri.o { border-bottom-color: transparent; position: relative; }
-.tri.o::after { content: ""; position: absolute; left: -5px; top: 0; width: 10px; height: 9px; background: linear-gradient(to top right, transparent 46%, var(--ink) 46% 56%, transparent 56%), linear-gradient(to top left, transparent 46%, var(--ink) 46% 56%, transparent 56%), linear-gradient(var(--ink), var(--ink)) bottom / 100% 1.5px no-repeat; }
-table.t { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px; }
-table.t th { text-align: left; font-family: var(--font-display); font-weight: 600; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px; border-bottom: 1px solid var(--ink); }
-table.t td { padding: 4px; border-bottom: 1px solid var(--rule); font-family: var(--font-data); font-size: 0.74rem; font-variant-numeric: tabular-nums; }
-table.t tr.cur td { background: var(--plate); font-weight: 500; }
-.ok { font-weight: 600; } .bad { text-decoration: line-through; color: var(--muted); }
-.empty { color: var(--muted); font-size: 0.82rem; font-style: italic; }
-details.more summary { cursor: pointer; color: var(--muted); font-family: var(--font-display); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.72rem; margin-top: 6px; }
+.chart .ax { font-family: var(--font-data); font-size: 10px; fill: var(--muted); }
+.chart { position: relative; }
+.keys { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+.keys span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 9px; display: inline-block; border-radius: 2px; }
+.swl { width: 16px; height: 0; border-top: 2.5px solid; display: inline-block; }
+.swd { width: 16px; height: 0; border-top: 2px dashed; display: inline-block; }
 
-.world { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media (max-width: 900px) { .world { grid-template-columns: 1fr; } }
-.world .frame { padding: 16px 18px; }
-footer { color: var(--muted); font-size: 0.8rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px 24px; padding: 16px 18px; }
+/* site tab */
+.sitebar { padding: 10px 18px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.sitebar select { font-family: var(--font-display); font-weight: 600; font-size: 1rem; letter-spacing: 0.05em; text-transform: uppercase; min-width: 260px; }
+.idcard { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 0; }
+@media (max-width: 860px) { .idcard { grid-template-columns: minmax(0, 1fr); } }
+.thumb { padding: 16px; border-right: 1px solid var(--rule); display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 860px) { .thumb { border-right: 0; border-bottom: 1px solid var(--rule); } }
+.thumb .img { position: relative; aspect-ratio: 1; background: var(--plate); border: 1px solid var(--ink); overflow: hidden; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .cross { position: absolute; inset: 0; pointer-events: none; }
+.thumb .scale { position: absolute; left: 8px; bottom: 8px; background: rgb(0 0 0 / 0.6); color: #fff; font-family: var(--font-data); font-size: 0.68rem; padding: 2px 6px; }
+.thumb .seg { display: flex; gap: 4px; }
+.facts { padding: 16px 18px; min-width: 0; }
+.facts h2 { font-family: var(--font-display); font-weight: 700; font-size: 2rem; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; margin: 2px 0 4px; }
+.facts .meta { color: var(--muted); font-size: 0.86rem; margin-bottom: 10px; }
+.statusline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 12px; margin: 0 0 12px; border: 1px solid var(--ink); }
+.statusline .big { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.statusline .big .dot { width: 14px; height: 14px; }
+dl.kv { display: grid; grid-template-columns: minmax(130px, auto) 1fr; gap: 0; margin: 0; font-size: 0.85rem; border-top: 1px solid var(--ink); }
+dl.kv dt, dl.kv dd { padding: 5px 0; border-bottom: 1px solid var(--rule); }
+dl.kv dt { color: var(--muted); font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.74rem; padding-right: 14px; }
+dl.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+dl.kv dd .m { font-family: var(--font-data); font-size: 0.8rem; }
+dl.kv a { color: var(--rep); }
+.subtabs { display: flex; gap: 2px; padding: 0 18px; border-bottom: 1px solid var(--ink); flex-wrap: wrap; }
+.subtabs button { font-family: var(--font-display); font-weight: 600; font-size: 0.86rem; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; color: var(--muted); border: 0; padding: 9px 14px 7px; cursor: pointer; border-bottom: 3px solid transparent; }
+.subtabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.subpane { padding: 16px 18px; }
+table.t { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
+table.t th { text-align: left; font-family: var(--font-display); font-weight: 600; color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.09em; padding: 5px 6px; border-bottom: 1px solid var(--ink); white-space: nowrap; }
+table.t td { padding: 5px 6px; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; vertical-align: top; }
+table.t td.m { font-family: var(--font-data); font-size: 0.78rem; white-space: nowrap; }
+table.t td.num, table.t th.num { text-align: right; }
+table.t tr.cur td { background: var(--plate); }
+tr[data-site] { cursor: pointer; } tr[data-site]:hover td { background: var(--plate); }
+.tag { display: inline-block; font-family: var(--font-display); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0 6px; border: 1px solid; white-space: nowrap; }
+.t-stop { color: var(--stop); } .t-restart, .t-start-up { color: var(--run); } .t-fast { color: var(--est); } .t-surprise { color: var(--rep); }
+.ok { color: var(--run); font-weight: 600; } .bad { color: var(--stop); }
+.scroll { overflow-x: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; padding: 3px 9px; border: 1px solid var(--border); background: var(--panel); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--plate); font-weight: 600; }
+.chip .sw { border-radius: 50%; width: 9px; height: 9px; }
+.cmp-pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--panel); padding: 7px 10px; font-size: 0.78rem; max-width: 320px; clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%); }
+#tip .r { display: flex; align-items: center; gap: 6px; } #tip .sw { width: 9px; height: 9px; border-radius: 50%; }
+#toast { position: fixed; z-index: 30; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 8px 14px; font-size: 0.85rem; }
+footer { color: var(--muted); font-size: 0.8rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px 24px; }
 footer p { margin: 0; }
 footer strong { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); display: block; font-size: 0.78rem; }
-.svgdefs { position: absolute; width: 0; height: 0; }
-.hatch-line { stroke: var(--ink); }
-.hatch-soft { stroke: var(--border); }
+[hidden] { display: none !important; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <svg class="svgdefs" aria-hidden="true" focusable="false"><defs>
-    <pattern id="hatch" patternUnits="userSpaceOnUse" width="3.5" height="3.5" patternTransform="rotate(45)"><rect width="3.5" height="3.5" fill="var(--panel)"></rect><line class="hatch-line" x1="0" y1="0" x2="0" y2="3.5" stroke-width="2.2"></line></pattern>
-    <pattern id="hatchSoft" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line class="hatch-soft" x1="0" y1="0" x2="0" y2="5" stroke-width="1.2"></line></pattern>
-  </defs></svg>
-  <header>
-    <div class="brand">
-      <span class="code">OrbitCu · surveillance satellite des fonderies de cuivre · réf. SW-29</span>
-      <h1>Smelter <span>//</span> Watch</h1>
-      <p class="sub">Les 29 plus grandes fonderies de cuivre primaire du registre (environ 47 % de la capacité mondiale), suivies depuis l'espace : chaleur nocturne VIIRS, images Sentinel-2 et Landsat, SO2 de Sentinel-5P. Choisissez une semaine, puis une usine.</p>
-    </div>
-    <div class="tallies" id="tallies" aria-live="polite"></div>
-  </header>
-  <div class="hatch-band" aria-hidden="true"></div>
+<div class="top">
+  <div class="topin">
+    <div class="brand"><div class="code">OrbitCu · satellite watch of copper smelters</div><h1>Smelter <span>//</span> Watch</h1></div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-tab="site" aria-selected="false">Site</button>
+      <button role="tab" data-tab="production" aria-selected="false">Production</button>
+      <button role="tab" data-tab="alerts" aria-selected="false">Alerts<span class="badge" id="alertBadge" hidden></span></button>
+      <button role="tab" data-tab="markets" aria-selected="false">Markets</button>
+      <button role="tab" data-tab="compare" aria-selected="false">Compare</button>
+    </nav>
+    <button class="btn share" id="copyLink" type="button" title="Copy a link to this exact view">Copy link</button>
+  </div>
+</div>
 
-  <div class="controls frame">
-    <div class="ctl">
-      <label class="lbl" for="week">Semaine</label>
-      <input type="range" id="week" min="0" max="0" step="1" value="0">
-      <span id="weekLabel"></span>
-      <button class="btn" id="play" type="button" aria-pressed="false">Lecture</button>
-      <button class="btn" id="last" type="button">Dernière</button>
-    </div>
+<div class="wrap">
+  <div class="weekbar frame" id="weekbar">
+    <label class="lbl" for="week">Week ending</label>
+    <input type="range" id="week" min="0" max="0" step="1" value="0">
+    <span id="weekLabel"></span>
+    <button class="btn" id="play" type="button" aria-pressed="false">Play</button>
+    <button class="btn" id="last" type="button">Latest</button>
   </div>
 
-  <div class="main">
-    <div class="left">
-      <div class="mapbox frame">
-        <div class="maptag" id="maptag"></div>
-        <svg id="map" role="img" aria-label="Carte du monde des fonderies de cuivre et de leur statut d'activité"></svg>
-        <div class="zoombar">
-          <button type="button" id="zin" aria-label="Zoomer">+</button>
-          <button type="button" id="zout" aria-label="Dézoomer">−</button>
-          <button type="button" id="zreset" aria-label="Vue mondiale">⟲</button>
+  <!-- OVERVIEW -->
+  <section id="tab-overview" role="tabpanel">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="kpis" id="kpis"></div>
+      <div class="filters frame" id="filters">
+        <span class="lbl">Filters</span>
+        <input type="search" id="fq" placeholder="Search smelter or operator" aria-label="Search smelter or operator">
+        <select id="fcountry" aria-label="Country"></select>
+        <select id="foperator" aria-label="Operator"></select>
+        <select id="fstatus" aria-label="Status"><option value="">Any status</option><option value="r">Running</option><option value="s">Stopped</option><option value="u">Unknown</option></select>
+        <select id="fconf" aria-label="Position confidence"><option value="">Any position confidence</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+        <button class="btn small" id="freset" type="button">Reset</button>
+        <span class="code" id="fcount"></span>
+      </div>
+      <div class="ov">
+        <div class="mapbox frame">
+          <svg id="map" role="img" aria-label="World map of copper smelters coloured by weekly status"></svg>
+          <div class="maptag code" id="maptag"></div>
+          <div class="zoombar">
+            <button type="button" id="zin" aria-label="Zoom in">+</button>
+            <button type="button" id="zout" aria-label="Zoom out">−</button>
+            <button type="button" id="zreset" aria-label="World view">⟲</button>
+          </div>
+          <div class="legend" id="legend"></div>
         </div>
-        <div class="legend" id="legend"></div>
+        <div class="frame reg">
+          <div class="head"><span class="sec-title" style="flex:1;margin:0"><span class="n">REG</span>Smelters</span><span class="code">last 52 weeks · kt/yr</span></div>
+          <div class="list" id="list"></div>
+        </div>
+      </div>
+      <div class="two">
+        <div class="frame pad">
+          <h3 class="sec-title"><span class="n">W1</span>Registry capacity by status</h3>
+          <p class="hint">Each week, the capacity of the 29 smelters split into running, stopped and unknown (VIIRS cannot tell: clouds, too few clear nights, or the plant is not visible at night). Click to jump to a week.</p>
+          <div class="chart" id="worldChart"></div>
+          <div class="keys"><span><span class="sw" style="background:var(--run)"></span>Running</span><span><span class="sw" style="background:var(--stop)"></span>Stopped</span><span><span class="sw" style="background:var(--unk)"></span>Unknown</span></div>
+        </div>
+        <div class="frame pad">
+          <h3 class="sec-title"><span class="n">W2</span>China: satellite vs official output</h3>
+          <p class="hint" id="chinaHint"></p>
+          <div class="chart" id="chinaChart"></div>
+          <div class="keys"><span><span class="swl" style="border-color:var(--est)"></span>Satellite: share of Chinese capacity running</span><span><span class="swl" style="border-color:var(--rep)"></span>NBS refined copper vs its 12-month median</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SITE -->
+  <section id="tab-site" role="tabpanel" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="sitebar frame">
+        <span class="lbl">Smelter</span>
+        <button class="btn small" id="prevSite" type="button" aria-label="Previous smelter">◀</button>
+        <select id="sitePick" aria-label="Choose a smelter"></select>
+        <button class="btn small" id="nextSite" type="button" aria-label="Next smelter">▶</button>
+        <button class="btn small" id="showMap" type="button">Show on map</button>
+        <button class="btn small" id="addCmp" type="button">Add to comparison</button>
       </div>
       <div class="frame">
-        <div class="listhead"><span class="sec-title" style="flex:1;margin:0"><span class="n">REG</span>Registre · 52 dernières semaines</span><span class="lbl">kt Cu/an</span></div>
-        <div class="list" id="list"></div>
+        <div class="idcard" id="idcard"></div>
+        <div class="subtabs" role="tablist" aria-label="Site details" id="subtabs">
+          <button role="tab" data-sub="activity" aria-selected="true">Activity</button>
+          <button role="tab" data-sub="output" aria-selected="false">Output</button>
+          <button role="tab" data-sub="images" aria-selected="false">Images</button>
+          <button role="tab" data-sub="alerts" aria-selected="false">Alerts</button>
+        </div>
+        <div class="subpane" id="subpane"></div>
       </div>
     </div>
-    <aside class="frame" id="detail" aria-live="polite"></aside>
-  </div>
+  </section>
 
-  <div class="world">
-    <div class="frame">
-      <h3 class="sec-title"><span class="n">W1</span>Monde · capacité connue en marche</h3>
-      <p class="hint">Indice hebdomadaire, pondéré par la capacité, sur les usines dont VIIRS donne un statut cette semaine-là. Le trait vertical est la semaine choisie.</p>
-      <div class="chart" id="worldChart"></div>
+  <!-- PRODUCTION -->
+  <section id="tab-production" role="tabpanel" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="frame pad">
+        <h3 class="sec-title"><span class="n">P1</span>Estimated copper output of the 29 smelters, by country</h3>
+        <p class="hint" id="prodHint"></p>
+        <div class="chart" id="prodChart"></div>
+        <div class="keys" id="prodKeys"></div>
+      </div>
+      <div class="frame pad">
+        <h3 class="sec-title"><span class="n">P2</span>By country and year</h3>
+        <div class="scroll"><table class="t" id="prodTable"></table></div>
+      </div>
     </div>
-    <div class="frame">
-      <h3 class="sec-title"><span class="n">W2</span>Chine · satellite contre NBS</h3>
-      <p class="hint" id="chinaHint"></p>
-      <div class="chart" id="chinaChart"></div>
-    </div>
-  </div>
+  </section>
 
-  <footer class="frame">
-    <p><strong>Statut hebdomadaire.</strong> Activité = jours chauds VIIRS (375 m) sur jours clairs (couverture nuageuse ERA5 &lt; 0,5), fenêtre de 8 semaines, comparée aux mêmes semaines (± 2) des 3 années précédentes. Rapport r &lt; 0,6 : arrêt. Moins de 5 jours clairs ou référence trop faible : inconnu. Un arrêt ou un redémarrage est daté s'il dure au moins 3 semaines.</p>
-    <p><strong>Production.</strong> Estimation trimestrielle = rythme publié des 12 derniers mois (sinon 80 % de la capacité) × facteur d'activité (r si r &lt; 0,6, sinon 1), calculée sans regarder l'avenir. Erreur moyenne 8,0 % contre 11,1 % pour la prévision naïve sur 99 chiffres publiés.</p>
-    <p><strong>Alertes de surprise.</strong> Une surprise est un chiffre publié à plus de 10 % de la prévision naïve. L'alerte vient de VIIRS (r &lt; 0,6 ou &gt; 1,3), sinon de la part d'images chaudes (&lt; 0,75 ou &gt; 1,33), seuils fixés à l'avance. <span id="surScore"></span></p>
-    <p><strong>Images et SO2.</strong> Score image = part des images claires Sentinel-2 / Landsat avec un point chaud confirmé (TAI &gt; 3 et B12 − B11 &gt; 0,40). SO2 = ajustement de panache sur TROPOMI avec vents ERA5, corrigé des changements de version du traitement ; visible seulement à Norilsk, Sarcheshmeh et Jinchang.</p>
-    <p><strong>Limites.</strong> Cercles en pointillés : position de faible confiance. Sept positions ont été corrigées le 27/11/2026 (cercle creux = ancienne position) ; toutes les séries ont été recalculées aux nouvelles positions. À Kutch, le nouveau point ne montre presque aucune chaleur : l'usine y est invisible pour l'instant. Données générées le <span id="gen"></span>. Fond de carte Natural Earth 1:50m.</p>
+  <!-- ALERTS -->
+  <section id="tab-alerts" role="tabpanel" hidden>
+    <div class="frame pad">
+      <h3 class="sec-title"><span class="n">A1</span>Alert feed</h3>
+      <p class="hint">Every signal from the satellites, newest first. <b>Stop / restart</b>: dated change of the weekly status (lasting 3 weeks or more), shown on the day it could be seen. <b>Fast stop alert</b>: VIIRS sees no heat for several clear nights (about 13 days after the stop). <b>Output alert</b>: the satellites expected a quarter more than 10 % away from the usual output, before the company published it. Click a row to open the smelter.</p>
+      <div class="filters" style="padding:0 0 8px">
+        <div class="chips" id="alertChips"></div>
+        <select id="alertPeriod" aria-label="Period"><option value="90">Last 3 months</option><option value="365" selected>Last 12 months</option><option value="1095">Last 3 years</option><option value="0">All</option></select>
+        <input type="search" id="alertQ" placeholder="Filter by smelter" aria-label="Filter by smelter">
+        <span class="code" id="alertCount"></span>
+      </div>
+      <div class="scroll"><table class="t" id="alertTable"></table></div>
+    </div>
+  </section>
+
+  <!-- MARKETS -->
+  <section id="tab-markets" role="tabpanel" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="filters frame"><span class="lbl">Period</span><div class="chips" id="mkRange"></div><span class="code">Prices: COMEX and LME weekly closes; company shares: monthly closes (Yahoo, adjusted), in local currency</span></div>
+      <div class="two">
+        <div class="frame pad"><h3 class="sec-title"><span class="n">M1</span>Copper price</h3><p class="hint">USD per tonne. COMEX is quoted in USD per pound and converted (× 2,204.62).</p><div class="chart" id="mkCu"></div><div class="keys"><span><span class="swl" style="border-color:var(--c1)"></span>LME 3-month</span><span><span class="swl" style="border-color:var(--c2)"></span>COMEX front month</span></div></div>
+        <div class="frame pad"><h3 class="sec-title"><span class="n">M2</span>LME copper stocks</h3><p class="hint">Tonnes in LME warehouses. Falling stocks usually mean a tight physical market.</p><div class="chart" id="mkStock"></div></div>
+      </div>
+      <div class="two">
+        <div class="frame pad"><h3 class="sec-title"><span class="n">M3</span>Base metals, indexed</h3><p class="hint">LME 3-month prices, 100 at the start of the period.</p><div class="chart" id="mkBase"></div><div class="keys"><span><span class="swl" style="border-color:var(--c1)"></span>Copper</span><span><span class="swl" style="border-color:var(--c3)"></span>Aluminium</span><span><span class="swl" style="border-color:var(--c7)"></span>Zinc</span></div></div>
+        <div class="frame pad"><h3 class="sec-title"><span class="n">M4</span>LME cash minus 3-month</h3><p class="hint">USD per tonne. Above zero (backwardation): metal is wanted now, a sign of short supply.</p><div class="chart" id="mkSpread"></div></div>
+      </div>
+      <div class="frame pad">
+        <h3 class="sec-title"><span class="n">M5</span>Company shares, indexed</h3>
+        <p class="hint">100 at the start of the period. Pick up to 8 companies: smelter operators (with the smelters they run) and copper fabricators.</p>
+        <div class="chips" id="mkPick" style="margin-bottom:10px"></div>
+        <div class="chart" id="mkShares"></div>
+        <div class="keys" id="mkSharesKeys"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARE -->
+  <section id="tab-compare" role="tabpanel" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="filters frame">
+        <span class="lbl">Compare up to 4 smelters</span>
+        <div class="cmp-pick" id="cmpPick"></div>
+        <span class="lbl">Period</span><div class="chips" id="cmpRange"></div>
+      </div>
+      <div class="frame pad"><h3 class="sec-title"><span class="n">C1</span>Activity ratio</h3><p class="hint">VIIRS activity compared with the same weeks of the previous 3 years, 4-week average. 1 = usual level; below 0.6 (dashed) = stopped.</p><div class="chart" id="cmpAct"></div><div class="keys" id="cmpKeys"></div></div>
+      <div class="two">
+        <div class="frame pad"><h3 class="sec-title"><span class="n">C2</span>Hot images</h3><p class="hint">Share of clear Sentinel-2 / Landsat images with a confirmed hot spot, 3-month average.</p><div class="chart" id="cmpImg"></div></div>
+        <div class="frame pad"><h3 class="sec-title"><span class="n">C3</span>Key facts</h3><div class="scroll"><table class="t" id="cmpTable"></table></div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="frame pad">
+    <p><strong>Weekly status</strong>Activity = hot VIIRS nights (375 m) over clear nights (ERA5 cloud cover &lt; 0.5) in an 8-week window, compared with the same weeks (± 2) of the 3 previous years. Ratio below 0.6: stopped. Fewer than 5 clear nights or too weak a reference: unknown. Series start in March 2019, the first week with a reference.</p>
+    <p><strong>Output</strong>Quarterly estimate = published rate of the last 12 months (else 80 % of capacity) × activity factor (r if r &lt; 0.6, else 1), computed without looking ahead. Mean error 8.0 % vs 11.1 % for the naive forecast on 99 published figures.</p>
+    <p><strong>Output alerts</strong>A surprise is a published figure more than 10 % away from the naive forecast. The alert comes from VIIRS (r &lt; 0.6 or &gt; 1.3), else from the share of hot images (&lt; 0.75 or &gt; 1.33), thresholds fixed in advance. <span id="surScore"></span></p>
+    <p><strong>Sources and limits</strong>NASA FIRMS VIIRS, Copernicus Sentinel-2 and Landsat via Microsoft Planetary Computer, ERA5, company reports, NBS, LME, COMEX, Yahoo Finance. Dashed circles: low-confidence positions; hollow circles: positions corrected on 27 Nov 2026 (all series recomputed). Data generated <span id="gen"></span>. Base map Natural Earth 1:50m.</p>
   </footer>
 </div>
 <div id="tip" hidden></div>
+<div id="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
@@ -246,37 +372,106 @@ footer strong { font-family: var(--font-display); font-weight: 600; letter-spaci
 const DATA = /*__DATA__*/null;
 const WORLD = /*__WORLD__*/null;
 
-const MFR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-const ST = { r: { label: "En marche", v: "--active", cls: "s-r" }, s: { label: "Arrêt", v: "--off", cls: "s-s" }, u: { label: "Inconnu", v: "--weak", cls: "s-u" } };
-const stFill = c => c === "s" ? "url(#hatch)" : css(c === "r" ? "--ink" : "--weak");
-const EVFR = { stop: "Arrêt", restart: "Redémarrage", "start-up": "Démarrage" };
-const CONF_FR = { high: "élevée", medium: "moyenne", low: "faible" };
+// ---------- helpers ----------
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const ST = { r: { label: "Running", v: "--run", cls: "d-r" }, s: { label: "Stopped", v: "--stop", cls: "d-s" }, u: { label: "Unknown", v: "--unk", cls: "d-u" } };
+const EV = { stop: "Stop", restart: "Restart", "start-up": "Start-up" };
+const CONF = { high: "high", medium: "medium", low: "low" };
+const PAL = ["--c1", "--c2", "--c3", "--c4", "--c5", "--c6", "--c7", "--c8"];
 const W = DATA.weeks, NW = W.length;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const fr = (x, d = 0) => x == null ? "–" : x.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
-const fdate = s => { if (!s) return "–"; const [y, m, d] = s.slice(0, 10).split("-"); return `${+d} ${MFR[+m - 1]} ${y}`; };
-const fmonth = s => { const [y, m] = s.split("-"); return `${MFR[+m - 1]} ${y}`; };
-const wIndex = date => { let lo = 0, hi = NW - 1; if (date <= W[0]) return 0; if (date >= W[hi]) return hi;
-  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (W[mid] < date) lo = mid; else hi = mid; } return hi; };
+const fr = (x, d = 0) => x == null || Number.isNaN(x) ? "–" : Number(x).toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fdate = s => { if (!s) return "–"; const [y, m, d] = s.slice(0, 10).split("-"); return `${+d} ${MON[+m - 1]} ${y}`; };
+const fmonth = s => { const [y, m] = s.split("-"); return `${MON[+m - 1]} ${y}`; };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-
+const wIndex = date => { if (date <= W[0]) return 0; if (date >= W[NW - 1]) return NW - 1; let lo = 0, hi = NW - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (W[mid] < date) lo = mid; else hi = mid; } return hi; };
 const sites = DATA.sites.slice().sort((a, b) => (b.capacity_kt || 0) - (a.capacity_kt || 0));
-const state = { w: NW - 1, sel: sites[0].id, playing: null };
-try { const s = JSON.parse(localStorage.getItem("orbitcu-sitemap") || "{}"); if (s.sel && sites.some(x => x.id === s.sel)) state.sel = s.sel; } catch (e) {}
+const byId = Object.fromEntries(sites.map(s => [s.id, s]));
+const stAt = (s, i) => s.status[i] || "u";
+const activeStop = (s, i) => s.events.find(e => e.event === "stop" && wIndex(e.start) <= i && wIndex(e.end) >= i);
 
-// ---------- tooltip (any element with data-tip) ----------
+// ---------- state + shareable link ----------
+const state = { tab: "overview", w: NW - 1, sel: sites[0].id, sub: "activity", cmp: [], mk: "3y", cmpR: "all", shares: ["NDA.DE", "KGH.WA", "SCCO", "600362.SS", "FCX"],
+  f: { q: "", country: "", operator: "", status: "", conf: "" }, alertTypes: ["stop", "restart", "fast", "surprise"], playing: null };
+function readHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("tab")) state.tab = h.get("tab");
+  if (h.get("site") && byId[h.get("site")]) state.sel = h.get("site");
+  if (h.get("week")) state.w = wIndex(h.get("week"));
+  if (h.get("sub")) state.sub = h.get("sub");
+  if (h.get("cmp")) state.cmp = h.get("cmp").split(",").filter(x => byId[x]).slice(0, 4);
+  if (h.get("shares")) state.shares = h.get("shares").split(",").slice(0, 8);
+  if (h.get("period")) state.mk = h.get("period");
+}
+function writeHash() {
+  const h = new URLSearchParams({ tab: state.tab, site: state.sel, week: W[state.w], sub: state.sub });
+  if (state.cmp.length) h.set("cmp", state.cmp.join(","));
+  if (state.tab === "markets") { h.set("shares", state.shares.join(",")); h.set("period", state.mk); }
+  history.replaceState(null, "", "#" + h.toString());
+}
+if (!state.cmp.length) state.cmp = sites.slice(0, 3).map(s => s.id);
+readHash();
+function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => el.hidden = true, 1800); }
+document.getElementById("copyLink").addEventListener("click", async () => {
+  writeHash();
+  try { await navigator.clipboard.writeText(location.href); toast("Link copied: it opens this exact view"); }
+  catch (e) { prompt("Copy this link", location.href); }
+});
+
+// ---------- tooltip ----------
 const tip = document.getElementById("tip");
-document.addEventListener("pointermove", e => {
-  const t = e.target.closest && e.target.closest("[data-tip]");
-  if (!t) { tip.hidden = true; return; }
-  tip.innerHTML = t.getAttribute("data-tip"); tip.hidden = false;
+function showTip(html, e) {
+  tip.innerHTML = html; tip.hidden = false;
   const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = e.clientY + 16 + tip.offsetHeight > innerHeight ? e.clientY - tip.offsetHeight - 10 : e.clientY + 16;
   tip.style.left = `${Math.max(8, x)}px`; tip.style.top = `${y}px`;
+}
+document.addEventListener("pointermove", e => {
+  if (e.target.closest && e.target.closest(".lc-hit")) return;
+  const t = e.target.closest && e.target.closest("[data-tip]");
+  if (!t) { tip.hidden = true; return; }
+  showTip(t.getAttribute("data-tip"), e);
 });
-document.addEventListener("pointerleave", () => { tip.hidden = true; });
+
+// ---------- generic line chart with crosshair ----------
+// series: [{name, color (css var), v: [..] aligned to x, dash?}], x: array of ISO dates
+function lineChart(el, { x, series, h = 220, yFmt = v => fr(v), yMin, yMax, refs = [], cursor = null, onPick = null, W0 = 900, area = false }) {
+  const m = { l: 52, r: 10, t: 8, b: 22 }, iw = W0 - m.l - m.r, ih = h - m.t - m.b, n = x.length;
+  if (!n || !series.length) { el.innerHTML = `<p class="empty">No data for this selection.</p>`; return; }
+  const vals = series.flatMap(s => s.v.filter(v => v != null && Number.isFinite(v)));
+  if (!vals.length) { el.innerHTML = `<p class="empty">No data for this selection.</p>`; return; }
+  let lo = yMin ?? d3.min(vals), hi = yMax ?? d3.max(vals); if (lo === hi) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.06; if (yMin == null) lo -= pad; if (yMax == null) hi += pad;
+  const X = i => m.l + (n === 1 ? iw / 2 : i / (n - 1) * iw), Y = v => m.t + ih - (v - lo) / (hi - lo) * ih;
+  let o = "";
+  d3.ticks(lo, hi, 4).forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${yFmt(v)}</text>`);
+  refs.forEach(r => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(r.v)}" y2="${Y(r.v)}" stroke="${css(r.color || "--muted")}" stroke-dasharray="4 3"></line>`);
+  // year ticks
+  let lastY = null; const yrs = [];
+  x.forEach((d, i) => { const yy = d.slice(0, 4); if (yy !== lastY) { yrs.push([i, yy]); lastY = yy; } });
+  const step = Math.ceil(yrs.length / 8);
+  yrs.forEach(([i, yy], k) => { if (i > 0 && k % step === 0) o += `<line x1="${X(i)}" x2="${X(i)}" y1="${m.t + ih}" y2="${m.t + ih + 4}" stroke="${css("--border")}"></line><text class="ax" x="${X(i) + 3}" y="${h - 6}">${yy}</text>`; });
+  series.forEach(s => {
+    let d = "", pen = false;
+    s.v.forEach((v, i) => { if (v == null || !Number.isFinite(v)) { pen = false; return; } d += (pen ? "L" : "M") + X(i).toFixed(1) + "," + Y(Math.max(lo, Math.min(hi, v))).toFixed(1); pen = true; });
+    o += `<path d="${d}" fill="none" stroke="${css(s.color)}" stroke-width="${s.w || 2}" stroke-linejoin="round" ${s.dash ? 'stroke-dasharray="5 3"' : ""}></path>`;
+  });
+  if (cursor != null && cursor >= 0) o += `<line x1="${X(cursor)}" x2="${X(cursor)}" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ink")}" stroke-width="1.5"></line>`;
+  o += `<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--muted")}" stroke-dasharray="2 2" visibility="hidden"></line>`;
+  o += `<rect class="lc-hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" style="cursor:${onPick ? "pointer" : "crosshair"}"></rect>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W0} ${h}" role="img">${o}</svg>`;
+  const svgEl = el.querySelector("svg"), hit = el.querySelector(".lc-hit"), xh = el.querySelector(".xh");
+  const idxAt = e => { const r = svgEl.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W0; return Math.max(0, Math.min(n - 1, Math.round((px - m.l) / iw * (n - 1)))); };
+  hit.addEventListener("pointermove", e => {
+    const i = idxAt(e); xh.setAttribute("x1", X(i)); xh.setAttribute("x2", X(i)); xh.setAttribute("visibility", "visible");
+    showTip(`<b>${x[i].length > 7 ? fdate(x[i]) : fmonth(x[i])}</b>` + series.map(s => `<div class="r"><span class="sw" style="background:${css(s.color)}"></span>${esc(s.name)}: ${s.v[i] == null ? "–" : yFmt(s.v[i], true)}</div>`).join(""), e);
+  });
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); tip.hidden = true; });
+  if (onPick) hit.addEventListener("click", e => onPick(idxAt(e)));
+}
 
 // ---------- map ----------
-const svg = d3.select("#map"), MW = 960, MH = 564;
+const svg = d3.select("#map"), MW = 960, MH = 552;
 svg.attr("viewBox", `0 0 ${MW} ${MH}`);
 const projection = d3.geoNaturalEarth1().fitExtent([[8, 8], [MW - 8, MH - 8]], { type: "Sphere" });
 const path = d3.geoPath(projection);
@@ -285,282 +480,422 @@ gZoom.append("path").datum(d3.geoGraticule10()).attr("class", "graticule").attr(
 gZoom.append("path").datum(topojson.feature(WORLD, WORLD.objects.countries)).attr("class", "land").attr("d", path);
 gZoom.append("path").datum(topojson.mesh(WORLD, WORLD.objects.countries, (a, b) => a !== b)).attr("class", "borders").attr("d", path);
 gZoom.append("path").datum(topojson.mesh(WORLD, WORLD.objects.countries, (a, b) => a === b)).attr("class", "coast").attr("d", path);
-const rScale = d3.scaleSqrt().domain([0, d3.max(sites, s => s.capacity_kt || 0)]).range([3, 13]);
-const gMove = gZoom.append("g"), gSites = gZoom.append("g"), gRet = gZoom.append("g").attr("class", "reticle");
-let k = 1;
+const rScale = d3.scaleSqrt().domain([0, d3.max(sites, s => s.capacity_kt || 0)]).range([3.5, 13]);
 const P = s => projection([s.lon, s.lat]);
 const moved = sites.filter(s => s.moved);
+const gMove = gZoom.append("g"), gSites = gZoom.append("g"), gRet = gZoom.append("g").attr("class", "reticle");
 const moveLines = gMove.selectAll("line").data(moved).join("line").attr("class", "moveline")
-  .attr("x1", d => projection([d.moved.lon, d.moved.lat])[0]).attr("y1", d => projection([d.moved.lon, d.moved.lat])[1])
-  .attr("x2", d => P(d)[0]).attr("y2", d => P(d)[1]);
+  .attr("x1", d => projection([d.moved.lon, d.moved.lat])[0]).attr("y1", d => projection([d.moved.lon, d.moved.lat])[1]).attr("x2", d => P(d)[0]).attr("y2", d => P(d)[1]);
 const oldMarks = gMove.selectAll("circle").data(moved).join("circle").attr("class", "oldpos")
   .attr("cx", d => projection([d.moved.lon, d.moved.lat])[0]).attr("cy", d => projection([d.moved.lon, d.moved.lat])[1])
-  .attr("data-tip", d => `<b>${esc(d.name)}</b><br>ancienne position (${d.moved.lat.toFixed(3)}, ${d.moved.lon.toFixed(3)})`);
+  .attr("data-tip", d => `<b>${esc(d.name)}</b><br>previous position (${d.moved.lat.toFixed(3)}, ${d.moved.lon.toFixed(3)})`);
 const marks = gSites.selectAll("circle").data(sites.slice().reverse(), d => d.id).join("circle")
-  .attr("class", d => "site" + (d.confidence === "low" ? " low" : ""))
-  .attr("cx", d => P(d)[0]).attr("cy", d => P(d)[1])
+  .attr("class", d => "site" + (d.confidence === "low" ? " low" : "")).attr("cx", d => P(d)[0]).attr("cy", d => P(d)[1])
   .attr("tabindex", 0).attr("role", "button").attr("aria-label", d => d.name)
-  .on("click", (e, d) => select(d.id))
-  .on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(d.id); } });
-const zoom = d3.zoom().scaleExtent([1, 400]).translateExtent([[0, 0], [MW, MH]]).on("zoom", ev => {
-  k = ev.transform.k; gZoom.attr("transform", ev.transform); sizeMarks();
-});
+  .on("click", (e, d) => openSite(d.id))
+  .on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSite(d.id); } });
+let k = 1;
+const zoom = d3.zoom().scaleExtent([1, 400]).translateExtent([[0, 0], [MW, MH]]).on("zoom", ev => { k = ev.transform.k; gZoom.attr("transform", ev.transform); sizeMarks(); });
 svg.call(zoom);
 d3.select("#zin").on("click", () => svg.transition().duration(250).call(zoom.scaleBy, 2));
 d3.select("#zout").on("click", () => svg.transition().duration(250).call(zoom.scaleBy, 0.5));
 d3.select("#zreset").on("click", () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity));
+function flyTo(id) { const s = byId[id], [x, y] = P(s), kk = Math.max(k, 6); svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(MW / 2 - kk * x, MH / 2 - kk * y).scale(kk)); }
 function sizeMarks() {
-  const sel = sites.find(x => x.id === state.sel);
-  if (sel) {
-    const [cx, cy] = P(sel), f = 1 / Math.sqrt(k), r0 = (sel.capacity_kt ? rScale(sel.capacity_kt) : 4) * f + 5 / k, t = 7 / k;
-    gRet.html(`<circle cx="${cx}" cy="${cy}" r="${r0}"></circle>` + [[0, -1], [0, 1], [-1, 0], [1, 0]].map(([dx, dy]) =>
-      `<line x1="${cx + dx * r0}" y1="${cy + dy * r0}" x2="${cx + dx * (r0 + t)}" y2="${cy + dy * (r0 + t)}"></line>`).join(""));
-  }
   const f = 1 / Math.sqrt(k);
-  marks.attr("r", d => (d.capacity_kt ? rScale(d.capacity_kt) : 4) * f).attr("stroke-width", 1.5);
+  marks.attr("r", d => (d.capacity_kt ? rScale(d.capacity_kt) : 4) * f);
   oldMarks.attr("r", 4 / k + 1.5 / Math.sqrt(k)).attr("opacity", d => k > 20 || d.id === state.sel ? 1 : 0);
   moveLines.attr("opacity", d => k > 20 || d.id === state.sel ? 1 : 0);
+  const s = byId[state.sel]; if (!s) return;
+  const [cx, cy] = P(s), r0 = (s.capacity_kt ? rScale(s.capacity_kt) : 4) * f + 5 / k, t = 7 / k;
+  gRet.html(`<circle cx="${cx}" cy="${cy}" r="${r0}"></circle>` + [[0, -1], [0, 1], [-1, 0], [1, 0]].map(([dx, dy]) => `<line x1="${cx + dx * r0}" y1="${cy + dy * r0}" x2="${cx + dx * (r0 + t)}" y2="${cy + dy * (r0 + t)}"></line>`).join(""));
 }
 document.getElementById("legend").innerHTML = ["r", "s", "u"].map(c => `<div><span class="dot ${ST[c].cls}"></span>${ST[c].label}</div>`).join("")
-  + `<div><span class="ring"></span>Position de faible confiance</div><div><span class="hollow"></span>Ancienne position (corrigée)</div><div style="color:var(--muted)">Taille : capacité</div>`;
+  + `<div><span class="ring"></span>Low-confidence position</div><div><span class="hollow"></span>Previous position (corrected)</div><div style="color:var(--muted)">Size: capacity · ring: selected</div>`;
 
-// ---------- helpers for the site at the current week ----------
-const stAt = (s, i) => s.status[i] || "u";
-const activeEvent = (s, i) => s.events.find(e => e.event === "stop" && wIndex(e.start) <= i && wIndex(e.end) >= i);
+// ---------- filters ----------
+const uniq = a => [...new Set(a)].sort();
+const opBase = o => o.replace(/\s*\(.*?\)/g, "").split(" / ")[0].replace(/ JV$/, "").trim();
+document.getElementById("fcountry").innerHTML = `<option value="">All countries</option>` + uniq(sites.map(s => s.country)).map(c => `<option>${esc(c)}</option>`).join("");
+document.getElementById("foperator").innerHTML = `<option value="">All operators</option>` + uniq(sites.map(s => opBase(s.operator))).map(c => `<option>${esc(c)}</option>`).join("");
+const passF = s => { const f = state.f, q = f.q.toLowerCase();
+  return (!q || (s.name + " " + s.operator + " " + s.country).toLowerCase().includes(q)) && (!f.country || s.country === f.country)
+    && (!f.operator || opBase(s.operator) === f.operator) && (!f.status || stAt(s, state.w) === f.status) && (!f.conf || s.confidence === f.conf); };
+[["fq", "q", "input"], ["fcountry", "country", "change"], ["foperator", "operator", "change"], ["fstatus", "status", "change"], ["fconf", "conf", "change"]].forEach(([id, key, ev]) =>
+  document.getElementById(id).addEventListener(ev, e => { state.f[key] = e.target.value; renderOverview(); }));
+document.getElementById("freset").addEventListener("click", () => { state.f = { q: "", country: "", operator: "", status: "", conf: "" }; ["fq", "fcountry", "foperator", "fstatus", "fconf"].forEach(id => document.getElementById(id).value = ""); renderOverview(); });
 
-function renderTallies() {
-  const agg = { r: { n: 0, cap: 0 }, s: { n: 0, cap: 0 }, u: { n: 0, cap: 0 } };
-  sites.forEach(s => { const a = agg[stAt(s, state.w)]; a.n++; a.cap += s.capacity_kt || 0; });
-  const wp = DATA.world[state.w];
-  document.getElementById("tallies").innerHTML = ["r", "s", "u"].map(c => `<div class="tally frame"><div class="k"><span class="dot ${ST[c].cls}"></span>${ST[c].label}</div><div class="v">${agg[c].n} <small>sites · ${fr(agg[c].cap)} kt</small></div></div>`).join("")
-    + (wp ? `<div class="tally frame"><div class="k">Part en marche</div><div class="v">${fr(wp.share * 100)} % <small>couverture ${fr(wp.cov * 100)} %</small></div></div>` : "");
-}
-
+// ---------- overview ----------
 function stripSvg(s, from, to, h) {
-  const n = to - from + 1, bw = 100 / n;
-  let out = "";
-  for (let i = from; i <= to; i++) out += `<rect x="${((i - from) * bw).toFixed(3)}" y="0" width="${(bw + 0.02).toFixed(3)}" height="${h}" fill="${stFill(stAt(s, i))}"></rect>`;
+  const n = to - from + 1, bw = 100 / n; let out = "";
+  for (let i = from; i <= to; i++) out += `<rect x="${((i - from) * bw).toFixed(3)}" y="0" width="${(bw + 0.03).toFixed(3)}" height="${h}" fill="${css(ST[stAt(s, i)].v)}"></rect>`;
   return `<svg viewBox="0 0 100 ${h}" preserveAspectRatio="none" aria-hidden="true">${out}</svg>`;
 }
-function renderList() {
-  const from = Math.max(0, state.w - 51);
-  document.getElementById("list").innerHTML = sites.map(s => {
-    const c = stAt(s, state.w);
-    return `<div class="row${s.id === state.sel ? " sel" : ""}" data-id="${s.id}" tabindex="0" role="button" aria-label="${esc(s.name)}, ${ST[c].label}">
-      <span class="dot ${ST[c].cls}"></span><span class="nm">${esc(s.name)} <span>· ${esc(s.country)}</span></span>
-      <span class="cap">${s.capacity_kt ? fr(s.capacity_kt) : "n.p."}</span>${stripSvg(s, from, state.w, 10)}</div>`;
-  }).join("");
+function renderOverview() {
+  const vis = sites.filter(passF), i = state.w;
+  const agg = { r: [0, 0], s: [0, 0], u: [0, 0] };
+  sites.forEach(s => { const a = agg[stAt(s, i)]; a[0]++; a[1] += s.capacity_kt || 0; });
+  const wp = DATA.world[i] || {}, newStops = sites.filter(s => s.events.some(e => e.event === "stop" && e.seen && e.seen <= W[i] && e.seen > W[Math.max(0, i - 8)]));
+  document.getElementById("kpis").innerHTML = ["r", "s", "u"].map(c => `<div class="kpi frame"><div class="k lbl"><span class="dot ${ST[c].cls}"></span>${ST[c].label}</div><div class="v">${agg[c][0]}<span class="s"> sites</span></div><div class="s">${fr(agg[c][1])} kt/yr capacity</div></div>`).join("")
+    + `<div class="kpi frame"><div class="k lbl">Known capacity running</div><div class="v">${wp.share != null ? fr(wp.share * 100) + " %" : "–"}</div><div class="s">status known for ${fr((wp.cov || 0) * 100)} % of capacity</div></div>`
+    + `<div class="kpi frame"><div class="k lbl">Stops seen, last 8 weeks</div><div class="v">${newStops.length}</div><div class="s">${newStops.length ? newStops.slice(0, 3).map(s => esc(s.name)).join(", ") : "none"}</div></div>`;
+  marks.attr("fill", d => css(ST[stAt(d, i)].v)).classed("dim", d => !passF(d))
+    .attr("data-tip", d => { const c = stAt(d, i), e = activeStop(d, i); return `<b>${esc(d.name)}</b> · ${esc(d.country)}<br>${ST[c].label}${d.r[i] != null ? ` · ratio ${fr(d.r[i], 2)}` : ""}${e ? `<br>stopped since ${fdate(e.start)}` : ""}<br><i>click to open</i>`; });
+  sizeMarks();
+  const from = Math.max(0, i - 51);
+  document.getElementById("list").innerHTML = vis.map(s => { const c = stAt(s, i);
+    return `<div class="row" data-id="${s.id}" tabindex="0" role="button" aria-label="${esc(s.name)}, ${ST[c].label}"><span class="dot ${ST[c].cls}"></span><span class="nm">${esc(s.name)} <span>· ${esc(s.country)}</span></span><span class="cap">${s.capacity_kt ? fr(s.capacity_kt) : "n/a"}</span>${stripSvg(s, from, i, 8)}</div>`; }).join("") || `<p class="empty" style="padding:12px 16px">No smelter matches the filters.</p>`;
+  document.getElementById("fcount").textContent = `${vis.length} of ${sites.length} smelters`;
+  document.getElementById("maptag").textContent = `Natural Earth · VIIRS 375 m · week ending ${fdate(W[i])}`;
+  worldChart(); chinaChart();
 }
-document.getElementById("list").addEventListener("click", e => { const r = e.target.closest(".row"); if (r) select(r.dataset.id, true); });
-document.getElementById("list").addEventListener("keydown", e => { const r = e.target.closest(".row"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select(r.dataset.id, true); } });
+document.getElementById("list").addEventListener("click", e => { const r = e.target.closest(".row"); if (r) openSite(r.dataset.id); });
+document.getElementById("list").addEventListener("keydown", e => { const r = e.target.closest(".row"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openSite(r.dataset.id); } });
 
-// ---------- charts (plain SVG strings, hover via data-tip) ----------
-const CW = 440;
-function activityChart(s) {
-  const h = 120, m = { l: 26, r: 6, t: 6, b: 34 }, iw = CW - m.l - m.r, ih = h - m.t - m.b;
-  const x = i => m.l + (i + 0.5) / NW * iw, y = v => m.t + ih - Math.min(v, 2) / 2 * ih, bw = iw / NW;
-  let o = "";
-  [0, 0.6, 1, 2].forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(v)}" y2="${y(v)}" stroke="${css(v === 0.6 ? "--off" : "--grid")}" ${v === 0.6 ? 'stroke-dasharray="3 2"' : ""} stroke-width="1"></line><text class="ax" x="${m.l - 4}" y="${y(v) + 3}" text-anchor="end">${fr(v, v === 0.6 ? 1 : 0)}</text>`);
-  s.events.filter(e => e.event === "stop").forEach(e => { const a = wIndex(e.start), b = wIndex(e.end);
-    o += `<rect x="${x(a) - bw / 2}" y="${m.t}" width="${Math.max(bw, x(b) - x(a) + bw)}" height="${ih}" fill="url(#hatchSoft)"></rect>`; });
-  const pts = s.r.map((v, i) => v == null ? null : [x(i), y(v)]);
-  let d = "", pen = false; pts.forEach(p => { if (!p) { pen = false; return; } d += (pen ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1); pen = true; });
-  o += `<path d="${d}" fill="none" stroke="${css("--ink")}" stroke-width="1.5" stroke-linejoin="round"></path>`;
-  const sy = m.t + ih + 4;
-  for (let i = 0; i < NW; i++) o += `<rect x="${(x(i) - bw / 2).toFixed(2)}" y="${sy}" width="${(bw + 0.1).toFixed(2)}" height="7" fill="${stFill(stAt(s, i))}"></rect>`;
-  const years = [...new Set(W.map(w => w.slice(0, 4)))];
-  years.forEach(yy => { const i = W.findIndex(w => w.startsWith(yy)); if (i >= 0 && +yy % 2 === 0) o += `<text class="ax" x="${x(i)}" y="${h - 6}" text-anchor="start">${yy}</text>`; });
-  o += `<line x1="${x(state.w)}" x2="${x(state.w)}" y1="${m.t}" y2="${sy + 7}" stroke="${css("--copper")}" stroke-width="2"></line>`;
-  // hover / click bins
-  const step = 2;
-  for (let i = 0; i < NW; i += step) {
-    const st = stAt(s, i), rv = s.r[i];
-    o += `<rect class="bin" data-w="${i}" x="${(x(i) - bw / 2).toFixed(2)}" y="${m.t}" width="${(bw * step).toFixed(2)}" height="${ih + 11}" fill="transparent" style="cursor:pointer" data-tip="<b>semaine au ${fdate(W[i])}</b><br>${ST[st].label}${rv != null ? ` · r = ${fr(rv, 2)}` : ""}"></rect>`;
-  }
-  return `<svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="Rapport d'activité hebdomadaire et statut">${o}</svg>`;
-}
-
-function qIndex(q) { const y = +q.slice(0, 4), n = +q.slice(5); return y * 4 + n - 1; }
-function dateQ(d) { const y = +d.slice(0, 4), m = +d.slice(5, 7); return y * 4 + Math.floor((m - 1) / 3); }
-function productionChart(s) {
-  if (!s.est.length) return "";
-  const q0 = qIndex(s.est[0].q), q1 = qIndex(s.est[s.est.length - 1].q), nq = q1 - q0 + 1;
-  // published figures turned into a per-quarter rate over their period
-  const reps = s.reported.map(r => { const a = dateQ(r.start), b = dateQ(r.end); return { ...r, a, b, perq: r.kt / (b - a + 1) }; })
-    .filter(r => r.b >= q0 && r.a <= q1);
-  const vmax = d3.max([...s.est.map(e => Math.max(e.est, e.normal || 0)), ...reps.map(r => r.perq)]) * 1.12 || 1;
-  const h = 140, m = { l: 34, r: 6, t: 14, b: 18 }, iw = CW - m.l - m.r, ih = h - m.t - m.b, bw = iw / nq;
-  const x = q => m.l + (q - q0) * bw, y = v => m.t + ih - v / vmax * ih;
-  let o = "";
-  d3.ticks(0, vmax, 3).forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(v)}" y2="${y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 4}" y="${y(v) + 3}" text-anchor="end">${fr(v)}</text>`);
-  s.est.forEach(e => { const q = qIndex(e.q), bh = ih - (y(e.est) - m.t);
-    const basis = e.basis === "published" ? "rythme publié" : e.basis === "capacity" ? "80 % de la capacité" : "pas encore démarrée";
-    o += `<path d="${roundTop(x(q) + 2, y(e.est), bw - 4, bh)}" fill="${css("--est")}" opacity="${e.basis === "published" ? 1 : 0.5}" data-tip="<b>${e.q}</b> · estimation ${fr(e.est)} kt<br>base : ${basis}${e.r != null ? ` · r = ${fr(e.r, 2)}` : ""}${e.visible ? "" : "<br>VIIRS ne voit pas l'usine"}"></path>`; });
-  reps.forEach(r => { const xa = x(Math.max(r.a, q0)) + 1, xb = x(Math.min(r.b, q1) + 1) - 1;
-    o += `<line x1="${xa}" x2="${xb}" y1="${y(r.perq)}" y2="${y(r.perq)}" stroke="${css("--rep")}" stroke-width="2.5" stroke-linecap="round"></line>`
-       + `<line x1="${xa}" x2="${xb}" y1="${y(r.perq)}" y2="${y(r.perq)}" stroke="transparent" stroke-width="10" data-tip="<b>publié ${fdate(r.start)} – ${fdate(r.end)}</b><br>${fr(r.kt, 1)} kt (${esc(r.metric)})${r.b > r.a ? `, soit ${fr(r.perq, 1)} kt par trimestre` : ""}<br>publié le ${fdate(r.published)}"></line>`; });
-  s.surprises.filter(u => u.flag !== 0).forEach(u => { const a = Math.max(dateQ(u.start), q0), b = Math.min(dateQ(u.end), q1); if (b < q0 || a > q1) return;
-    const cx = (x(a) + x(b + 1)) / 2, good = Math.sign(u.flag) === Math.sign(u.surprise) && u.surprise !== 0;
-    const tri = u.flag < 0 ? `M${cx - 5},${m.t - 9} L${cx + 5},${m.t - 9} L${cx},${m.t - 1} Z` : `M${cx - 5},${m.t - 1} L${cx + 5},${m.t - 1} L${cx},${m.t - 9} Z`;
-    o += `<path d="${tri}" fill="${good ? css("--ink") : css("--panel")}" stroke="${css("--ink")}" stroke-width="1.2" data-tip="<b>Alerte ${u.flag < 0 ? "baisse" : "hausse"}</b> (${u.source}) ${fdate(u.start)} – ${fdate(u.end)}<br>${good ? "juste" : "fausse alerte"}, ${u.lead} j avant la publication"></path>`; });
-  for (let yy = Math.ceil(q0 / 4); yy * 4 <= q1; yy++) o += `<text class="ax" x="${x(yy * 4)}" y="${h - 4}">${yy}</text>`;
-  return `<svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="Production estimée et publiée par trimestre">${o}</svg>`;
-}
-function roundTop(x, y, w, h) { const r = Math.min(4, w / 2, h); if (h <= 0) return ""; return `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`; }
-
-function imageChart(s) {
-  if (!s.images.length) return "";
-  const months = s.images.map(i => i.m), m0 = ym(months[0]), m1 = ym(months[months.length - 1]), n = m1 - m0 + 1;
-  const h = 90, m = { l: 26, r: 6, t: 6, b: 18 }, iw = CW - m.l - m.r, ih = h - m.t - m.b, bw = iw / n;
-  const x = i => m.l + (i - m0) * bw, y = v => m.t + ih - v * ih;
-  let o = "";
-  [0, 0.5, 1].forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(v)}" y2="${y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 4}" y="${y(v) + 3}" text-anchor="end">${fr(v * 100)}</text>`);
-  s.images.forEach(i => { const xi = x(ym(i.m)), bh = Math.max(1, i.share * ih);
-    o += `<rect x="${(xi + 0.4).toFixed(2)}" y="${(y(i.share) - (i.share === 0 ? 1 : 0)).toFixed(2)}" width="${Math.max(0.8, bw - 0.8).toFixed(2)}" height="${bh.toFixed(2)}" fill="${css(i.n >= 3 ? "--ink" : "--est")}"></rect>`
-      + `<rect x="${xi}" y="${m.t}" width="${bw}" height="${ih}" fill="transparent" data-tip="<b>${fmonth(i.m)}</b><br>${fr(i.share * 100)} % d'images chaudes sur ${i.n} image${i.n > 1 ? "s" : ""} utilisable${i.n > 1 ? "s" : ""}"></rect>`; });
-  const cur = W[state.w].slice(0, 7); if (ym(cur) >= m0 && ym(cur) <= m1) o += `<line x1="${x(ym(cur)) + bw / 2}" x2="${x(ym(cur)) + bw / 2}" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ink")}" stroke-width="1" stroke-dasharray="2 2"></line>`;
-  for (let yy = Math.ceil(m0 / 12); yy * 12 <= m1; yy++) if (yy % 2 === 0) o += `<text class="ax" x="${x(yy * 12)}" y="${h - 4}">${yy}</text>`;
-  return `<svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="Part mensuelle d'images chaudes">${o}</svg>`;
-}
-const ym = s => +s.slice(0, 4) * 12 + +s.slice(5, 7) - 1;
-
-function so2Chart(s) {
-  const rows = s.so2; if (!rows.length) return "";
-  const vmax = d3.max(rows, r => r.e + (r.se || 0)) * 1.1;
-  const h = 110, m = { l: 34, r: 6, t: 8, b: 18 }, iw = CW - m.l - m.r, ih = h - m.t - m.b, bw = iw / rows.length;
-  const y = v => m.t + ih - Math.max(0, v) / vmax * ih;
-  let o = "";
-  d3.ticks(0, vmax, 3).forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(v)}" y2="${y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 4}" y="${y(v) + 3}" text-anchor="end">${fr(v)}</text>`);
-  rows.forEach((r, i) => { const x0 = m.l + i * bw + bw * 0.25, w = bw * 0.5, cx = x0 + w / 2;
-    o += `<path d="${roundTop(x0, y(r.e), w, m.t + ih - y(r.e))}" fill="${css("--est")}"></path>`
-      + `<line x1="${cx}" x2="${cx}" y1="${y(r.e - r.se)}" y2="${y(r.e + r.se)}" stroke="${css("--ink")}" stroke-width="1.5"></line>`
-      + `<text class="ax" x="${cx}" y="${h - 4}" text-anchor="middle">${r.y}</text>`
-      + `<rect x="${m.l + i * bw}" y="${m.t}" width="${bw}" height="${ih}" fill="transparent" data-tip="<b>${r.y}</b><br>${fr(r.e)} ± ${fr(r.se)} kt SO2 par an"></rect>`; });
-  return `<svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="Émissions annuelles de SO2">${o}</svg>`;
-}
-
-// ---------- detail panel ----------
-function renderDetail() {
-  const s = sites.find(x => x.id === state.sel) || sites[0], c = stAt(s, state.w), ev = activeEvent(s, state.w);
-  const lastEvent = s.events.filter(e => e.start <= W[state.w]).slice(-1)[0];
-  const evRows = s.events.slice().reverse().map(e => `<tr class="${wIndex(e.start) <= state.w && wIndex(e.end) >= state.w ? "cur" : ""}"><td>${EVFR[e.event] || e.event}</td><td>${fdate(e.start)}</td><td>${fdate(e.seen)}</td><td>${e.weeks} sem.</td></tr>`);
-  const alRows = s.alerts.slice().reverse().map(a => `<tr><td>${fdate(a.gap_start)}</td><td>${fdate(a.alert)}</td><td>${a.restart ? fdate(a.restart) : "en cours"}</td><td>${a.gap_days ?? "–"} j</td></tr>`);
-  const surRows = s.surprises.slice().reverse().map(u => { const good = u.flag !== 0 && Math.sign(u.flag) === Math.sign(u.surprise) && u.surprise !== 0;
-    const dev = u.naive ? (u.kt / u.naive - 1) * 100 : null;
-    return `<tr><td>${fdate(u.start).replace(/^\d+ /, "")} – ${fdate(u.end).replace(/^\d+ /, "")}</td><td>${dev != null ? (dev > 0 ? "+" : "") + fr(dev) + " %" : "–"}</td><td>${u.flag === 0 ? "aucune" : (u.flag < 0 ? "▼ " : "▲ ") + u.source}</td><td class="${u.flag === 0 ? "" : good ? "ok" : "bad"}">${u.flag === 0 ? "manquée" : good ? `juste, ${u.lead} j avant` : "fausse"}</td></tr>`; });
-  const table = (head, rows, max = 6) => !rows.length ? "" : `<table class="t"><thead><tr>${head.map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.slice(0, max).join("")}</tbody></table>`
-    + (rows.length > max ? `<details class="more"><summary>${rows.length - max} de plus</summary><table class="t"><tbody>${rows.slice(max).join("")}</tbody></table></details>` : "");
-  const cov = s.img_cov;
-  document.getElementById("detail").innerHTML = `
-  <div class="detail">
-    <span class="code">${s.id} · rang ${sites.indexOf(s) + 1} / ${sites.length}</span>
-    <h2>${esc(s.name)}</h2>
-    <div class="meta">${esc(s.country)} · ${esc(s.operator)} · ${s.capacity_kt ? fr(s.capacity_kt) + " kt Cu/an" : "capacité non publiée"} · preuve opérateur ${s.grade}</div>
-    <dl class="kv">
-      <dt>Semaine au</dt><dd>${fdate(W[state.w])}</dd>
-      <dt>Statut</dt><dd><span class="pill"><span class="dot ${ST[c].cls}"></span>${ST[c].label}</span>${s.r[state.w] != null ? ` r = ${fr(s.r[state.w], 2)}` : ""}${ev ? ` · arrêt daté depuis le ${fdate(ev.start)}` : ""}</dd>
-      <dt>Dernier événement</dt><dd>${lastEvent ? `${EVFR[lastEvent.event] || lastEvent.event}, ${fdate(lastEvent.start)}` : "aucun"}</dd>
-      <dt>Position</dt><dd>${s.lat.toFixed(4)}, ${s.lon.toFixed(4)} · confiance ${CONF_FR[s.confidence] || s.confidence}</dd>
-      ${s.moved ? `<dt>Corrigée le</dt><dd>${fdate(s.moved.on)} (avant : ${s.moved.lat.toFixed(4)}, ${s.moved.lon.toFixed(4)}, ${fr(d3.geoDistance([s.lon, s.lat], [s.moved.lon, s.moved.lat]) * 6371, 1)} km)</dd>` : ""}
-    </dl>
-  </div>
-  <section class="blk">
-    <h3 class="sec-title"><span class="n">01</span>Activité hebdomadaire · VIIRS</h3>
-    <p class="hint">Trait : rapport r entre l'activité et la même période des années précédentes (seuil d'arrêt 0,6 en pointillé). Zones hachurées : arrêts datés. Bande : statut. Cliquez pour choisir la semaine.</p>
-    <div class="chart" id="actChart">${activityChart(s)}</div>
-    ${s.events.length ? table(["Événement", "Début estimé", "Vu le", "Durée"], evRows) : `<p class="empty">Aucun arrêt ni redémarrage daté${s.status.includes("r") ? "" : " : VIIRS ne voit pas assez l'usine"}.</p>`}
-    ${alRows.length ? `<p class="hint" style="margin-top:10px">Alertes rapides d'arrêt (VIIRS seul, environ 13 jours) :</p>${table(["Trou depuis", "Alerte", "Reprise", "Durée"], alRows, 4)}` : ""}
-  </section>
-  <section class="blk">
-    <h3 class="sec-title"><span class="n">02</span>Production · estimé contre publié</h3>
-    ${s.est.length ? `<p class="hint">kt de cuivre par trimestre. ${s.entity_note ? esc(s.entity_note) : ""}${s.reported.some(r => r.metric !== "cuivre cathode" && r.metric !== "cuivre anode" && !String(r.metric).startsWith("cuivre métal")) ? " Attention : le chiffre publié ici n'est pas du cuivre produit (" + [...new Set(s.reported.map(r => r.metric))].join(", ") + ") ; comparez les variations, pas le niveau." : ""}</p>
-    <div class="chart">${productionChart(s)}</div>
-    <div class="keys"><span><span class="sw" style="background:var(--est)"></span>Estimation (claire : base capacité)</span><span><span class="swl" style="border-color:var(--rep)"></span>Publié (ramené au trimestre)</span><span><span class="tri"></span>Alerte juste</span><span><span class="tri o"></span>Fausse alerte</span></div>
-    ${s.reported.length ? "" : `<p class="empty">Aucun chiffre publié par usine pour ce site : l'estimation ne peut pas être vérifiée.</p>`}` : `<p class="empty">Pas d'estimation.</p>`}
-    ${surRows.length ? `<p class="hint" style="margin-top:10px">Surprises (publié à plus de 10 % de la prévision naïve) et alertes :</p>${table(["Période", "Écart publié", "Alerte", "Résultat"], surRows, 5)}` : ""}
-  </section>
-  <section class="blk">
-    <h3 class="sec-title"><span class="n">03</span>Images · Sentinel-2 et Landsat</h3>
-    ${s.images.length ? `<p class="hint">Part des images claires avec un point chaud confirmé, par mois (gris : moins de 3 images). ${cov ? `${fr(cov.n)} images, ${fr(cov.clear * 100)} % claires, ${fr(cov.per_month, 1)} utilisables par mois.` : ""}</p><div class="chart">${imageChart(s)}</div>` : `<p class="empty">Pas d'image.</p>`}
-  </section>
-  ${s.so2.length ? `<section class="blk"><h3 class="sec-title"><span class="n">04</span>SO2 · Sentinel-5P</h3><p class="hint">kt de SO2 par an, corrigées des versions du traitement, barre : erreur type.</p><div class="chart">${so2Chart(s)}</div></section>` : `<section class="blk"><h3 class="sec-title"><span class="n">04</span>SO2 · Sentinel-5P</h3><p class="empty">Panache non visible ici (usine équipée de captage, ou sources voisines). Visible seulement à Norilsk, Sarcheshmeh et Jinchang.</p></section>`}`;
-  document.querySelectorAll("#actChart .bin").forEach(b => b.addEventListener("click", () => setWeek(+b.dataset.w)));
-}
-
-// ---------- world panels ----------
 function worldChart() {
-  const rows = DATA.world; if (!rows.length) return;
-  const h = 170, m = { l: 34, r: 8, t: 8, b: 18 }, iw = CW * 1.4 - m.l - m.r, ih = h - m.t - m.b, Wd = CW * 1.4;
-  const i0 = rows.findIndex(r => r.cov >= 0.5), n = rows.length;
-  const x = i => m.l + i / (n - 1) * iw, y = v => m.t + ih - (v - 0.5) / 0.5 * ih;
+  const rows = DATA.world, n = rows.length, el = document.getElementById("worldChart");
+  if (!n) { el.innerHTML = `<p class="empty">No data.</p>`; return; }
+  const W0 = 640, h = 230, m = { l: 52, r: 8, t: 8, b: 22 }, iw = W0 - m.l - m.r, ih = h - m.t - m.b, tot = d3.max(rows, r => r.total);
+  const X = i => m.l + i / (n - 1) * iw, Y = v => m.t + ih - v / tot * ih;
+  const layer = (f0, f1, col) => { let top = "", bot = ""; rows.forEach((r, i) => { top += (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(f1(r)).toFixed(1); });
+    for (let i = n - 1; i >= 0; i--) bot += "L" + X(i).toFixed(1) + "," + Y(f0(rows[i])).toFixed(1); return `<path d="${top}${bot}Z" fill="${css(col)}" opacity="0.9"></path>`; };
   let o = "";
-  [0.5, 0.75, 1].forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(v)}" y2="${y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 4}" y="${y(v) + 3}" text-anchor="end">${fr(v * 100)} %</text>`);
-  let d = ""; rows.forEach((r, i) => { if (i < i0 || r.share == null) return; d += (d ? "L" : "M") + x(i).toFixed(1) + "," + y(Math.max(0.5, r.share)).toFixed(1); });
-  o += `<path d="${d}" fill="none" stroke="${css("--copper")}" stroke-width="2" stroke-linejoin="round"></path>`;
-  for (let yy = +W[0].slice(0, 4) + 1; yy <= +W[n - 1].slice(0, 4); yy++) { const i = W.findIndex(w => w.startsWith(String(yy))); o += `<text class="ax" x="${x(i)}" y="${h - 4}" text-anchor="middle">${yy}</text>`; }
-  o += `<line x1="${x(state.w)}" x2="${x(state.w)}" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ink")}" stroke-width="1.5"></line>`;
-  for (let i = 0; i < n; i += 2) o += `<rect x="${x(i) - iw / n}" y="${m.t}" width="${iw / n * 2}" height="${ih}" fill="transparent" class="wbin" data-w="${i}" style="cursor:pointer" data-tip="<b>semaine au ${fdate(W[i])}</b><br>${rows[i].share != null && i >= i0 ? fr(rows[i].share * 100, 1) + " % de la capacité connue en marche" : "trop peu d'usines vues"}<br>couverture ${fr(rows[i].cov * 100)} % de la capacité"></rect>`;
-  document.getElementById("worldChart").innerHTML = `<svg viewBox="0 0 ${Wd} ${h}" role="img" aria-label="Part mondiale de capacité en marche">${o}</svg>`;
-  document.querySelectorAll("#worldChart .wbin").forEach(b => b.addEventListener("click", () => setWeek(+b.dataset.w)));
+  o += layer(r => 0, r => r.run, "--run") + layer(r => r.run, r => r.known, "--stop") + layer(r => r.known, r => r.total, "--unk");
+  d3.ticks(0, tot, 4).forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--panel")}" stroke-opacity="0.6"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${fr(v / 1000, 0)} Mt</text>`);
+  let ly = null; rows.forEach((r, i) => { const yy = r.w.slice(0, 4); if (yy !== ly) { if (i) o += `<text class="ax" x="${X(i) + 3}" y="${h - 6}">${yy}</text>`; ly = yy; } });
+  o += `<line x1="${X(state.w)}" x2="${X(state.w)}" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ink")}" stroke-width="2"></line>`;
+  o += `<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ink")}" stroke-dasharray="2 2" visibility="hidden"></line><rect class="lc-hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" style="cursor:pointer"></rect>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W0} ${h}" role="img" aria-label="Registry capacity by weekly status">${o}</svg>`;
+  const s = el.querySelector("svg"), hit = el.querySelector(".lc-hit"), xh = el.querySelector(".xh");
+  const idx = e => { const r = s.getBoundingClientRect(); return Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width * W0 - m.l) / iw * (n - 1)))); };
+  hit.addEventListener("pointermove", e => { const i = idx(e), r = rows[i]; xh.setAttribute("x1", X(i)); xh.setAttribute("x2", X(i)); xh.setAttribute("visibility", "visible");
+    showTip(`<b>Week ending ${fdate(r.w)}</b><div class="r"><span class="sw" style="background:${css("--run")}"></span>Running ${fr(r.run)} kt</div><div class="r"><span class="sw" style="background:${css("--stop")}"></span>Stopped ${fr(r.known - r.run)} kt</div><div class="r"><span class="sw" style="background:${css("--unk")}"></span>Unknown ${fr(r.total - r.known)} kt</div>`, e); });
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); tip.hidden = true; });
+  hit.addEventListener("click", e => setWeek(idx(e)));
 }
+function zs(a) { const v = a.filter(x => x != null), m = d3.mean(v), sd = d3.deviation(v) || 1; return a.map(x => x == null ? null : (x - m) / sd); }
 function chinaChart() {
-  const rows = DATA.china; if (!rows.length) return;
-  const corr = d3.mean(rows, r => r.sat) != null ? pearson(rows.map(r => r.sat), rows.map(r => r.nbs)) : null;
-  document.getElementById("chinaHint").textContent = `En haut, part de la capacité chinoise vue en marche (satellite). En bas, écart de la production officielle de cuivre raffiné à sa médiane des 12 mois précédents. Corrélation ${fr(corr, 2)} sur ${rows.length} mois ; le satellite est disponible environ 11 jours avant la publication NBS.`;
-  const Wd = CW * 1.4, ph = 80, gap = 28, m = { l: 34, r: 8, t: 6, b: 18 }, iw = Wd - m.l - m.r, n = rows.length;
-  const x = i => m.l + (i + 0.5) / n * iw, bw = iw / n;
-  const panel = (key, y0, lo, hi, ticks, unit, color, bars) => {
-    const y = v => y0 + ph - (v - lo) / (hi - lo) * ph; let o = "";
-    ticks.forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(v)}" y2="${y(v)}" stroke="${css(v === 0 && bars ? "--border" : "--grid")}"></line><text class="ax" x="${m.l - 4}" y="${y(v) + 3}" text-anchor="end">${fr(v)}${unit}</text>`);
-    if (bars) rows.forEach((r, i) => { const v = Math.max(lo, Math.min(hi, r[key])); o += `<rect x="${x(i) - bw * 0.35}" y="${Math.min(y(0), y(v))}" width="${bw * 0.7}" height="${Math.abs(y(v) - y(0))}" fill="${color}"></rect>`; });
-    else { let d = ""; rows.forEach((r, i) => d += (i ? "L" : "M") + x(i).toFixed(1) + "," + y(Math.max(lo, r[key])).toFixed(1)); o += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2"></path>`; }
-    return o;
-  };
-  let o = panel("sat", m.t, 60, 100, [60, 80, 100], " %", css("--copper"), false)
-        + panel("nbs", m.t + ph + gap, -20, 20, [-20, 0, 20], " %", css("--est"), true);
-  const H = m.t + ph * 2 + gap + m.b;
-  rows.forEach((r, i) => { if (r.m.endsWith("-01")) o += `<text class="ax" x="${x(i)}" y="${H - 4}" text-anchor="middle">${r.m.slice(0, 4)}</text>`;
-    o += `<rect x="${x(i) - bw / 2}" y="${m.t}" width="${bw}" height="${ph * 2 + gap}" fill="transparent" data-tip="<b>${fmonth(r.m)}</b><br>satellite : ${fr(r.sat, 1)} % en marche<br>NBS : ${r.nbs > 0 ? "+" : ""}${fr(r.nbs, 1)} % vs médiane 12 mois"></rect>`; });
-  const cur = W[state.w].slice(0, 7), ci = rows.findIndex(r => r.m === cur);
-  if (ci >= 0) o += `<line x1="${x(ci)}" x2="${x(ci)}" y1="${m.t}" y2="${m.t + ph * 2 + gap}" stroke="${css("--ink")}" stroke-width="1" stroke-dasharray="2 2"></line>`;
-  document.getElementById("chinaChart").innerHTML = `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Indice satellite chinois et statistique NBS">${o}</svg>`
-    + `<div class="keys"><span><span class="swl" style="border-color:var(--copper)"></span>Satellite, part en marche</span><span><span class="sw" style="background:var(--est)"></span>NBS, écart à la médiane 12 mois</span></div>`;
+  const rows = DATA.china, el = document.getElementById("chinaChart");
+  if (!rows.length) { el.innerHTML = `<p class="empty">No data.</p>`; return; }
+  const sat = rows.map(r => r.sat), nbs = rows.map(r => r.nbs), corr = pearson(sat, nbs);
+  document.getElementById("chinaHint").textContent = `Both series are put on the same scale (standard deviations from their own average), so they can share one axis. When the lines move together, the satellites track the official figure. Correlation ${fr(corr, 2)} over ${rows.length} months; the satellite reading is ready about 11 days before NBS publishes.`;
+  const zsat = zs(sat), znbs = zs(nbs);
+  lineChart(el, { x: rows.map(r => r.m), W0: 640, h: 230, yMin: -3.2, yMax: 3.2, refs: [{ v: 0 }],
+    series: [{ name: "Satellite (share running)", color: "--est", v: zsat }, { name: "NBS (vs 12-month median)", color: "--rep", v: znbs }],
+    yFmt: (v, tipMode) => tipMode ? (v > 0 ? "+" : "") + fr(v, 1) + " sd" : (v > 0 ? "+" : "") + fr(v, 0) });
 }
 function pearson(a, b) { const ma = d3.mean(a), mb = d3.mean(b); let s = 0, sa = 0, sb = 0; a.forEach((v, i) => { s += (v - ma) * (b[i] - mb); sa += (v - ma) ** 2; sb += (b[i] - mb) ** 2; }); return s / Math.sqrt(sa * sb); }
 
-// ---------- controls ----------
-const slider = document.getElementById("week");
-slider.max = NW - 1; slider.value = state.w;
+// ---------- site ----------
+const pick = document.getElementById("sitePick");
+pick.innerHTML = sites.map(s => `<option value="${s.id}">${esc(s.name)} · ${esc(s.country)}</option>`).join("");
+pick.addEventListener("change", () => { state.sel = pick.value; renderSite(); });
+document.getElementById("prevSite").addEventListener("click", () => { const i = sites.findIndex(s => s.id === state.sel); state.sel = sites[(i - 1 + sites.length) % sites.length].id; renderSite(); });
+document.getElementById("nextSite").addEventListener("click", () => { const i = sites.findIndex(s => s.id === state.sel); state.sel = sites[(i + 1) % sites.length].id; renderSite(); });
+document.getElementById("showMap").addEventListener("click", () => { setTab("overview"); flyTo(state.sel); });
+document.getElementById("addCmp").addEventListener("click", () => { if (!state.cmp.includes(state.sel)) { state.cmp = [...state.cmp, state.sel].slice(-4); } toast("Added to comparison"); setTab("compare"); });
+document.querySelectorAll("#subtabs button").forEach(b => b.addEventListener("click", () => { state.sub = b.dataset.sub; renderSite(); }));
+let thumbMode = "rgb";
+function openSite(id) { state.sel = id; setTab("site"); }
+
+function renderSite() {
+  const s = byId[state.sel], i = state.w, c = stAt(s, i), ev = activeStop(s, i), p = s.profile || {};
+  pick.value = s.id;
+  const last = s.events.filter(e => e.start <= W[i]).slice(-1)[0];
+  const known = s.status.split("").filter(x => x !== "u").length / NW;
+  const th = s.thumb;
+  const tick = p.tickers || [];
+  const shareRow = t => { const ser = (DATA.markets.shares?.series || []).find(x => x.t === t.t); if (!ser) return esc(t.name);
+    const v = ser.v, lastV = v[v.length - 1], yAgo = v[v.length - 13]; const ch = yAgo ? (lastV / yAgo - 1) * 100 : null;
+    return `${esc(t.name)} <span class="m">${t.t} · ${fr(lastV, lastV < 10 ? 2 : 0)} ${t.ccy || ""}${ch != null ? ` · ${ch > 0 ? "+" : ""}${fr(ch)} % over 12 months` : ""}</span>`; };
+  document.getElementById("idcard").innerHTML = `
+    <div class="thumb">
+      <div class="img">${th ? `<img alt="Sentinel-2 image of ${esc(s.name)}" src="${thumbMode === "rgb" ? th.rgb : th.swir}">
+        <svg class="cross" viewBox="0 0 100 100" preserveAspectRatio="none"><circle cx="50" cy="50" r="7" fill="none" stroke="#fff" stroke-width="0.6"></circle><line x1="50" y1="38" x2="50" y2="45" stroke="#fff" stroke-width="0.6"></line><line x1="50" y1="55" x2="50" y2="62" stroke="#fff" stroke-width="0.6"></line><line x1="38" y1="50" x2="45" y2="50" stroke="#fff" stroke-width="0.6"></line><line x1="55" y1="50" x2="62" y2="50" stroke="#fff" stroke-width="0.6"></line></svg>
+        <span class="scale">${fr(th.half_km * 2, 1)} km across</span>` : `<p class="empty" style="padding:12px">No clear image.</p>`}</div>
+      ${th ? `<div class="seg"><button class="btn small" data-th="rgb" aria-pressed="${thumbMode === "rgb"}">True colour</button><button class="btn small" data-th="swir" aria-pressed="${thumbMode === "swir"}">Infrared (heat)</button></div>
+      <div class="code">Sentinel-2 · ${fdate(th.date)} · ${th.hot ? "hot spot confirmed" : "no hot spot on this image"}</div>
+      <div class="hint" style="margin:0">${thumbMode === "swir" ? "Short-wave infrared (B12, B11, B8A): furnaces and hot slag show as bright orange-white spots." : "Most recent clear image; the cross marks the registry position."}</div>` : ""}
+    </div>
+    <div class="facts">
+      <span class="code">${s.id} · rank ${p.rank ?? "–"} of ${sites.length} by capacity</span>
+      <h2>${esc(s.name)}</h2>
+      <div class="meta">${esc(s.country)} · ${esc(s.operator)}</div>
+      <div class="statusline"><span class="big"><span class="dot ${ST[c].cls}"></span>${ST[c].label}</span><span class="code">week ending ${fdate(W[i])}${s.r[i] != null ? ` · activity ratio ${fr(s.r[i], 2)}` : ""}${ev ? ` · stopped since ${fdate(ev.start)}` : ""}</span></div>
+      <dl class="kv">
+        <dt>Capacity</dt><dd>${s.capacity_kt ? `<span class="m">${fr(s.capacity_kt)} kt Cu/yr</span> · ${fr(p.reg_share, 1)} % of the 29 smelters` : "not published"}${p.capacity_basis ? ` <span class="code">(${esc(p.capacity_basis)})</span>` : ""}</dd>
+        <dt>Operator evidence</dt><dd>Grade ${esc(s.grade)}${p.evidence ? ` · ${esc(p.evidence)}` : ""}${p.evidence_source ? ` · <a href="${esc(p.evidence_source)}" target="_blank" rel="noopener">source${p.evidence_date ? `, ${fdate(p.evidence_date)}` : ""}</a>` : ""}</dd>
+        ${p.capacity_evidence ? `<dt>Capacity evidence</dt><dd>${esc(p.capacity_evidence)}</dd>` : ""}
+        <dt>Listed companies</dt><dd>${tick.length ? tick.map(shareRow).join("<br>") : "none (state-owned or private)"}</dd>
+        <dt>Position</dt><dd><span class="m">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</span> · confidence ${CONF[s.confidence] || esc(s.confidence)}${s.moved ? ` · corrected ${fdate(s.moved.on)} (moved ${fr(d3.geoDistance([s.lon, s.lat], [s.moved.lon, s.moved.lat]) * 6371, 1)} km)` : (p.geo_method ? ` · ${esc(p.geo_method)}` : "")}</dd>
+        <dt>Satellite coverage</dt><dd>VIIRS status known ${fr(known * 100)} % of weeks${s.img_cov ? ` · ${fr(s.img_cov.n)} images, ${fr(s.img_cov.per_month, 1)} usable per month` : ""}</dd>
+        <dt>Last event</dt><dd>${last ? `${EV[last.event] || last.event}, ${fdate(last.start)} (seen ${fdate(last.seen)})` : "none dated"}</dd>
+        <dt>Published output</dt><dd>${s.reported.length ? `${s.reported.length} figures (${esc([...new Set(s.reported.map(r => r.metric))].join(", "))})${s.entity_note ? ` · ${esc(s.entity_note)}` : ""}` : "none per smelter"}</dd>
+        ${s.so2_last ? `<dt>SO2 plume</dt><dd>visible · <span class="m">${fr(s.so2_last.e)} ± ${fr(s.so2_last.se)} kt SO2/yr</span> in ${s.so2_last.y}</dd>` : ""}
+      </dl>
+    </div>`;
+  document.querySelectorAll("#idcard [data-th]").forEach(b => b.addEventListener("click", () => { thumbMode = b.dataset.th; renderSite(); }));
+  document.querySelectorAll("#subtabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.sub === state.sub)));
+  const pane = document.getElementById("subpane");
+  if (state.sub === "activity") renderActivity(pane, s);
+  else if (state.sub === "output") renderOutput(pane, s);
+  else if (state.sub === "images") renderImages(pane, s);
+  else renderSiteAlerts(pane, s);
+  sizeMarks(); writeHash();
+}
+
+function renderActivity(pane, s) {
+  const stopRows = s.events.slice().reverse().map(e => `<tr class="${wIndex(e.start) <= state.w && wIndex(e.end) >= state.w ? "cur" : ""}"><td><span class="tag t-${e.event}">${EV[e.event] || e.event}</span></td><td class="m">${fdate(e.start)}</td><td class="m">${fdate(e.seen)}</td><td class="m num">${e.weeks} wk</td><td class="m num">${e.min_r != null ? fr(e.min_r, 2) : "–"}</td></tr>`).join("");
+  pane.innerHTML = `<p class="hint">Black line: activity ratio (this week vs the same weeks of the 3 previous years; 1 = usual, below 0.6 = stopped). Coloured band: weekly status. Red zones: dated stops. Click the chart to move the week.</p>
+    <div class="chart" id="actChart"></div>
+    <div class="keys"><span><span class="swl" style="border-color:var(--ink)"></span>Activity ratio</span><span><span class="swd" style="border-color:var(--stop)"></span>Stop threshold 0.6</span><span><span class="sw" style="background:var(--run)"></span>Running</span><span><span class="sw" style="background:var(--stop)"></span>Stopped</span><span><span class="sw" style="background:var(--unk)"></span>Unknown</span></div>
+    <h3 class="sec-title" style="margin-top:16px"><span class="n">EV</span>Dated stops and restarts</h3>
+    ${stopRows ? `<div class="scroll"><table class="t"><thead><tr><th>Event</th><th>Estimated start</th><th>Seen on</th><th class="num">Length</th><th class="num">Lowest ratio</th></tr></thead><tbody>${stopRows}</tbody></table></div>` : `<p class="empty">No dated stop or restart${s.status.includes("r") ? "" : ": VIIRS does not see this plant well enough"}.</p>`}`;
+  activityChart(document.getElementById("actChart"), s);
+}
+function activityChart(el, s) {
+  const W0 = 1000, h = 200, m = { l: 40, r: 8, t: 8, b: 36 }, iw = W0 - m.l - m.r, ih = h - m.t - m.b, bw = iw / NW;
+  const X = i => m.l + (i + 0.5) / NW * iw, Y = v => m.t + ih - Math.min(v, 2) / 2 * ih;
+  let o = "";
+  [0, 0.5, 1, 1.5, 2].forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${fr(v, 1)}</text>`);
+  s.events.filter(e => e.event === "stop").forEach(e => { const a = wIndex(e.start), b = wIndex(e.end); o += `<rect x="${X(a) - bw / 2}" y="${m.t}" width="${Math.max(bw, X(b) - X(a) + bw)}" height="${ih}" fill="${css("--stop")}" opacity="0.13"></rect>`; });
+  o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(0.6)}" y2="${Y(0.6)}" stroke="${css("--stop")}" stroke-dasharray="5 3"></line>`;
+  let d = "", pen = false; s.r.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? "L" : "M") + X(i).toFixed(1) + "," + Y(v).toFixed(1); pen = true; });
+  o += `<path d="${d}" fill="none" stroke="${css("--ink")}" stroke-width="1.6" stroke-linejoin="round"></path>`;
+  const sy = m.t + ih + 4;
+  for (let i = 0; i < NW; i++) o += `<rect x="${(X(i) - bw / 2).toFixed(2)}" y="${sy}" width="${(bw + 0.1).toFixed(2)}" height="9" fill="${css(ST[stAt(s, i)].v)}"></rect>`;
+  let ly = null; W.forEach((w, i) => { const yy = w.slice(0, 4); if (yy !== ly) { if (i) o += `<text class="ax" x="${X(i)}" y="${h - 6}">${yy}</text>`; ly = yy; } });
+  o += `<line x1="${X(state.w)}" x2="${X(state.w)}" y1="${m.t}" y2="${sy + 9}" stroke="${css("--ink")}" stroke-width="2"></line>`;
+  o += `<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${sy + 9}" stroke="${css("--muted")}" stroke-dasharray="2 2" visibility="hidden"></line><rect class="lc-hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih + 13}" fill="transparent" style="cursor:pointer"></rect>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W0} ${h}" role="img" aria-label="Weekly activity ratio and status">${o}</svg>`;
+  const sv = el.querySelector("svg"), hit = el.querySelector(".lc-hit"), xh = el.querySelector(".xh");
+  const idx = e => { const r = sv.getBoundingClientRect(); return Math.max(0, Math.min(NW - 1, Math.floor(((e.clientX - r.left) / r.width * W0 - m.l) / iw * NW))); };
+  hit.addEventListener("pointermove", e => { const i = idx(e); xh.setAttribute("x1", X(i)); xh.setAttribute("x2", X(i)); xh.setAttribute("visibility", "visible");
+    const st = stAt(s, i), ev = activeStop(s, i); showTip(`<b>Week ending ${fdate(W[i])}</b><div class="r"><span class="sw" style="background:${css(ST[st].v)}"></span>${ST[st].label}${s.r[i] != null ? ` · ratio ${fr(s.r[i], 2)}` : ""}</div>${ev ? `stop dated ${fdate(ev.start)}` : ""}`, e); });
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); tip.hidden = true; });
+  hit.addEventListener("click", e => setWeek(idx(e)));
+}
+
+const qIndex = q => +q.slice(0, 4) * 4 + +q.slice(5) - 1;
+const dateQ = d => +d.slice(0, 4) * 4 + Math.floor((+d.slice(5, 7) - 1) / 3);
+function renderOutput(pane, s) {
+  const notCopper = s.reported.some(r => !/^(cathode|anode) copper|^copper metal|^group cathode/.test(String(r.metric)));
+  const hasRep = s.reported.length > 0;
+  const yr = s.est_year ? Object.entries(s.est_year) : [];
+  const surRows = s.surprises.slice().reverse().map(u => { const good = u.flag !== 0 && Math.sign(u.flag) === Math.sign(u.surprise) && u.surprise !== 0; const dev = u.naive ? (u.kt / u.naive - 1) * 100 : null;
+    return `<tr><td class="m">${fmonth(u.start.slice(0, 7))} – ${fmonth(u.end.slice(0, 7))}</td><td class="m num">${fr(u.kt, 1)}</td><td class="m num">${fr(u.naive, 1)}</td><td class="m num">${dev != null ? (dev > 0 ? "+" : "") + fr(dev) + " %" : "–"}</td><td>${u.flag === 0 ? "none" : (u.flag < 0 ? "▼ lower" : "▲ higher") + ` (${u.source})`}</td><td class="${u.flag === 0 ? "" : good ? "ok" : "bad"}">${u.flag === 0 ? (u.surprise ? "missed" : "–") : good ? `right, ${u.lead} days early` : "false alarm"}</td></tr>`; }).join("");
+  pane.innerHTML = `
+    ${hasRep ? `<p class="hint">Copper output per quarter, kt. Bars: satellite estimate (lighter when based on capacity rather than published rates). Blue lines: what the company published, spread evenly over the quarters of its period. Triangles: output alerts (green right, red false). ${s.entity_note ? esc(s.entity_note) : ""}${notCopper ? ` <b>The published figure here is not refined copper (${esc([...new Set(s.reported.map(r => r.metric))].join(", "))}): compare the changes, not the level.</b>` : ""}</p>
+      <div class="chart" id="outChart"></div>
+      <div class="keys"><span><span class="sw" style="background:var(--est)"></span>Satellite estimate</span><span><span class="swl" style="border-color:var(--rep)"></span>Published</span><span style="color:var(--run)">▲ right alert</span><span style="color:var(--stop)">▲ false alert</span></div>`
+    : `<p class="hint"><b>This company does not publish output for this smelter</b>, so the estimate cannot be checked against reported figures. It is 80 % of capacity, cut when VIIRS sees a stop (activity ratio below 0.6).</p><div class="chart" id="outChart"></div><div class="keys"><span><span class="sw" style="background:var(--est);opacity:.5"></span>Satellite estimate (capacity-based)</span></div>`}
+    ${yr.length ? `<h3 class="sec-title" style="margin-top:16px"><span class="n">YR</span>Estimate by year (kt Cu)</h3><div class="scroll"><table class="t"><thead><tr>${yr.map(([k]) => `<th class="num">${esc(k)}</th>`).join("")}</tr></thead><tbody><tr>${yr.map(([, v]) => `<td class="m num">${fr(v)}</td>`).join("")}</tr></tbody></table></div>` : ""}
+    ${surRows ? `<h3 class="sec-title" style="margin-top:16px"><span class="n">SU</span>Surprises and output alerts</h3><p class="hint">Surprise: published output more than 10 % away from the naive forecast (last 12 months' rate).</p><div class="scroll"><table class="t"><thead><tr><th>Period</th><th class="num">Published kt</th><th class="num">Naive kt</th><th class="num">Gap</th><th>Alert</th><th>Result</th></tr></thead><tbody>${surRows}</tbody></table></div>` : ""}`;
+  if (document.getElementById("outChart")) outputChart(document.getElementById("outChart"), s);
+}
+function roundTop(x, y, w, h) { const r = Math.min(3, w / 2, h); if (h <= 0) return ""; return `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`; }
+function outputChart(el, s) {
+  const est = s.est.filter(e => e.est != null);
+  const reps = s.reported.map(r => { const a = dateQ(r.start), b = dateQ(r.end); return { ...r, a, b, perq: r.kt / (b - a + 1) }; });
+  if (!est.length) { el.innerHTML = `<p class="empty">No estimate.</p>`; return; }
+  const q0 = qIndex(est[0].q), q1 = qIndex(est[est.length - 1].q), nq = q1 - q0 + 1;
+  const vr = reps.filter(r => r.b >= q0 && r.a <= q1);
+  const vmax = (d3.max([...est.map(e => e.est), ...vr.map(r => r.perq)]) || 1) * 1.15;
+  const W0 = 1000, h = 240, m = { l: 44, r: 8, t: 16, b: 22 }, iw = W0 - m.l - m.r, ih = h - m.t - m.b, bw = iw / nq;
+  const X = q => m.l + (q - q0) * bw, Y = v => m.t + ih - v / vmax * ih;
+  let o = "";
+  d3.ticks(0, vmax, 4).forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${fr(v)}</text>`);
+  est.forEach(e => { const q = qIndex(e.q); if (q < q0) return; const basis = e.basis === "published" ? "published rate" : e.basis === "capacity" ? "80 % of capacity" : "not started";
+    o += `<path d="${roundTop(X(q) + 2, Y(e.est), bw - 4, m.t + ih - Y(e.est))}" fill="${css("--est")}" opacity="${e.basis === "published" ? 1 : 0.5}" data-tip="<b>${e.q}</b> · estimate ${fr(e.est)} kt<br>basis: ${basis}${e.r != null ? ` · ratio ${fr(e.r, 2)}` : ""}${e.visible ? "" : "<br>VIIRS does not see the plant"}"></path>`; });
+  vr.forEach(r => { const xa = X(Math.max(r.a, q0)) + 1, xb = X(Math.min(r.b, q1) + 1) - 1;
+    o += `<line x1="${xa}" x2="${xb}" y1="${Y(r.perq)}" y2="${Y(r.perq)}" stroke="${css("--rep")}" stroke-width="3" stroke-linecap="round"></line><line x1="${xa}" x2="${xb}" y1="${Y(r.perq)}" y2="${Y(r.perq)}" stroke="transparent" stroke-width="12" data-tip="<b>Published ${fdate(r.start)} – ${fdate(r.end)}</b><br>${fr(r.kt, 1)} kt (${esc(r.metric)})${r.b > r.a ? `, ${fr(r.perq, 1)} kt per quarter` : ""}<br>released ${fdate(r.published)}"></line>`; });
+  s.surprises.filter(u => u.flag !== 0).forEach(u => { const a = Math.max(dateQ(u.start), q0), b = Math.min(dateQ(u.end), q1); if (b < q0 || a > q1) return;
+    const cx = (X(a) + X(b + 1)) / 2, good = Math.sign(u.flag) === Math.sign(u.surprise) && u.surprise !== 0;
+    const tri = u.flag < 0 ? `M${cx - 6},${m.t - 12} L${cx + 6},${m.t - 12} L${cx},${m.t - 2} Z` : `M${cx - 6},${m.t - 2} L${cx + 6},${m.t - 2} L${cx},${m.t - 12} Z`;
+    o += `<path d="${tri}" fill="${css(good ? "--run" : "--stop")}" data-tip="<b>${u.flag < 0 ? "Lower" : "Higher"} output alert</b> (${u.source})<br>${fdate(u.start)} – ${fdate(u.end)}<br>${good ? "right" : "false alarm"}, ${u.lead} days before publication"></path>`; });
+  for (let yy = Math.ceil(q0 / 4); yy * 4 <= q1; yy++) o += `<text class="ax" x="${X(yy * 4) + 3}" y="${h - 6}">${yy}</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W0} ${h}" role="img" aria-label="Estimated and published output per quarter">${o}</svg>`;
+}
+
+const ym = s => +s.slice(0, 4) * 12 + +s.slice(5, 7) - 1;
+function renderImages(pane, s) {
+  if (!s.images.length) { pane.innerHTML = `<p class="empty">No usable image.</p>`; return; }
+  pane.innerHTML = `<p class="hint">Share of clear Sentinel-2 and Landsat images with a confirmed hot spot (TAI &gt; 3 and B12 − B11 &gt; 0.40), per month. Lighter bars: fewer than 3 images that month. ${s.img_cov ? `${fr(s.img_cov.n)} images in total, ${fr(s.img_cov.clear * 100)} % clear.` : ""}</p><div class="chart" id="imgChart"></div>
+    <div class="keys"><span><span class="sw" style="background:var(--est)"></span>Hot images, % of clear images</span></div>`;
+  const el = document.getElementById("imgChart"), m0 = ym(s.images[0].m), m1 = ym(s.images[s.images.length - 1].m), n = m1 - m0 + 1;
+  const W0 = 1000, h = 200, m = { l: 40, r: 8, t: 8, b: 22 }, iw = W0 - m.l - m.r, ih = h - m.t - m.b, bw = iw / n;
+  const X = i => m.l + (i - m0) * bw, Y = v => m.t + ih - v * ih;
+  let o = "";
+  [0, 0.25, 0.5, 0.75, 1].forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${fr(v * 100)}%</text>`);
+  s.images.forEach(im => { const xi = X(ym(im.m)), bh = Math.max(1.5, im.share * ih);
+    o += `<rect x="${(xi + 0.6).toFixed(2)}" y="${(m.t + ih - bh).toFixed(2)}" width="${Math.max(1, bw - 1.2).toFixed(2)}" height="${bh.toFixed(2)}" fill="${css("--est")}" opacity="${im.n >= 3 ? 1 : 0.4}"></rect><rect x="${xi}" y="${m.t}" width="${bw}" height="${ih}" fill="transparent" data-tip="<b>${fmonth(im.m)}</b><br>${fr(im.share * 100)} % hot, ${im.n} usable image${im.n > 1 ? "s" : ""}"></rect>`; });
+  const cur = W[state.w].slice(0, 7); if (ym(cur) >= m0 && ym(cur) <= m1) o += `<line x1="${X(ym(cur)) + bw / 2}" x2="${X(ym(cur)) + bw / 2}" y1="${m.t}" y2="${m.t + ih}" stroke="${css("--ink")}" stroke-width="1.5"></line>`;
+  for (let yy = Math.ceil(m0 / 12); yy * 12 <= m1; yy++) o += `<text class="ax" x="${X(yy * 12) + 3}" y="${h - 6}">${yy}</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W0} ${h}" role="img" aria-label="Monthly share of hot images">${o}</svg>`;
+}
+function renderSiteAlerts(pane, s) {
+  const rows = allAlerts().filter(a => a.site === s.id);
+  pane.innerHTML = rows.length ? `<p class="hint">All satellite signals for this smelter, newest first.</p><div class="scroll">${alertTable(rows, false)}</div>` : `<p class="empty">No alert for this smelter.</p>`;
+}
+
+// ---------- alerts feed ----------
+let ALERTS = null;
+function allAlerts() {
+  if (ALERTS) return ALERTS;
+  const out = [];
+  sites.forEach(s => {
+    s.events.forEach(e => out.push({ date: e.seen || e.start, site: s.id, type: e.event === "stop" ? "stop" : "restart", label: EV[e.event] || e.event, cls: e.event,
+      detail: `${EV[e.event]} estimated ${fdate(e.start)}, lasted ${e.weeks} weeks${e.min_r != null && e.event === "stop" ? `, lowest ratio ${fr(e.min_r, 2)}` : ""}`, result: "" }));
+    s.alerts.forEach(a => out.push({ date: a.alert, site: s.id, type: "fast", label: "Fast stop alert", cls: "fast",
+      detail: `no heat since ${fdate(a.gap_start)}${a.restart ? `, heat back ${fdate(a.restart)} (${a.gap_days} days)` : ", still no heat"}`, result: "" }));
+    s.surprises.filter(u => u.flag !== 0).forEach(u => { const good = Math.sign(u.flag) === Math.sign(u.surprise) && u.surprise !== 0;
+      out.push({ date: u.decision, site: s.id, type: "surprise", label: "Output alert", cls: "surprise",
+        detail: `${u.flag < 0 ? "lower" : "higher"} output expected for ${fmonth(u.start.slice(0, 7))} – ${fmonth(u.end.slice(0, 7))} (${u.source})`,
+        result: u.published && /^\d/.test(u.published) ? (good ? `<span class="ok">right</span>, published ${fdate(u.published)}` : `<span class="bad">false alarm</span>`) : "pending" }); });
+  });
+  ALERTS = out.sort((a, b) => b.date.localeCompare(a.date));
+  return ALERTS;
+}
+function alertTable(rows, withSite = true, id = "") {
+  return `<table class="t"${id ? ` id="${id}"` : ""}><thead><tr><th>Date</th>${withSite ? "<th>Smelter</th>" : ""}<th>Signal</th><th>Detail</th><th>Result</th></tr></thead><tbody>${rows.map(a => { const s = byId[a.site];
+    return `<tr ${withSite ? `data-site="${a.site}" tabindex="0"` : ""}><td class="m">${fdate(a.date)}</td>${withSite ? `<td><b>${esc(s.name)}</b> <span class="code">${esc(s.country)}</span></td>` : ""}<td><span class="tag t-${a.cls}">${a.label}</span></td><td>${a.detail}</td><td>${a.result}</td></tr>`; }).join("")}</tbody></table>`;
+}
+const ATYPES = [["stop", "Stops", "--stop"], ["restart", "Restarts / start-ups", "--run"], ["fast", "Fast stop alerts", "--est"], ["surprise", "Output alerts", "--rep"]];
+function renderAlerts() {
+  document.getElementById("alertChips").innerHTML = ATYPES.map(([k, l, c]) => `<button class="chip" data-a="${k}" aria-pressed="${state.alertTypes.includes(k)}"><span class="sw" style="background:var(${c})"></span>${l}</button>`).join("");
+  const days = +document.getElementById("alertPeriod").value, q = document.getElementById("alertQ").value.toLowerCase();
+  const end = W[NW - 1], cut = days ? new Date(new Date(end).getTime() - days * 864e5).toISOString().slice(0, 10) : "0000";
+  const rows = allAlerts().filter(a => state.alertTypes.includes(a.type) && a.date >= cut && (!q || byId[a.site].name.toLowerCase().includes(q)));
+  document.getElementById("alertCount").textContent = `${rows.length} signals`;
+  document.getElementById("alertTable").outerHTML = alertTable(rows, true, "alertTable");
+  document.querySelectorAll("#alertChips .chip").forEach(b => b.addEventListener("click", () => { const k = b.dataset.a; state.alertTypes = state.alertTypes.includes(k) ? state.alertTypes.filter(x => x !== k) : [...state.alertTypes, k]; renderAlerts(); }));
+}
+["alertPeriod", "alertQ"].forEach(id => document.getElementById(id).addEventListener(id === "alertQ" ? "input" : "change", renderAlerts));
+document.getElementById("tab-alerts").addEventListener("click", e => { const r = e.target.closest("tr[data-site]"); if (r) openSite(r.dataset.site); });
+document.getElementById("tab-alerts").addEventListener("keydown", e => { const r = e.target.closest("tr[data-site]"); if (r && e.key === "Enter") openSite(r.dataset.site); });
+(() => { const end = W[NW - 1], cut = new Date(new Date(end).getTime() - 90 * 864e5).toISOString().slice(0, 10); const n = allAlerts().filter(a => a.date >= cut && a.type !== "restart").length;
+  const b = document.getElementById("alertBadge"); if (n) { b.textContent = n; b.hidden = false; b.title = `${n} signals in the last 3 months`; } })();
+
+// ---------- production ----------
+function renderProduction() {
+  const P0 = DATA.production; if (!P0 || !P0.quarters) return;
+  const top = P0.countries.slice(0, 7), other = P0.countries.slice(7);
+  const groups = [...top.map((c, i) => ({ name: c, col: PAL[i], v: P0.values[c] })), { name: "Other (" + other.join(", ") + ")", short: "Other", col: "--cother", v: P0.quarters.map((_, i) => other.reduce((a, c) => a + P0.values[c][i], 0)) }];
+  const n = P0.quarters.length, tot = P0.quarters.map((_, i) => groups.reduce((a, g) => a + g.v[i], 0));
+  document.getElementById("prodHint").innerHTML = `Copper output per quarter estimated from satellite heat (kt). The latest quarter, ${P0.quarters[n - 1]}, totals ${fr(tot[n - 1])} kt, ${fr((tot[n - 1] / tot[n - 5] - 1) * 100, 1)} % vs a year earlier. Where a company publishes figures, the estimate follows its rate; elsewhere it is 80 % of capacity, cut when a stop is seen.`;
+  const W0 = 1200, h = 300, m = { l: 52, r: 8, t: 10, b: 24 }, iw = W0 - m.l - m.r, ih = h - m.t - m.b, bw = iw / n, vmax = d3.max(tot) * 1.08;
+  const X = i => m.l + i * bw, Y = v => m.t + ih - v / vmax * ih;
+  let o = ""; d3.ticks(0, vmax, 5).forEach(v => o += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--grid")}"></line><text class="ax" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${fr(v)}</text>`);
+  P0.quarters.forEach((q, i) => { let acc = 0;
+    groups.forEach(g => { const v = g.v[i]; if (v <= 0) return; const y1 = Y(acc + v), y0 = Y(acc); o += `<rect x="${X(i) + 3}" y="${y1 + 1}" width="${bw - 6}" height="${Math.max(0, y0 - y1 - 1)}" fill="${css(g.col)}"></rect>`; acc += v; });
+    o += `<rect x="${X(i)}" y="${m.t}" width="${bw}" height="${ih}" fill="transparent" data-tip="<b>${q}</b> · total ${fr(tot[i])} kt${groups.slice().reverse().map(g => `<div class='r'><span class='sw' style='background:${css(g.col)}'></span>${esc(g.short || g.name)}: ${fr(g.v[i])} kt</div>`).join("")}"></rect>`;
+    if (q.endsWith("Q1")) o += `<text class="ax" x="${X(i) + 3}" y="${h - 6}">${q.slice(0, 4)}</text>`; });
+  document.getElementById("prodChart").innerHTML = `<svg viewBox="0 0 ${W0} ${h}" role="img" aria-label="Estimated output by country">${o}</svg>`;
+  document.getElementById("prodKeys").innerHTML = groups.map(g => `<span><span class="sw" style="background:var(${g.col})"></span>${esc(g.name)}</span>`).join("");
+  // table: country x year
+  const years = [...new Set(P0.quarters.map(q => q.slice(0, 4)))];
+  const yv = c => years.map(y => P0.quarters.reduce((a, q, i) => a + (q.startsWith(y) ? P0.values[c][i] : 0), 0));
+  const nq = y => P0.quarters.filter(q => q.startsWith(y)).length;
+  const rows = P0.countries.map(c => [c, yv(c)]), totals = years.map((y, j) => rows.reduce((a, r) => a + r[1][j], 0));
+  document.getElementById("prodTable").innerHTML = `<thead><tr><th>Country</th>${years.map(y => `<th class="num">${y}${nq(y) < 4 ? ` (Q1–Q${nq(y)})` : ""}</th>`).join("")}</tr></thead><tbody>${rows.map(([c, v]) => `<tr><td>${esc(c)}</td>${v.map(x => `<td class="m num">${fr(x)}</td>`).join("")}</tr>`).join("")}<tr><td><b>Total</b></td>${totals.map(x => `<td class="m num"><b>${fr(x)}</b></td>`).join("")}</tr></tbody>`;
+}
+
+// ---------- markets ----------
+const RANGES = [["1y", "1 year", 52], ["3y", "3 years", 156], ["all", "Since 2018", 0]];
+function sliceRange(dates, key) { const r = RANGES.find(x => x[0] === key) || RANGES[2]; if (!r[2]) return 0; const end = new Date(dates[dates.length - 1]); const cut = new Date(end.getTime() - r[2] * 7 * 864e5).toISOString().slice(0, 10); return Math.max(0, dates.findIndex(d => d >= cut)); }
+function renderMarkets() {
+  const M = DATA.markets; if (!M.weekly) return;
+  document.getElementById("mkRange").innerHTML = RANGES.map(([k, l]) => `<button class="chip" data-r="${k}" aria-pressed="${state.mk === k}">${l}</button>`).join("");
+  document.querySelectorAll("#mkRange .chip").forEach(b => b.addEventListener("click", () => { state.mk = b.dataset.r; renderMarkets(); writeHash(); }));
+  const w = M.weekly, i0 = sliceRange(w.w, state.mk), x = w.w.slice(i0), sl = a => (a || []).slice(i0);
+  const usd = v => "$" + fr(v);
+  lineChart(document.getElementById("mkCu"), { x, W0: 640, series: [{ name: "LME 3-month", color: "--c1", v: sl(w.lme_3m_usd_t) }, { name: "COMEX", color: "--c2", v: sl(w.hg_usd_lb).map(v => v == null ? null : v * 2204.62) }], yFmt: usd });
+  lineChart(document.getElementById("mkStock"), { x, W0: 640, series: [{ name: "LME stocks", color: "--c1", v: sl(w.lme_stock_t) }], yFmt: (v, t) => t ? fr(v) + " t" : fr(v / 1000) + "k" });
+  const idx = a => { const s = a.find(v => v != null); return a.map(v => v == null || !s ? null : v / s * 100); };
+  lineChart(document.getElementById("mkBase"), { x, W0: 640, refs: [{ v: 100 }], series: [{ name: "Copper", color: "--c1", v: idx(sl(w.lme_3m_usd_t)) }, { name: "Aluminium", color: "--c3", v: idx(sl(w.lme_al_3m_usd_t)) }, { name: "Zinc", color: "--c7", v: idx(sl(w.lme_zn_3m_usd_t)) }], yFmt: v => fr(v) });
+  lineChart(document.getElementById("mkSpread"), { x, W0: 640, refs: [{ v: 0 }], series: [{ name: "Cash − 3M", color: "--c4", v: sl(w.cash_minus_3m_usd_t) }], yFmt: (v, t) => (v > 0 ? "+" : "") + "$" + fr(v) });
+  // shares
+  const all = [...(M.shares?.series || []).map(s => ({ ...s, grp: "op" })), ...(M.fabricators?.series || []).map(s => ({ ...s, grp: "fab", w: M.fabricators.w }))];
+  state.shares = state.shares.filter(t => all.some(s => s.t === t));
+  const colorOf = t => PAL[state.shares.indexOf(t) % PAL.length];
+  document.getElementById("mkPick").innerHTML = `<span class="lbl" style="align-self:center">Operators</span>` + all.filter(s => s.grp === "op").map(s => chip(s)).join("") + `<span class="lbl" style="align-self:center;margin-left:8px">Fabricators</span>` + all.filter(s => s.grp === "fab").map(s => chip(s)).join("");
+  function chip(s) { const on = state.shares.includes(s.t), sitesTxt = (s.sites || []).map(id => byId[id]?.name).filter(Boolean).join(", ");
+    return `<button class="chip" data-t="${s.t}" aria-pressed="${on}" title="${esc(s.name)}${sitesTxt ? " · smelters: " + esc(sitesTxt) : ""}">${on ? `<span class="sw" style="background:var(${colorOf(s.t)})"></span>` : ""}${esc(s.name.replace(/ \(.*\)/, ""))}</button>`; }
+  document.querySelectorAll("#mkPick .chip").forEach(b => b.addEventListener("click", () => { const t = b.dataset.t;
+    if (state.shares.includes(t)) state.shares = state.shares.filter(x => x !== t); else if (state.shares.length < 8) state.shares = [...state.shares, t]; else toast("At most 8 companies");
+    renderMarkets(); writeHash(); }));
+  // common monthly axis: operators are monthly; fabricators weekly -> take the last week of each month
+  const months = (M.shares?.w || []).map(d => d.slice(0, 7));
+  const j0 = (() => { const r = RANGES.find(x => x[0] === state.mk); if (!r || !r[2]) return 0; return Math.max(0, months.length - Math.round(r[2] / 4.33)); })();
+  const mx = months.slice(j0);
+  const series = state.shares.map(t => { const s = all.find(z => z.t === t); let v;
+    if (s.grp === "op") v = s.v.slice(j0); else { const last = {}; s.w.forEach((d, i) => last[d.slice(0, 7)] = s.v[i]); v = mx.map(mm => last[mm] ?? null); }
+    const b = v.find(z => z != null); return { name: s.name, color: colorOf(t), v: v.map(z => z == null || !b ? null : z / b * 100) }; });
+  lineChart(document.getElementById("mkShares"), { x: mx, h: 280, refs: [{ v: 100 }], series, yFmt: v => fr(v) });
+  document.getElementById("mkSharesKeys").innerHTML = series.map(s => `<span><span class="swl" style="border-color:var(${s.color})"></span>${esc(s.name)}</span>`).join("") || `<span>Pick companies above.</span>`;
+}
+
+// ---------- compare ----------
+function renderCompare() {
+  const box = document.getElementById("cmpPick");
+  box.innerHTML = state.cmp.map((id, j) => `<span class="chip" aria-pressed="true"><span class="sw" style="background:var(${PAL[j]})"></span><select data-j="${j}" aria-label="Smelter ${j + 1}">${sites.map(s => `<option value="${s.id}" ${s.id === id ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select><button class="btn small" data-rm="${j}" aria-label="Remove" ${state.cmp.length < 2 ? "disabled" : ""}>×</button></span>`).join("")
+    + (state.cmp.length < 4 ? `<button class="btn small" id="cmpAdd" type="button">+ Add smelter</button>` : "");
+  box.querySelectorAll("select").forEach(sl => sl.addEventListener("change", () => { state.cmp[+sl.dataset.j] = sl.value; renderCompare(); writeHash(); }));
+  box.querySelectorAll("[data-rm]").forEach(b => b.addEventListener("click", () => { state.cmp.splice(+b.dataset.rm, 1); renderCompare(); writeHash(); }));
+  const add = document.getElementById("cmpAdd"); if (add) add.addEventListener("click", () => { const nxt = sites.find(s => !state.cmp.includes(s.id)); state.cmp.push(nxt.id); renderCompare(); writeHash(); });
+  document.getElementById("cmpRange").innerHTML = RANGES.map(([k, l]) => `<button class="chip" data-r="${k}" aria-pressed="${state.cmpR === k}">${l === "Since 2018" ? "Since 2019" : l}</button>`).join("");
+  document.querySelectorAll("#cmpRange .chip").forEach(b => b.addEventListener("click", () => { state.cmpR = b.dataset.r; renderCompare(); }));
+  const ss = state.cmp.map(id => byId[id]);
+  const i0 = sliceRange(W, state.cmpR), x = W.slice(i0);
+  const smooth = a => a.map((v, i) => { const w = a.slice(Math.max(0, i - 3), i + 1).filter(z => z != null); return w.length ? d3.mean(w) : null; });
+  lineChart(document.getElementById("cmpAct"), { x, h: 260, yMin: 0, yMax: 2, refs: [{ v: 0.6, color: "--stop" }, { v: 1 }], cursor: state.w - i0 >= 0 ? state.w - i0 : null,
+    series: ss.map((s, j) => ({ name: s.name, color: PAL[j], v: smooth(s.r).slice(i0) })), yFmt: v => fr(v, 1), onPick: i => setWeek(i + i0) });
+  document.getElementById("cmpKeys").innerHTML = ss.map((s, j) => `<span><span class="swl" style="border-color:var(${PAL[j]})"></span>${esc(s.name)}</span>`).join("");
+  // images, monthly 3-month mean on a common month axis
+  const m0 = W[i0].slice(0, 7), mEnd = W[NW - 1].slice(0, 7), months = []; for (let t = ym(m0); t <= ym(mEnd); t++) months.push(`${Math.floor(t / 12)}-${String(t % 12 + 1).padStart(2, "0")}`);
+  lineChart(document.getElementById("cmpImg"), { x: months, W0: 640, yMin: 0, yMax: 100, series: ss.map((s, j) => { const mp = Object.fromEntries(s.images.map(im => [im.m, im.share * 100]));
+    const raw = months.map(mm => mp[mm] ?? null); return { name: s.name, color: PAL[j], v: raw.map((v, i) => { const w = raw.slice(Math.max(0, i - 2), i + 1).filter(z => z != null); return w.length ? d3.mean(w) : null; }) }; }), yFmt: v => fr(v) + "%" });
+  const rowsT = [["Country", s => esc(s.country)], ["Operator", s => esc(s.operator)], ["Capacity", s => s.capacity_kt ? fr(s.capacity_kt) + " kt" : "–"],
+    ["Status now", s => `<span class="dot ${ST[stAt(s, state.w)].cls}"></span> ${ST[stAt(s, state.w)].label}`], ["Dated stops", s => s.events.filter(e => e.event === "stop").length],
+    ["Status known", s => fr(s.status.split("").filter(c => c !== "u").length / NW * 100) + " %"], ["Hot images", s => s.img_cov ? fr(s.images.reduce((a, im) => a + im.share, 0) / Math.max(1, s.images.length) * 100) + " %" : "–"],
+    ["Published figures", s => s.reported.length || "none"], ["Position confidence", s => CONF[s.confidence] || s.confidence]];
+  document.getElementById("cmpTable").innerHTML = `<thead><tr><th></th>${ss.map((s, j) => `<th><span class="sw" style="background:var(${PAL[j]});display:inline-block;width:9px;height:9px;border-radius:50%"></span> ${esc(s.name)}</th>`).join("")}</tr></thead><tbody>${rowsT.map(([l, f]) => `<tr><td class="lbl">${l}</td>${ss.map(s => `<td>${f(s)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+}
+
+// ---------- tabs, week ----------
+function setTab(t) {
+  state.tab = t;
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  document.querySelectorAll("section[role=tabpanel]").forEach(p => p.hidden = p.id !== "tab-" + t);
+  document.getElementById("weekbar").hidden = !["overview", "site", "compare"].includes(t);
+  render(); writeHash(); window.scrollTo({ top: 0 });
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+const slider = document.getElementById("week"); slider.max = NW - 1;
 slider.addEventListener("input", () => setWeek(+slider.value));
-function setWeek(i) { state.w = Math.max(0, Math.min(NW - 1, i)); slider.value = state.w; render(); }
+function setWeek(i) { state.w = Math.max(0, Math.min(NW - 1, i)); slider.value = state.w; render(); writeHash(); }
 document.getElementById("last").addEventListener("click", () => setWeek(NW - 1));
 const playBtn = document.getElementById("play");
 playBtn.addEventListener("click", () => {
-  if (state.playing) { clearInterval(state.playing); state.playing = null; playBtn.textContent = "Lecture"; playBtn.setAttribute("aria-pressed", "false"); return; }
+  if (state.playing) { clearInterval(state.playing); state.playing = null; playBtn.textContent = "Play"; playBtn.setAttribute("aria-pressed", "false"); return; }
   if (state.w >= NW - 1) state.w = 0;
   playBtn.textContent = "Pause"; playBtn.setAttribute("aria-pressed", "true");
-  state.playing = setInterval(() => { setWeek(state.w + 1); if (state.w >= NW - 1) playBtn.click(); }, 180);
+  state.playing = setInterval(() => { setWeek(state.w + 1); if (state.w >= NW - 1) playBtn.click(); }, 160);
 });
-function select(id, fly) {
-  state.sel = id;
-  try { localStorage.setItem("orbitcu-sitemap", JSON.stringify({ sel: id })); } catch (e) {}
-  if (fly) { const s = sites.find(x => x.id === id), [x, y] = P(s), kk = Math.max(k, 6);
-    svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(MW / 2 - kk * x, MH / 2 - kk * y).scale(kk)); }
-  render();
-}
-const ss = DATA.surprise_score;
-if (ss) document.getElementById("surScore").textContent = `Sur l'historique : ${ss.flags} alertes, dont ${ss.hits} justes, pour ${ss.surprises} surprises ; médiane ${ss.lead} jours avant la publication.`;
-document.getElementById("gen").textContent = DATA.generated.split("-").reverse().join("/");
-
 function render() {
   document.getElementById("weekLabel").textContent = fdate(W[state.w]);
-  document.getElementById("maptag").textContent = `Natural Earth · VIIRS 375 m · semaine au ${fdate(W[state.w])}`;
-  marks.attr("fill", d => stFill(stAt(d, state.w))).classed("u", d => stAt(d, state.w) === "u").classed("sel", d => d.id === state.sel)
-       .attr("data-tip", d => { const c = stAt(d, state.w), e = activeEvent(d, state.w);
-         return `<b>${esc(d.name)}</b> · ${esc(d.country)}<br>${ST[c].label}${d.r[state.w] != null ? ` · r = ${fr(d.r[state.w], 2)}` : ""}${e ? `<br>arrêt daté depuis le ${fdate(e.start)}` : ""}`; });
-  sizeMarks(); renderTallies(); renderList(); renderDetail(); worldChart(); chinaChart();
+  if (state.tab === "overview") renderOverview();
+  else if (state.tab === "site") renderSite();
+  else if (state.tab === "production") renderProduction();
+  else if (state.tab === "alerts") renderAlerts();
+  else if (state.tab === "markets") renderMarkets();
+  else if (state.tab === "compare") renderCompare();
 }
-render();
+const ss0 = DATA.surprise_score;
+if (ss0) document.getElementById("surScore").textContent = `Track record: ${ss0.flags} alerts, ${ss0.hits} right, for ${ss0.surprises} surprises; median ${ss0.lead} days before publication.`;
+document.getElementById("gen").textContent = fdate(DATA.generated);
+slider.value = state.w;
+setTab(["overview", "site", "production", "alerts", "markets", "compare"].includes(state.tab) ? state.tab : "overview");
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 </script>
