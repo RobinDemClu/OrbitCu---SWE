@@ -1,0 +1,9 @@
+[data] VIIRS S-NPP 2012-2018: 1521 site-months with detections, 26 sites
+[index] world share defined from 2013-04-14, 282 weeks, mean 0.93, mean coverage 0.59; China share 256 weeks
+[holdout] frozen rule (world share, L 52, hold 16): first trade 2014-07-14, 230 weeks; Sharpe -0.38; return -0.57 %/yr at 1.48 % vol
+[holdout] by year 2014 -0.63, 2015 -0.12, 2016 -0.01, 2017 -0.32, 2018 -1.05
+[holdout] costs 8 / 20 bp: -0.54 / -0.98
+[holdout] placebo (1,000 time shifts of the signal): share with Sharpe >= real 0.728; placebo median -0.14
+[holdout] secondary check, same rule with China share: Sharpe -0.67
+[holdout] always long the spread over the same weeks: Sharpe -0.16; mean weight of the rule -0.23
+[holdout] criterion fixed in advance (holdout Sharpe > 0 with placebo p < 0.10 counts as support; Sharpe <= 0 means the 2023-2026 result is treated as overfitting): NOT SUPPORTED
