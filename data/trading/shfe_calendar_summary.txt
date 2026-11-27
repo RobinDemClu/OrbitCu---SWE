@@ -1,0 +1,23 @@
+[corr] China surprise vs SHFE spread change next 1 w: rho +0.04 p 0.510 n 348
+[corr] China surprise vs SHFE spread change next 4 w: rho -0.12 p 0.275 n 87
+[corr] China surprise vs SHFE spread change next 8 w: rho -0.30 p 0.050 n 43
+[corr] China surprise vs SHFE spread change next 13 w: rho -0.10 p 0.634 n 26
+[corr] China surprise vs spread level: rho +0.17 p 0.001 n 348 (overlapping weeks)
+[corr] same-period 4 w change: China share vs SHFE spread rho -0.08 p 0.421 n 97
+[corr] same-period 13 w change: China share vs SHFE spread rho +0.16 p 0.408 n 29
+[events] China stops n 21: spread change next 4 w +12 bp vs average +3 bp, t +0.92
+[events] China restarts n 23: spread change next 4 w +6 bp vs average +3 bp, t +0.30
+[search] 672 strategies: rank corr 0.11; median test -0.23; top10 train 1.16 -> test -0.11; best all 0.94
+            signal transform  smooth position  direction  sharpe_train  sharpe_test
+   sat_restarts_4w     lvl26       4     sign          1          1.44         0.25
+   sat_restarts_4w     lvl26       4   scaled          1          1.21         0.26
+     sat_stops_13w     chg13       1     sign         -1          1.18        -0.76
+sat_China_stops_4w     lvl13       1     sign          1          1.18         0.07
+sat_China_stops_4w     lvl13       1   scaled          1          1.18         0.07
+     sat_stops_13w     chg13       1   scaled         -1          1.17        -0.79
+sat_China_stops_4w     lvl52       1     sign          1          1.06         0.31
+sat_China_stops_4w     lvl52       1   scaled          1          1.06         0.31
+     sat_stops_13w     lvl13       4     sign         -1          1.05        -0.81
+   sat_restarts_4w     lvl13       4     sign          1          1.04        -0.06
+[placebo] rank corr median 0.02 (>= real 0.27); top10 test median -0.27 (>= real 0.37); best all median 0.73 (>= real 0.07)
+[dsr] best ('sat_restarts_4w', 'lvl26', np.int64(4), 'CalSpread', 'sign', np.int64(1)): Sharpe 0.94 (train 1.44, test 0.25); deflated Sharpe probability 0.28

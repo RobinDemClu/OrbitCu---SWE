@@ -1,0 +1,14 @@
+same period 10 d: China share vs acid rho -0.03 (p 0.720), vs copper +0.03 (p 0.655), n 170
+same period 30 d: China share vs acid rho +0.02 (p 0.889), vs copper +0.05 (p 0.714), n 56
+same period 60 d: China share vs acid rho +0.09 (p 0.651), vs copper -0.03 (p 0.883), n 28
+same period 90 d: China share vs acid rho +0.07 (p 0.784), vs copper -0.05 (p 0.845), n 18
+lead: surprise vs acid change next 10 d: rho -0.15 (p 0.051) n 161
+lead: surprise vs acid change next 30 d: rho -0.24 (p 0.077) n 53
+lead: surprise vs acid change next 60 d: rho -0.20 (p 0.326) n 26
+after China stops (n 16): acid change next 30 d +6.8 % vs average +1.9 % (sd 20.3 %)
+after China restarts (n 15): acid change next 30 d -2.6 % vs average +1.9 % (sd 20.3 %)
+placebo (shifted share) for the 90-day relation: share of |rho| >= 0.07: 0.85
+placebo lead 10 d: real rho -0.15; share of shifted surprises with rho <= real: 0.168
+placebo lead 30 d: real rho -0.24; share of shifted surprises with rho <= real: 0.083
+China stops: t = +0.96
+China restarts: t = -0.85

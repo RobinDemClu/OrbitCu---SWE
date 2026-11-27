@@ -19,7 +19,9 @@ C = [("Official statistics", "China running share vs NBS output deviation", 0.43
      ("Market", "Supply surprise vs next-week COMEX return", -0.10, 200),
      ("Market", "Company output surprise vs share reaction", -0.06, 66),
      ("Market", "China surprise vs SHFE/LME ratio, next 4 weeks", -0.20, 87),
-     ("Market", "China share vs SHFE/LME ratio, same 13 weeks", 0.42, 30)]
+     ("Market", "China share vs SHFE/LME ratio, same 13 weeks", 0.42, 30),
+     ("Market", "China surprise vs SHFE calendar spread, next 8 weeks", -0.30, 43),
+     ("Market", "China surprise vs Chinese sulphuric acid, next 30 days", -0.24, 53)]
 fig, ax = plt.subplots(figsize=(8.2, 4.8))
 for i, (grp, lab, r, n) in enumerate(C[::-1]):
     lo, hi = np.tanh(np.arctanh(r) + np.array([-1, 1]) * 1.96 / np.sqrt(n - 3))
