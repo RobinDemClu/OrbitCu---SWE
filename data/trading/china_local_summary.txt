@@ -1,0 +1,8 @@
+[horizon] Shanghai calendar spread: most negative rho -0.37 at 12 w (placebo share <= 0.00); rho at 8 w -0.30
+[horizon] Shanghai/London ratio: most negative rho -0.38 at 12 w (placebo share <= 0.03); rho at 8 w -0.21
+[horizon] Chinese sulphuric acid: most negative rho -0.41 at 10 w (placebo share <= 0.00); rho at 8 w -0.24
+                    market  sharpe_2019_2026  sharpe_2019_2022  sharpe_2023_2026  placebo_p  sharpe_1w_hold
+           calendar spread              0.41              0.31              0.50       0.01           -0.40
+               SHFE vs LME              0.03              0.59             -0.62       0.44           -0.11
+             SHFE outright             -0.57             -1.36              0.32       0.92           -0.20
+mix (spread + SHFE vs LME)              0.28              0.60             -0.01       0.08           -0.34
