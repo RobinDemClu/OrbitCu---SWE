@@ -102,7 +102,7 @@
 
 Copper supply is known only weeks after the fact, through monthly statistics. Smelters, however, leave traces visible from space: hot furnaces and sulfur dioxide (\SOtwo) plumes. \textbf{OrbitCu} watches the largest copper smelters with free satellite data, decides every day whether each one is running, turns this into an activity index, uses it to estimate copper production before official figures, and tests whether this signal improves copper futures strategies.
 
-\begin{keybox}[Where the project stands (26 November 2026)]
+\begin{keybox}[Where the project stands (27 November 2026)]
 \begin{itemize}[leftmargin=1.2em]
   \item \textbf{29 smelters selected} (about 11.7 Mt of copper per year, roughly 47\,\% of world smelting capacity), each checked against its operator's own documents.
   \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
@@ -113,7 +113,8 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{Every image scored (new):} heat score and quality flag for all 29\,315 Sentinel-2 and Landsat images 2018--2026, with a hot-pixel rule tested on four boxes without industry; the Hamburg and Pirdop shutdowns and the Manyar restart are seen directly (Section~\ref{sec:images}).
   \item \textbf{\SOtwo{} software correction (new):} the step of each Sentinel-5P software upgrade is measured on orbits processed in both versions; the November 2025 upgrade alone added 19\,\%, about 40\,\% of the 2026 jumps (Section~\ref{sec:so2}).
   \item \textbf{Finer changes (new):} when a plant runs, the share of hot images follows output changes ($\rho=0.37$), which night heat does not; a fine adjustment cuts the error on large moves from 18.3\,\% to 15.2\,\%, with no overall gain yet (Section~\ref{sec:production}).
-  \item \textbf{Still to build:} the trading test on past prices and the full dashboard.
+  \item \textbf{Trading test (new):} a weekly long/short strategy on COMEX copper driven by the satellite supply surprise, with volatility targeting and 2\,bp costs, was tested on 2019--2026 with a training/test split. It does \emph{not} beat buy-and-hold: test Sharpe $-0.02$ (world index) and $0.82$ (China index, interval $-0.26$ to $1.57$) against $0.60$ for buy-and-hold at the same risk; a placebo test finds no signal (Section~\ref{sec:trading}).
+  \item \textbf{Still to build:} the full dashboard.
 \end{itemize}
 \end{keybox}
 
@@ -143,8 +144,8 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
 \node[t] (idx) at (11.6,0.95) {\textbf{Activity index}\\[-1pt]{\scriptsize world, regions}};
 % outputs
 \node[w] (cu) at (15.0,2.45) {\textbf{Copper output}\\[-1pt]{\scriptsize estimate}};
-\node[t] (bt) at (15.0,-0.55) {\textbf{Trading test}\\[-1pt]{\scriptsize futures}};
-\node[t] (mk) at (15.0,-2.15) {\textbf{Market prices}};
+\node[d] (bt) at (15.0,-0.55) {\textbf{Trading test}\\[-1pt]{\scriptsize futures}};
+\node[d] (mk) at (15.0,-2.15) {\textbf{Market prices}};
 \node[w] (dash) at (11.6,-1.3) {\textbf{Dashboard}\\[-1pt]{\scriptsize map, charts}};
 \draw[arr] (img.east)--(heat.west); \draw[arr] (hot.east)--(heat.west);
 \draw[arr] (gas.east)--(so2.west); \draw[arr] (wind.east)--(so2.west);
@@ -321,8 +322,8 @@ Under the hood, OrbitCu is a set of small programs (``jobs''), one per task, tha
 3 & give a heat score and an \SOtwo{} emission per smelter & Heat score and quality flag for all 29\,315 Sentinel-2/Landsat images 2018--2026 (Section~\ref{sec:images}); cloud-corrected VIIRS activity per smelter and month 2018--2026; \SOtwo{} emission per smelter and month 2022--2026, corrected for software versions (clear signal at 3 sites) & \done\\
 4 & estimate daily ``running or not'' and publish activity indices & Weekly status per smelter, capacity-weighted world index and dated stop/restart list 2019--2026 (Section~\ref{sec:index}) & \wip\\
 5 & check results against known events and official figures & 197 published output figures (KGHM, Aurubis, Ilo, Nornickel, Yunnan Copper, China Daye, Adani, Kamoa); point-in-time test of the output estimate on 9 units, heat + \SOtwo{} test at Norilsk (Section~\ref{sec:production}) & \wip\\
-6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 8.2\,\% vs 11.3\,\% naive; with the image fine adjustment, 15.2\,\% vs 18.3\,\% on large moves); official monthly statistics loaded (China NBS, Japan METI); market prices not yet loaded & \wip\\
-7 & test futures strategies on past data & Planned & \todo\\
+6 & use market data and estimate monthly copper output & Quarterly copper estimate per smelter and country 2022--2026, tested on hidden figures (error 8.2\,\% vs 11.3\,\% naive; with the image fine adjustment, 15.2\,\% vs 18.3\,\% on large moves); official monthly statistics loaded (China NBS, Japan METI); weekly COMEX and LME copper prices 2018--2026 loaded & \wip\\
+7 & test futures strategies on past data & Weekly long/short test on COMEX HG (LME as a check), 2019--2026, costs, training/test split, placebo; no gain over buy-and-hold (Section~\ref{sec:trading}) & \done\\
 8 & show everything on a web dashboard & Interactive status map available & \wip\\
 \bottomrule
 \end{tabularx}
@@ -721,7 +722,67 @@ Shutdown rule + fine adjustment from images & 8.1\,\% & 15.2\,\% & 4.7\,\%\\
 \end{figure}
 
 \begin{notebox}[What this means for a trading strategy]
-The index and events carry a real but moderate signal: they follow Chinese official output with a correlation of about 0.45 and are available 1--2 weeks earlier in China and 1--3 months earlier than company reports. About one stop in three is followed by a visible loss of output. This supports a strategy built on \emph{events and index changes}, tested on past prices with costs, rather than on exact tonnes per smelter. Whether it earns money is not known until that test is run; no trading signal has been built.
+The index and events carry a real but moderate signal: they follow Chinese official output with a correlation of about 0.45 and are available 1--2 weeks earlier in China and 1--3 months earlier than company reports. About one stop in three is followed by a visible loss of output. This supports a strategy built on \emph{events and index changes}, tested on past prices with costs, rather than on exact tonnes per smelter. Section~\ref{sec:trading} runs that test.
+\end{notebox}
+
+% =====================================================================
+\subsection{Trading test: a weekly supply-surprise strategy}\label{sec:trading}
+
+\textbf{Question.} Does the satellite activity index earn money on copper futures, after costs and without using information from the future? The design choices were fixed with the team before the test: COMEX HG as the main contract and LME as a check, weekly rebalancing, a \emph{supply surprise} signal, long/short positions, buy-and-hold as the benchmark, 2019--2026, 2 basis points of cost per trade, and usual risk settings for a single-commodity trend or macro strategy. The code is \code{orbitcu.trading}.
+
+\textbf{Exchanges.} The LME (London Metal Exchange) sets the world reference price of physical copper (USD per tonne, 3-month contract). COMEX (CME group, New York) trades the HG future (USD per pound), the most liquid copper contract with free daily history. The SHFE (Shanghai) trades copper in yuan and reflects Chinese demand; it was not used.
+
+\textbf{Price data.} COMEX HG front-month daily closes from the Yahoo Finance chart service (ticker \texttt{HG=F}) [40] and LME copper 3-month official prices from Westmetall, which republishes the LME daily settlement [41], January 2018 to November 2026. Both hosts are blocked in our cloud environment, so the series were read in a browser on a team computer and copied with a checksum. One price per week is kept: the first trading day of each week (normally the Monday). The Yahoo series is a continuous front-month chain that is not back-adjusted at rolls; for copper the roll gaps are small, except during the 2025 US tariff episode, when the COMEX premium over LME jumped and fell (HG $-22$\,\% on 31 July 2025). Both the strategy and the benchmark carry this effect.
+
+\textbf{Rules (fixed in advance).}
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+  \item \emph{Supply surprise}: running share of watched capacity this week minus its median over the previous $L$ weeks. Negative means less supply than usual. Weeks with less than half the capacity known (2018--mid 2019) are ignored.
+  \item \emph{Score}: surprise divided by its standard deviation over the same past window ($z$).
+  \item \emph{Direction}: position $=\mathrm{clip}(-z/2,\,-1,\,1)$: long when supply is short, short when it is abundant, full size at $|z|=2$.
+  \item \emph{Risk}: volatility targeting at 10\,\% a year using the past 26 weeks of returns, maximum weight 1 (no leverage).
+  \item \emph{Timing}: the signal for the week ending Sunday $t$ is traded at the close of Monday $t+8$ days (ERA5 cloud data arrive about 5 days late) and held one week.
+  \item \emph{Costs}: 2\,bp times the change in weight.
+\end{enumerate}
+Two versions of the index were tested: the world index of Section~\ref{sec:index} and the Chinese capacity only, where the index follows official output. The window $L$ (26 or 52 weeks) and a 4-week smoothing (on or off) were chosen on the training years 2019--2022 only; all four choices lost money there, and the least bad ($L=26$, no smoothing) was kept. The test years are 2023 to November 2026.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}l l r r r r@{}}
+\toprule
+\textbf{Strategy (COMEX HG)} & \textbf{Period} & \textbf{Return/yr} & \textbf{Vol/yr} & \textbf{Sharpe (95\,\% interval)} & \textbf{Max loss}\\
+\midrule
+Supply surprise, world  & 2019--22 & $-2.7$\,\% & 4.6\,\% & $-0.58$ ($-1.83$; $0.57$) & $-12.8$\,\%\\
+                        & 2023--26 & $-0.3$\,\% & 6.7\,\% & $-0.02$ ($-0.82$; $0.73$) & $-14.6$\,\%\\
+Supply surprise, China  & 2019--22 & $-5.5$\,\% & 6.7\,\% & $-0.81$ ($-1.61$; $0.16$) & $-23.2$\,\%\\
+                        & 2023--26 & $3.9$\,\%  & 4.8\,\% & $0.82$ ($-0.26$; $1.57$)  & $-6.3$\,\%\\
+Buy-and-hold, 10\,\% vol & 2019--22 & $5.3$\,\% & 11.3\,\% & $0.52$ ($-0.56$; $1.61$) & $-17.7$\,\%\\
+                        & 2023--26 & $6.1$\,\% & 10.9\,\% & $0.60$ ($-0.22$; $1.59$) & $-10.9$\,\%\\
+Buy-and-hold, 1 contract & 2023--26 & $12.7$\,\% & 26.1\,\% & $0.59$ ($-0.22$; $1.57$) & $-21.7$\,\%\\
+\bottomrule
+\end{tabular}
+\caption{Weekly backtest after 2\,bp costs. Sharpe intervals from an 8-week block bootstrap. With LME prices the results are the same (world test $-0.00$, China test $0.95$, buy-and-hold $0.69$).}
+\label{tab:trading}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/trading_equity.png}
+\caption{Growth of one dollar, after costs. The dashed line separates the training and test years.}
+\label{fig:trading}
+\end{figure}
+
+\textbf{Checks.}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Placebo.} The world index was shifted in time by a random number of weeks 500 times, which keeps its shape but breaks any link with prices. 48\,\% of these fake signals do as well as or better than the real one in the test years: the real signal is indistinguishable from noise.
+  \item \textbf{Predictive power.} Rank correlation between the score and the next tradable week's return: $-0.10$ in training ($p=0.21$) and $-0.05$ in test ($p=0.51$), both with the wrong sign for the supply story.
+  \item \textbf{Timing and costs.} Trading on the same Monday (no delay, not achievable) is worse (test Sharpe $-0.52$); 2 or 4 weeks of delay give 0.14 and 0.13. Costs are not the problem: at 0\,bp the test Sharpe is $-0.00$, at 20\,bp $-0.17$. Turnover is only 4--6 times the capital per year.
+  \item \textbf{China.} The Chinese version earns money in the test years but lost as much in the training years, and its interval includes zero. It was not selected in advance and should not be read as a result.
+\end{itemize}
+
+\textbf{Why the signal does not trade.} (1) The index moves when smelters stop, but most stops are planned maintenance or are buffered by anode and concentrate stocks (Section~\ref{sec:index}); the market learns about them from company notices. (2) Smelters are the middle of the chain: a stopped smelter leaves concentrate unprocessed but refined copper on the market comes from stocks, other smelters and scrap, so the price effect is small and slow. (3) Copper prices in 2019--2026 were driven by demand, the dollar, Chinese stimulus and US tariffs, which are far larger than the supply changes we see. (4) The signal is often near zero, so the strategy runs at only 5--7\,\% volatility instead of 10\,\%.
+
+\begin{notebox}[Conclusion of the trading test]
+With the rules fixed in advance, the satellite supply surprise does not beat buy-and-hold on COMEX or LME copper over 2019--2026, and a placebo test cannot tell it from noise. This is a negative but clean result: no parameter was tuned on the test years. The more promising uses are narrower: trading only in the 11 days between the satellite month and the Chinese NBS release (where the index does follow official output), or around large unplanned stops, and using properly rolled futures prices from LSEG.
 \end{notebox}
 
 % =====================================================================
@@ -738,8 +799,8 @@ The index and events carry a real but moderate signal: they follow Chinese offic
 3 & Re-run the image scores once the 14 smelters are placed by hand (about 1\,h); re-test the image fine adjustment with more published figures; use the image score with VIIRS in the weekly status & Radu\\
 4 & Add the daily image score to the dashboard data & Radu\\
 5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
-6 & Market data (futures prices, exchange stocks); remaining official statistics (ICSG world, Cochilco, India) with their publication dates; more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
-7 & Trading test on past data, with contract rolls and costs & Robin\\
+6 & Exchange stocks; remaining official statistics (ICSG world, Cochilco, India) with their publication dates; more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
+7 & Trading: event-driven variant (trade only in the days between the satellite month and the NBS release, and around detected stops); properly rolled futures prices (LSEG); exchange stocks as a control & Robin\\
 8 & Web dashboard (map, site charts, indices, estimates, test results) & Robin\\
 9 & Automated runs in containers, tests on GitHub at every change & Baptiste\\
 \bottomrule
@@ -748,7 +809,7 @@ The index and events carry a real but moderate signal: they follow Chinese offic
 \end{table}
 
 \begin{notebox}[Decisions still open]
-Which exchange and contract to test (LME, COMEX or SHFE) · target delay and availability of the results · tools for scheduling, storage and the dashboard · source of the known-event list · task split after mid-term · project calendar.
+target delay and availability of the results · tools for scheduling, storage and the dashboard · source of the known-event list · task split after mid-term · project calendar.
 \end{notebox}
 
 % =====================================================================
@@ -876,6 +937,8 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \item Ministry of Economy, Trade and Industry (Japan), Non-ferrous metals statistics (e-Stat), blister and electrolytic copper, 2021--2025. \url{https://www.e-stat.go.jp}
 \item ESA / BIRA-IASB, ``Sentinel-5 Precursor Level 2 \SOtwo{} Product Readme File,'' processor versions 2.2.1 to 3.0.1, with the Planetary Computer archive file names (processor version and orbit) used to date each upgrade. \url{https://sentinels.copernicus.eu/web/sentinel/technical-guides/sentinel-5p/products-algorithms}
 \item S. W. Murphy et al., ``Automated global detection of high-temperature anomalies from Landsat-8 OLI,'' \emph{Remote Sens.\ Environ.}, vol.\ 179, pp.\ 152--163, 2016.
+\item Yahoo Finance, ``Copper futures (HG=F), daily history,'' chart service \url{https://query1.finance.yahoo.com/v8/finance/chart/HG=F} (accessed Nov.\ 27, 2026).
+\item Westmetall, ``LME copper cash-settlement and 3-month prices, 2018--2026.'' \url{https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash} (accessed Nov.\ 27, 2026).
 \end{enumerate}
 
 \end{document}
