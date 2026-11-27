@@ -38,6 +38,7 @@ export FIRMS_MAP_KEY=...      # Windows PowerShell: $env:FIRMS_MAP_KEY = "..."
 export CDSAPI_KEY=...         # Windows PowerShell: $env:CDSAPI_KEY = "..."
 pytest                        # 24 unit tests, no network
 orbitcu statusmap --open      # interactive smelter status map
+orbitcu sitemap --data <data folder>   # results map (status, events, output, alerts, images, SO2)
 ```
 
 All commands and options are described in the report, section "Using the code".
