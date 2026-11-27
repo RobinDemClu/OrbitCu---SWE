@@ -1,0 +1,13 @@
+{
+  "written": "2026-11-27, before any 2012-2018 satellite or SHFE contract data was collected",
+  "purpose": "Out-of-sample test on 2013-2018 of the variant picked on 2019-2022 (scripts/trading_china_local_robust.py). Nothing below may be changed after the holdout data is seen.",
+  "signal": "world running share (capacity-weighted share of watched smelters running, coverage >= 0.5), same activity_index rules as 2019-2026 (56-day window, seasonal reference of 3 previous years, cut 0.6); sites only from their start of operation",
+  "surprise": "z = (share - median of previous 52 weeks, min 31) / std of the previous 52 weekly deviations (min 26)",
+  "delay_weeks": 1,
+  "position": "raw = clip(-z, -1, 1); book = mean of the last 16 raw values",
+  "instrument": "SHFE copper: long the next-month contract, short the third-month contract chosen each Monday, both held to the next Monday (no constant-maturity series)",
+  "sizing": "weight = book * 0.10 / past 26-week volatility of the instrument P&L, clipped to [-1, 1]",
+  "costs_bp_per_turnover": 4,
+  "report": "Sharpe over the whole holdout and per year; also 8 and 20 bp; placebo by 1,000 time shifts of the signal; same rule with China share as a secondary check",
+  "success_criterion": "holdout Sharpe > 0 with placebo p < 0.10 counts as support; Sharpe <= 0 means the 2023-2026 result is treated as overfitting"
+}
