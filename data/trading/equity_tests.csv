@@ -1,0 +1,5 @@
+test,n,stat,p
+output deviation vs 2-day abnormal return at publication,66,-0.059223230064417855,0.6366741676279395
+big surprises: signed 2-day abnormal return,20,-0.003890000000000001,
+"trade flags until publication (abnormal return, 8bp)",14,0.013771428571428572,
+trade flags through publication,14,0.02095714285714286,
