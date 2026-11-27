@@ -115,6 +115,7 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{Finer changes (new):} when a plant runs, the share of hot images follows output changes ($\rho=0.34$), which night heat does not; but after a point-in-time audit of the code the fine adjustment built on it no longer improves the estimate (18.3 to 17.5\,\% on large moves, no overall gain) (Section~\ref{sec:production}).
   \item \textbf{Trading test (new):} a weekly long/short strategy on COMEX copper driven by the satellite supply surprise, with volatility targeting and 2\,bp costs, was tested on 2019--2026 with a training/test split. It does \emph{not} beat buy-and-hold: test Sharpe $-0.02$ (world index) and $0.82$ (China index, interval $-0.26$ to $1.57$) against $0.60$ for buy-and-hold at the same risk; a placebo test finds no signal. Trading only in the 11 days before the Chinese statistics fails too: the satellites anticipate the NBS figure ($\rho=0.33$) but prices do not react to it. Stops one by one, LME stocks and the LME spread give no robust signal either; only restarts are followed by a small, uncertain fall (Section~\ref{sec:trading}).
   \item \textbf{Images for surprises (new):} measuring heat \emph{intensity} on each image does not improve the estimate, but using the share of hot images when VIIRS is silent catches 10 of 36 large surprises instead of 6, two flags out of three right, about 7 weeks before the official figure (Section~\ref{sec:intensity}).
+  \item \textbf{Nowcast of Chinese output (new):} a monthly figure for Chinese refined copper made 5 days after month end, tested out of sample on 48 months (2022--2026) with no look-ahead: 2.78\,\% error against 2.95\,\% for the best naive forecast (significant, placebo $p<0.02$), with honest $\pm$60\,kt bands, but large surprises are not caught: a useful input, not a stand-alone product (Section~\ref{sec:nowcast}).
   \item \textbf{Seven smelters moved by hand (new):} images, VIIRS and clouds redone at the new positions; the estimate is 8.0\,\% vs 11.1\,\% naive on 99 figures; Kutch and Kamoa stay invisible (the old Kutch box saw another installation) (Section~\ref{sec:moved}).
   \item \textbf{Still to build:} the full dashboard.
 \end{itemize}
@@ -943,6 +944,66 @@ So the nickel price is driven by news about \emph{future} supply (quotas, export
 With the rules fixed in advance, the satellite supply surprise does not beat buy-and-hold on COMEX or LME copper over 2019--2026, and a placebo test cannot tell it from noise. This is a negative but clean result: no parameter was tuned on the test years. Trading only in the 11 days before the Chinese NBS release does not help either: the satellites do anticipate the official figure, but copper prices do not react to that figure. Stops one by one show no price effect; restarts are followed by a small fall ($-0.7$ to $-1.1$\,\% in two weeks, $p\approx0.03$, not robust to multiple testing); the LME spread moves the expected way but not significantly, and LME stocks do not confirm a supply shock. The satellite data describe smelters well but, on 2019--2026, carry no trading edge on exchange prices. Remaining ideas: re-test the restart effect on events after November 2026, and treatment charges (the price smelters are paid, the market most directly tied to smelter supply), which need a paid source (Fastmarkets, SMM, LSEG).
 \end{notebox}
 
+\subsection{Nowcast of Chinese refined copper output: out-of-sample backtest}\label{sec:nowcast}
+
+\textbf{Question.} The China index follows the NBS figure ($\rho\approx0.45$, Section~\ref{sec:index}) and the satellite surprise anticipates the NBS deviation ($\rho=0.33$, Section~\ref{sec:trading}). A correlation is not yet a forecast. Here we ask the practical question: if every month we had published a figure in kt for Chinese refined copper output, 5 days after month end, how far from the official number would it have been, and would it have beaten simple forecasts that need no satellite? This follows the real-time nowcasting set-up of Giannone et al.\ [26].
+
+\textbf{Set-up, no look-ahead.} Target: NBS monthly refined copper output as first published [36] (in kt; January and February are skipped because NBS releases them combined). Nowcast day: month end $+5$ days, when the last satellite week is complete (cloud data latency). On that day the model only uses (i) NBS figures whose release date (NBS calendar) is earlier, so the previous month is known but not the target month, released about 11 days later (median); (ii) the weekly status of the 12 watched Chinese smelters (5.1\,Mt/yr of capacity, about 90\,\% with a known status on average), computed at the seven corrected positions of Section~\ref{sec:moved}; the status is itself point-in-time (trailing 8-week window, reference from the three previous years). All models are refitted every month on an expanding window of past months (at least 20); the first nowcast is March 2022 and the last October 2026: 48 months.
+
+\textbf{Models.}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{B1, last value:} the last released month (for March, the January--February average).
+  \item \textbf{B2, seasonal + trend:} the same month last year times the growth of the last three released months over the same months a year earlier.
+  \item \textbf{B3, naive blend:} the best mix of B1 and B2 learnt on past months (regression of $\log(y/\mathrm{B2})$ on $\log(\mathrm{B1}/\mathrm{B2})$). This is the fair benchmark: everything a careful analyst can do without satellites.
+  \item \textbf{S1 = B3 + satellite:} adds the running-share deviation, the share of watched Chinese capacity running in the month minus its median over the previous 12 months (in points). \textbf{S2} adds the change of the share versus the same month last year; \textbf{S3} uses B2 and the deviation only.
+\end{itemize}
+Interval: 80\,\% and 90\,\% bands from the quantiles of the model's own past out-of-sample errors (at least 12; before that, from the in-sample residuals).
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+\textbf{Model} & \textbf{MAE (kt)} & \textbf{MAE (\%)} & \textbf{Direction} & \textbf{Above/below B2} & \textbf{80\,\% band} & \textbf{Band width (kt)}\\
+\midrule
+B1 last value & 37.7 & 3.33 & -- & 73\,\% & 79\,\% & 136\\
+B2 seasonal + trend & 38.1 & 3.38 & 60\,\% & -- & 77\,\% & 125\\
+B3 naive blend & 33.1 & 2.95 & 68\,\% & 71\,\% & 81\,\% & 125\\
+\textbf{S1 blend + satellite} & \textbf{31.0} & \textbf{2.78} & \textbf{70\,\%} & \textbf{73\,\%} & \textbf{81\,\%} & \textbf{119}\\
+S2 (+ year-on-year share) & 30.9 & 2.77 & 70\,\% & 71\,\% & 81\,\% & 119\\
+S3 (B2 + satellite only) & 36.2 & 3.22 & 60\,\% & 69\,\% & 79\,\% & 124\\
+\bottomrule
+\end{tabular}
+\caption{Out-of-sample nowcast of Chinese refined copper output, March 2022 -- October 2026 (48 months, average output about 1\,150\,kt per month). Direction: sign of the change versus the previous month right. Above/below B2: sign of the deviation from the seasonal forecast right. 80\,\% band: share of months where the NBS figure fell inside.}
+\label{tab:nowcast}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/china_nowcast_backtest.png}
+\caption{Top: NBS refined copper output (black), satellite nowcast S1 made 5 days after month end (blue) with its 80\,\% band, and the naive blend B3 (dashed). Bottom: 12-month rolling mean absolute error of each model.}
+\label{fig:nowcast}
+\end{figure}
+
+\textbf{Results.}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{The satellite term helps, but a little.} S1 cuts the mean error from 2.95\,\% (33.1\,kt) to 2.78\,\% (31.0\,kt), about 6\,\% less error, and beats B3 in 33 of 48 months. A Diebold--Mariano test on absolute errors [43] gives $t=-2.15$, $p=0.04$. A placebo that shifts the satellite series in time (56 circular shifts, keeping its autocorrelation) never does as well as the real timing (median placebo error 33.7\,kt; $p<0.02$). Adding the year-on-year share (S2) adds nothing.
+  \item \textbf{Most of the work is done by the naive blend.} Combining the last value and the seasonal trend already brings the error from 3.3--3.4\,\% to 2.95\,\%. The satellite's fitted effect is small: one point of capacity running above normal adds about 0.16\,\% to the nowcast. Used alone with the seasonal forecast (S3) it is worse than the blend.
+  \item \textbf{The gain is recent.} In March 2022 -- June 2024 S1 and B3 are equal (3.12 vs 3.15\,\%); in July 2024 -- October 2026 S1 is clearly better (2.43 vs 2.75\,\%). More history to learn from, and better positions, may both play a role; two halves of 24 months cannot separate them.
+  \item \textbf{Large misses are not caught.} The 12 months where the naive blend misses most (4 to 9\,\%: July 2022 $-$8.9\,\%, December 2024 $+$7.7\,\%, May 2024 $-$6.9\,\%, \dots) are not anticipated: the satellite term moves the nowcast the right way in 8 of them, but by only 4\,kt on average, against misses of 70\,kt. These swings come from plants outside our list, new capacity and scrap-fed refineries, or from the NBS reporting itself, not from stops at the 12 large smelters we watch.
+  \item \textbf{The bands are honest.} 81\,\% of NBS figures fell inside the 80\,\% band and 92\,\% inside the 90\,\% band; the 80\,\% band is about $\pm$60\,kt ($\pm$5\,\%).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/china_nowcast_models.png}
+\caption{Left: satellite running-share deviation against the miss of the naive blend (NBS vs B3, out-of-sample months). Right: mean absolute error of each model.}
+\label{fig:nowcastmodels}
+\end{figure}
+
+\begin{notebox}[Verdict: worth publishing?]
+As a stand-alone product, no: a nowcast of Chinese refined copper with a 2.8\,\% error is only slightly better than a careful naive forecast (2.95\,\%), and it misses the large surprises that would matter to a user. As an input, yes: the satellite term improves the nowcast significantly and out of sample, with reliable bands, 11 days before the official figure. It is worth keeping in the dashboard as ``NBS expected at X\,kt $\pm$60'', flagged as a modest improvement, and worth improving by watching more Chinese capacity (only about a third of Chinese output is covered by the 12 sites). Code: \code{scripts/nowcast\_china.py}; results in \code{data/nowcast/}.
+\end{notebox}
+
 % =====================================================================
 \section{What comes next}
 
@@ -1101,6 +1162,7 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \item Yahoo Finance, ``Copper futures (HG=F), daily history,'' chart service \url{https://query1.finance.yahoo.com/v8/finance/chart/HG=F} (accessed Nov.\ 27, 2026).
 \item Westmetall, ``LME copper cash-settlement and 3-month prices, 2018--2026.'' \url{https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash} (accessed Nov.\ 27, 2026).
 \item D. H. Bailey and M. L\'opez de Prado, ``The deflated Sharpe ratio: correcting for selection bias, backtest overfitting and non-normality,'' \emph{J.\ Portfolio Management}, vol.\ 40, no.\ 5, pp.\ 94--107, 2014.
+\item F. X. Diebold and R. S. Mariano, ``Comparing predictive accuracy,'' \emph{J.\ Business \& Economic Statistics}, vol.\ 13, no.\ 3, pp.\ 253--263, 1995.
 \end{enumerate}
 
 \end{document}
