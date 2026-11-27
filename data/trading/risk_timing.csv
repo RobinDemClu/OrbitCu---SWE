@@ -1,0 +1,7 @@
+,value
+r2_past_vol_only,-0.07609889637137557
+r2_with_satellite,-0.06584840872183872
+r2_placebo_median,-0.09619870258605745
+r2_placebo_share_ge,0.15
+sharpe_sized_past_vol,0.48583871504014514
+sharpe_sized_satellite,0.44960063269133443

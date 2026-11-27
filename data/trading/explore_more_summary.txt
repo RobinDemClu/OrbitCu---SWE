@@ -1,0 +1,34 @@
+[A] 1440 strategies Cu vs Al/Zn: rank corr 0.24; median test -0.02; top10 test -0.44; best all 0.92
+              signal transform  smooth instrument position  direction  sharpe_train  sharpe_test
+sat_AmericasAF_share      chg4       1     CuBase     sign          1          1.50        -0.82
+sat_AmericasAF_share      chg4       1       CuZn     sign          1          1.49        -0.88
+sat_AmericasAF_share      chg4       1     CuBase   scaled          1          1.47        -0.79
+sat_AmericasAF_share      chg4       1       CuZn   scaled          1          1.45        -0.86
+     sat_world_share      chg4       1       CuZn     sign          1          1.43        -0.20
+     sat_world_share      chg4       1     CuBase     sign          1          1.38        -0.45
+sat_AmericasAF_share     chg13       1       CuZn   scaled          1          1.08        -0.82
+     sat_world_share     lvl52       4       CuZn     sign          1          1.08         0.28
+     sat_world_share      chg4       1       CuZn   scaled          1          1.06        -0.19
+     sat_China_share      chg4       1       CuAl   scaled         -1          1.03         0.32
+[A] placebo: rank corr median -0.03 (share >= real 0.13); top10 test median 0.06 (share >= real 0.83); best all median 1.00 (share >= real 0.77)
+[B] combined ridge model, out of sample 2021-2026:
+target  ridge_lambda position  sharpe_2021_2026    ic  sharpe_2023_2026  placebo_median  placebo_share_ge
+    HG           1.0     sign             -0.70 -0.06             -0.66            0.03              1.00
+    HG           1.0   scaled             -0.55 -0.06             -0.18           -0.04              0.95
+    HG          10.0     sign             -0.34 -0.04             -0.21            0.17              0.70
+    HG          10.0   scaled             -0.30 -0.04              0.01           -0.03              0.85
+    HG         100.0     sign             -0.03 -0.06              0.37            0.11              0.65
+    HG         100.0   scaled             -0.29 -0.06             -0.02           -0.07              0.85
+   LME           1.0     sign             -0.74 -0.06             -0.70            0.09              0.95
+   LME           1.0   scaled             -0.44 -0.06             -0.17           -0.08              0.95
+   LME          10.0     sign             -0.10 -0.06              0.00            0.10              0.75
+   LME          10.0   scaled             -0.26 -0.06              0.05           -0.08              0.75
+   LME         100.0     sign             -0.04 -0.08              0.37            0.08              0.65
+   LME         100.0   scaled             -0.30 -0.08             -0.02           -0.05              0.75
+CuBase           1.0     sign             -0.03 -0.01              0.05           -0.05              0.45
+CuBase           1.0   scaled             -0.16 -0.01             -0.20           -0.12              0.70
+CuBase          10.0     sign             -0.41 -0.06             -0.19            0.13              0.80
+CuBase          10.0   scaled             -0.32 -0.06             -0.22           -0.06              0.85
+CuBase         100.0     sign             -0.76 -0.06             -0.45            0.06              0.95
+CuBase         100.0   scaled             -0.38 -0.06             -0.32            0.01              0.90
+[C] risk timing 2021-2026: {'r2_past_vol_only': np.float64(-0.076), 'r2_with_satellite': np.float64(-0.066), 'r2_placebo_median': np.float64(-0.096), 'r2_placebo_share_ge': np.float64(0.15), 'sharpe_sized_past_vol': np.float64(0.486), 'sharpe_sized_satellite': np.float64(0.45)}
