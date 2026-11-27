@@ -1,0 +1,62 @@
+[data] tradable weekly P&L vs constant-maturity change: corr 0.88; mean +1.0 vs +1.0 bp; sd 25.1 vs 25.7 bp; month-end weeks corr 0.38
+[grid] 1440 variants; fixed rule Sharpe 0.10 (train -0.12, test 0.32); rank among variants 408
+[grid] share of variants with full-period Sharpe > 0: 0.34; median -0.23; best 1.10
+[grid] median Sharpe by signal: China -0.08, China-World -0.62, World +0.23
+[grid] median Sharpe by L: 13 -0.53, 20 -0.30, 26 -0.09, 39 +0.06, 52 -0.24
+[grid] median Sharpe by lag: 1 -0.27, 2 -0.22
+[grid] median Sharpe by hold: 1 -0.72, 2 -0.51, 4 -0.22, 6 -0.08, 8 -0.11, 10 -0.10, 12 +0.02, 16 +0.14
+[grid] median Sharpe by scale: 1 -0.21, 2 -0.23, 4 -0.24
+[grid] median Sharpe by sizing: fixed -0.22, vol -0.25
+[grid] China, lag 1, scale 2, vol target: Sharpe by reference window (rows) and holding (columns)
+hold    1     2     4     6     8     10    12    16
+L                                                   
+13   -0.88 -0.80 -0.77 -0.70 -0.62 -0.61 -0.53  0.15
+20   -0.83 -0.77 -0.33  0.02  0.01 -0.05  0.03  0.11
+26   -0.69 -0.40 -0.01  0.00  0.10  0.07  0.10  0.10
+39   -0.11  0.03  0.28  0.44  0.45  0.43  0.26  0.09
+52   -0.87 -0.81 -0.26 -0.11 -0.16 -0.23 -0.19 -0.13
+[grid] variants positive in both halves: 328 of 1440 (23%)
+[placebo grid] best_all: real +1.10, placebo median +0.74, share of placebos >= real 0.095
+[placebo grid] share_pos: real +0.34, placebo median +0.27, share of placebos >= real 0.420
+[placebo grid] median_all: real -0.23, placebo median -0.20, share of placebos >= real 0.545
+[placebo grid] china_plateau: real +0.14, placebo median +0.06, share of placebos >= real 0.375
+[placebo grid] picked_test: real +1.08, placebo median -0.52, share of placebos >= real 0.025
+[select] best on 2019-2022: ('World', np.int64(52), np.int64(1), np.int64(16), np.int64(1), 'vol'), train 1.16 -> test 1.08
+[trade] fixed rule on the tradable P&L 0.10 (2019-22 -0.12, 2023-26 0.32); on the constant-maturity series 0.41
+[trade] gross P&L per year, month-end weeks / other weeks: constant maturity +57 / +31 bp, tradable +6 / +30 bp
+[baseline] always long spread 0.32; spread mean reversion (26 w) -0.83; corr of rule P&L with them +0.07 / +0.08
+[alpha] rule on baselines: alpha +36.0 bp/yr (t +0.58), beta carry +0.21, beta mean-rev +0.22
+[cost] 2 bp per turnover: Sharpe 0.16
+[cost] 4 bp per turnover: Sharpe 0.10
+[cost] 8 bp per turnover: Sharpe -0.01
+[cost] 12 bp per turnover: Sharpe -0.13
+[cost] 20 bp per turnover: Sharpe -0.35
+[trade] turnover 4.4 per year; mean |weight| 0.71; share of weeks at the cap 0.62
+[bootstrap] Sharpe 0.10, 90 % interval -0.85 to 0.61; P(Sharpe <= 0) 0.59
+[by year] 2019 +nan, 2020 +0.77, 2021 +0.51, 2022 -0.76, 2023 -0.88, 2024 -1.02, 2025 +0.13, 2026 +1.27
+[leave one year out] -2019 +0.10, -2020 +0.02, -2021 +0.06, -2022 +0.41, -2023 +0.17, -2024 +0.19, -2025 +0.10, -2026 -0.23
+                     variant  sharpe_2019_2026  sharpe_2019_2022  sharpe_2023_2026  sharpe_without_2026_09_on
+   fixed rule (L 26, hold 8)              0.10             -0.12              0.32                      -0.25
+  ensemble all L, holds 4-16             -0.14             -0.50              0.17                      -0.60
+ensemble L 20-39, holds 6-12              0.01             -0.15              0.16                      -0.37
+   fixed rule on SHFE vs LME              0.03              0.59             -0.62                       0.03
+ basket spread + SHFE vs LME              0.08              0.32             -0.16                      -0.13
+[placebo ensemble] real -0.14; share of placebos >= real 0.763
+[world lead] neighbourhood (World share, scale 1, lag 1): Sharpe all / test
+L       13    26    52
+hold                  
+12    0.02  0.71  0.83
+16    0.81  0.92  1.10
+20    0.81  0.91  0.93
+26    0.72  0.87  0.47
+39    0.69  0.09 -0.45
+L       13    26    52
+hold                  
+12    0.02  1.13  1.10
+16    0.96  1.16  1.08
+20    1.10  1.10  0.91
+26    0.86  1.08  0.36
+39    0.84  0.85 -0.36
+[world lead] by year 2020 +0.19, 2021 +1.43, 2022 +1.47, 2023 -0.98, 2024 +1.63, 2025 +2.66, 2026 +1.49; without Sep-Nov 2026 1.08
+[world lead] costs 8 / 20 bp: 1.00 / 0.71; on constant-maturity series 0.61; same rule on SHFE vs LME 0.11
+[world lead] Sharpe 1.10, 16-week block bootstrap 90 % interval 0.27 to 1.79, P(Sharpe <= 0) 0.015; return 1.44 %/yr at 1.41 % vol
