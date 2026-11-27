@@ -875,6 +875,14 @@ Removing the two known sources of noise (Ilo and Kutch flags) leaves 172 trades 
 \label{fig:search}
 \end{figure}
 
+\textbf{Shares of copper product makers.} Firms that turn refined copper into cables, wire and tubes buy cathode every day, so a smelter shortfall could reach their margins before it shows in official data. We repeated the strategy search on seven listed fabricators, each held against its home index (long the share, short the index, weekly): Prysmian, Nexans, Mueller Industries, Furukawa Electric, Sumitomo Electric, Fujikura and Hailiang, plus their equal-weight basket (Yahoo adjusted closes, 2018--2026). Same signals, transforms and rules as above: 4\,608 strategies, 3\,840 of them satellite-driven.
+\begin{itemize}[leftmargin=1.2em]
+  \item The training--test rank correlation is positive this time ($0.15$ for satellite strategies) and the 10 best on training keep a small test Sharpe ($0.16$; best: change in world running share, long Prysmian when supply rises, $1.75$ then $0.87$).
+  \item But time-shifted placebo signals do the same: their rank correlation has a median of $0.04$ and exceeds $0.15$ in 15\,\% of 20 placebo searches, their top-10 test Sharpe ranges from $-0.90$ to $0.34$, and 17\,\% of 30 placebo searches find a full-period strategy at least as good as the real best ($1.26$). The positive correlation comes from share-specific trends (for example Fujikura's 2024--2025 rise) that any signal with a lasting long or short bias picks up in both periods.
+  \item Deflated Sharpe probability of the best full-period satellite strategy: $0.53$, far below $0.95$.
+\end{itemize}
+Market signals (LME spread) on Fujikura look better in the test (top-10 mean $0.42$) but are not satellite information and show the same trend effect. Conclusion: no robust strategy on copper fabricators either.
+
 \begin{notebox}[Conclusion of the trading test]
 With the rules fixed in advance, the satellite supply surprise does not beat buy-and-hold on COMEX or LME copper over 2019--2026, and a placebo test cannot tell it from noise. This is a negative but clean result: no parameter was tuned on the test years. Trading only in the 11 days before the Chinese NBS release does not help either: the satellites do anticipate the official figure, but copper prices do not react to that figure. Stops one by one show no price effect; restarts are followed by a small fall ($-0.7$ to $-1.1$\,\% in two weeks, $p\approx0.03$, not robust to multiple testing); the LME spread moves the expected way but not significantly, and LME stocks do not confirm a supply shock. The satellite data describe smelters well but, on 2019--2026, carry no trading edge on exchange prices. Remaining ideas: re-test the restart effect on events after November 2026, and treatment charges (the price smelters are paid, the market most directly tied to smelter supply), which need a paid source (Fastmarkets, SMM, LSEG).
 \end{notebox}
