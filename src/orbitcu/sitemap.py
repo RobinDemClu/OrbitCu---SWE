@@ -1,6 +1,6 @@
 """Interactive smelter map built from the project's computed results.
 
-One self-contained HTML page (base map, d3 and topojson-client embedded; no network at view time)
+One self-contained HTML page (base map, fonts, d3 and topojson-client embedded; no network at view time)
 that shows, for each registry smelter:
 
 * its current position (and the previous one when the team moved it);
@@ -28,7 +28,9 @@ recomputation (new positions, new months) rebuild it with::
 from __future__ import annotations
 
 import argparse
+import base64
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -40,6 +42,7 @@ from .sites import REGISTRY_DIR, SITES_CSV
 TEMPLATES = Path(__file__).resolve().parent / "templates"
 VENDOR = {"https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js": "d3.min.js",
           "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js": "topojson-client.min.js"}
+FONT_FAMILIES = {"saira-condensed": "Saira Condensed", "ibm-plex-sans": "IBM Plex Sans", "ibm-plex-mono": "IBM Plex Mono"}
 
 # Published figures and surprise cases are kept per reporting entity; a few
 # entities cover several registry sites.
@@ -198,6 +201,17 @@ def render(data: dict, out: Path, template: Path = TEMPLATES / "site_map.html") 
     world = (TEMPLATES / "countries-50m.json").read_text(encoding="utf-8")
     html = html.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False, separators=(",", ":"), allow_nan=False))
     html = html.replace("/*__WORLD__*/null", world)
+    # embed the fonts (SIL OFL, from Fontsource) instead of loading Google Fonts
+    fonts = TEMPLATES / "vendor" / "fonts"
+    faces = []
+    for f in sorted(fonts.glob("*.woff2")):
+        family, weight = FONT_FAMILIES[f.name.split("-latin-")[0]], f.name.split("-latin-")[1].split("-")[0]
+        b64 = base64.b64encode(f.read_bytes()).decode("ascii")
+        faces.append(f'@font-face{{font-family:"{family}";font-style:normal;font-weight:{weight};font-display:swap;'
+                     f'src:url(data:font/woff2;base64,{b64}) format("woff2")}}')
+    if faces:
+        html = re.sub(r'<link rel="preconnect" href="https://fonts.googleapis.com">\s*<link rel="stylesheet" href="https://fonts.googleapis.com[^"]*">',
+                      lambda _: "<style>" + "".join(faces) + "</style>", html)
     # inline the two libraries so the page opens without network
     for url, name in VENDOR.items():
         lib = TEMPLATES / "vendor" / name

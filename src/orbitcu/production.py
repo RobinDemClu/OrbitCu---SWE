@@ -332,9 +332,19 @@ def _norm_rate(R: pd.DataFrame, decision: pd.Timestamp, p0: pd.Period, months: i
     return float((win["cu_kt"] / m).median())
 
 
+START_DATES = {"CD-KAMOA": "2025-12-29"}   # first anode (Ivanhoe Mines); no heat reference before
+
+
 def robust_cases(act: pd.DataFrame, rep: pd.DataFrame, sites, col: str = "hot_frac",
-                 ref_months: int = 12, min_ref: float = 0.05, latency_days: int = 1) -> pd.DataFrame:
-    """One row per published figure: robust activity ratio and normal published rate."""
+                 ref_months: int = 12, min_ref: float = 0.05, latency_days: int = 1,
+                 start_dates: dict | None = None) -> pd.DataFrame:
+    """One row per published figure: robust activity ratio and normal published rate.
+
+    ``start_dates`` (entity -> first production, default START_DATES): a figure whose
+    12-month heat reference begins before the plant existed is not testable
+    (``visible=False``), as in ``estimate_sites`` (the heat seen there is something else,
+    e.g. bush fires around Kamoa)."""
+    start_dates = START_DATES if start_dates is None else start_dates
     rows = []
     for e in rep["site_id"].unique():
         a = entity_activity(act, sites, e, col)
@@ -351,10 +361,11 @@ def robust_cases(act: pd.DataFrame, rep: pd.DataFrame, sites, col: str = "hot_fr
                          "months": n, "decision_time": decision, "cu_kt": r.cu_kt,
                          "published_at": getattr(r, "published_at", pd.NaT),
                          "a_cur": float(cur.mean()) if ok else np.nan, "a_ref": a_ref,
-                         "naive_kt": rate * n})
+                         "naive_kt": rate * n,
+                         "before_start": e in start_dates and (p0 - ref_months).start_time < pd.Timestamp(start_dates[e])})
     c = pd.DataFrame(rows)
     c["r"] = c["a_cur"] / c["a_ref"].where(c["a_ref"] > 0)
-    c["visible"] = c["a_ref"] >= min_ref
+    c["visible"] = (c["a_ref"] >= min_ref) & ~c["before_start"]
     return c
 
 

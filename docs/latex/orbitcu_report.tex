@@ -108,13 +108,14 @@ Copper supply is known only weeks after the fact, through monthly statistics. Sm
   \item \textbf{All 5 satellite data sources work}: images (Sentinel-2, Landsat), heat spots (VIIRS), \SOtwo{} gas (Sentinel-5P) and wind (ERA5).
   \item \textbf{First results:} heat is seen at 20 of the 29 smelters on at least 2 days a week, which confirms that they run; drops in activity are visible month by month (Chuquicamata in June--July 2026, for example). \SOtwo{} emissions 2022--2026 are computed for all 29 sites, but only 3 old smelters (Norilsk, Sarcheshmeh, Jinchang) are seen clearly: modern plants capture almost all their \SOtwo.
   \item \textbf{Copper output from heat (new):} with the full 2018--2026 VIIRS history and a cloud correction, a point-in-time estimate cuts the error on 100 hidden published figures at 9 units from 11.3\,\% (naive) to 8.2\,\%, by catching shutdowns (Hamburg 2024, Pirdop 2025) without false alarms; normal periods are not improved, and adding \SOtwo{} at Norilsk did not help (Section~\ref{sec:production}).
-  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 53 automated tests pass.
+  \item \textbf{Tools available today:} the \code{orbitcu} command downloads all sources, draws an interactive status map and estimates \SOtwo{} emissions; 55 automated tests pass.
   \item \textbf{Activity index (new):} a weekly share of smelter capacity running and a list of 57 dated stops and 59 restarts (2019--2026); in China it follows official output ($\rho=0.45$) about 11 days ahead of the statistics (Section~\ref{sec:index}).
   \item \textbf{Every image scored (new):} heat score and quality flag for all 29\,315 Sentinel-2 and Landsat images 2018--2026, with a hot-pixel rule tested on four boxes without industry; the Hamburg and Pirdop shutdowns and the Manyar restart are seen directly (Section~\ref{sec:images}).
   \item \textbf{\SOtwo{} software correction (new):} the step of each Sentinel-5P software upgrade is measured on orbits processed in both versions; the November 2025 upgrade alone added 19\,\%, about 40\,\% of the 2026 jumps (Section~\ref{sec:so2}).
   \item \textbf{Finer changes (new):} when a plant runs, the share of hot images follows output changes ($\rho=0.34$), which night heat does not; but after a point-in-time audit of the code the fine adjustment built on it no longer improves the estimate (18.3 to 17.5\,\% on large moves, no overall gain) (Section~\ref{sec:production}).
   \item \textbf{Trading test (new):} a weekly long/short strategy on COMEX copper driven by the satellite supply surprise, with volatility targeting and 2\,bp costs, was tested on 2019--2026 with a training/test split. It does \emph{not} beat buy-and-hold: test Sharpe $-0.02$ (world index) and $0.82$ (China index, interval $-0.26$ to $1.57$) against $0.60$ for buy-and-hold at the same risk; a placebo test finds no signal. Trading only in the 11 days before the Chinese statistics fails too: the satellites anticipate the NBS figure ($\rho=0.33$) but prices do not react to it. Stops one by one, LME stocks and the LME spread give no robust signal either; only restarts are followed by a small, uncertain fall (Section~\ref{sec:trading}).
   \item \textbf{Images for surprises (new):} measuring heat \emph{intensity} on each image does not improve the estimate, but using the share of hot images when VIIRS is silent catches 10 of 36 large surprises instead of 6, two flags out of three right, about 7 weeks before the official figure (Section~\ref{sec:intensity}).
+  \item \textbf{Seven smelters moved by hand (new):} images, VIIRS and clouds redone at the new positions; the estimate is 8.0\,\% vs 11.1\,\% naive on 99 figures; Kutch and Kamoa stay invisible (the old Kutch box saw another installation) (Section~\ref{sec:moved}).
   \item \textbf{Still to build:} the full dashboard.
 \end{itemize}
 \end{keybox}
@@ -493,7 +494,7 @@ Kamoa-Kakula (DR Congo) & low & 102 (53) & \textbf{8 / 53} & 19\\
 \subsection{The interactive status map}
 The command \code{orbitcu statusmap --open} repeats Test 2 for the last 12 months and draws the result on a world map. For each smelter and month, it compares the number of hot days with the site's usual level and gives one of four statuses: \textbf{active} (at least half the usual level), \textbf{reduced}, \textbf{no heat detected}, or \textbf{signal too weak} when the satellite cannot decide. Downloads are kept month by month, so a second run only fetches the new month.
 
-\textbf{Results map.} A second page, \code{orbitcu sitemap --data <data folder>}, draws all the results of this report on the same world map, without downloading or recomputing anything: it reads the result files, so it is rebuilt in a few seconds after any recomputation. A week slider (February 2018 to October 2026) colours each smelter by its weekly status (running, stopped, unknown, Section~\ref{sec:index}), and the header gives the capacity in each state. Selecting a smelter opens a panel with (i) its current position and, for the seven sites moved by the team on 27 November 2026, the previous one and the distance; (ii) the weekly activity ratio with the dated stops, restarts and fast stop alerts; (iii) the quarterly output estimated from heat against the published figures, with the surprise alerts (VIIRS, else hot-image share: 10 right out of 15, median 51 days before publication) marked as right or wrong; (iv) the monthly share of hot Sentinel-2/Landsat images; and (v) the version-corrected annual \SOtwo{} emissions at Norilsk, Sarcheshmeh and Jinchang. Two world panels show the capacity-weighted running share and the China index against the NBS statistic (correlation 0.45). Where the published figure is not copper (Aurubis reports concentrate throughput), the panel says so: only the changes can be compared, not the level. The page is one self-contained HTML file (map, d3 and data embedded), \code{figures/carte\_statut\_fonderies.html} in the project folder.
+\textbf{Results map.} A second page, \code{orbitcu sitemap --data <data folder>}, draws all the results of this report on the same world map, without downloading or recomputing anything: it reads the result files, so it is rebuilt in a few seconds after any recomputation. A week slider (February 2018 to October 2026) colours each smelter by its weekly status (running, stopped, unknown, Section~\ref{sec:index}), and the header gives the capacity in each state. Selecting a smelter opens a panel with (i) its current position and, for the seven sites moved by the team on 27 November 2026, the previous one and the distance (all series recomputed at the new positions); (ii) the weekly activity ratio with the dated stops, restarts and fast stop alerts; (iii) the quarterly output estimated from heat against the published figures, with the surprise alerts (VIIRS, else hot-image share: 9 right out of 14, median 58 days before publication) marked as right or wrong; (iv) the monthly share of hot Sentinel-2/Landsat images; and (v) the version-corrected annual \SOtwo{} emissions at Norilsk, Sarcheshmeh and Jinchang. Two world panels show the capacity-weighted running share and the China index against the NBS statistic (correlation 0.43 after the position update). Where the published figure is not copper (Aurubis reports concentrate throughput), the panel says so: only the changes can be compared, not the level. The page uses a monochrome design (black on off-white, inverted in dark mode): status is read from shape and hatching rather than colour (filled dot running, hatched dot stopped, grey unknown), so it also prints in black and white. It is one self-contained HTML file (map, fonts, d3 and data embedded), \code{figures/carte\_statut\_fonderies.html} in the project folder.
 
 \subsection{\SOtwo{} emissions: first results}\label{sec:so2}
 \textbf{Method.} For each smelter and month, the \SOtwo{} pixels within 40\,km are turned to face the wind measured at the smelter, and a plume shape (spread across the wind, fading along it) is fitted to them, following Fioletov et al.\ [7], [22]. The fit gives an emission rate in tonnes of \SOtwo{} per day, with its uncertainty. When another source is nearby, its position is estimated and it is fitted at the same time: at Kutch (India), most of the \SOtwo{} comes from coal power plants about 20\,km away, and the method now separates them from the smelter. Emissions are then converted to copper with one factor per site, set from output the operator published earlier.
@@ -723,6 +724,40 @@ VIIRS is never wrong but sees only the 6 clear stops. Adding the share of hot im
 
 \textbf{Decision.} Default estimate unchanged (VIIRS shutdown rule). For surprises the recommended detector is ``VIIRS, else share of hot images''; the intensity is kept in the code (\code{intensity\_ratio}, \code{surprise\_flags}) but not used. To be re-tested after the 14 smelters are placed by hand.
 
+\subsection{Seven smelters moved by hand (27 November 2026)}\label{sec:moved}
+
+\textbf{What changed.} The team placed by hand the smelters whose position came from a prior rather than from heat. Seven moved: Kutch 17.5\,km, Kamoa 14.0\,km, Toyo 6.2\,km, Dahej 3.5\,km, Jinguan 1.8\,km, Chifeng Yunjin 0.8\,km and Southeast 0.4\,km. Eight others kept their position (Dongying, Heding, Jinlong, Gresik, Daye, Chifeng Jintong, Onahama, Manyar). For the seven, all 6\,057 Sentinel-2/Landsat images, the VIIRS day masks of both satellites (from the archive on the team PC; Kutch and Kamoa fell outside the downloaded boxes and were fetched again with a 0.2$^\circ$ box) and the ERA5 cloud series were redone, then every test was run again. The \SOtwo{} fits were not redone (Kutch is mixed with coal plants; Kamoa shows no \SOtwo).
+
+\textbf{What the satellites see at the new positions.}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Kutch:} cold on images (0--4\,\% of images hot, also in 2024--2026 while the plant runs) and almost no VIIRS detection within 1.5\,km (6 days in 9 years; 6 days a year within 5\,km since 2025). The hot cluster in the old box (hot 2018--mid-2024, before the copper plant existed) was another installation, so the old Kutch ``stops'' and ``restarts'' were wrong. The plant is either dim or about 2\,km from the new point.
+  \item \textbf{Kamoa:} 15--22\,\% of images hot, but VIIRS sees only seasonal bush fires (June--August), with no rise after the start-up of December 2025. A test figure whose heat reference starts before the start-up is now excluded, as in the estimate (\code{production.START\_DATES}).
+  \item \textbf{Toyo, Dahej:} still cold (Toyo: no VIIRS detection within 3\,km).
+  \item \textbf{Jinguan, Chifeng Yunjin, Southeast:} hot as before; Jinguan now shows one stop and restart.
+\end{itemize}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}X r r@{}}
+\toprule
+\textbf{Result} & \textbf{Before the move} & \textbf{After}\\
+\midrule
+Copper estimate, hidden figures (VIIRS shutdown rule vs naive) & 8.2 vs 11.3\,\% (100) & 8.0 vs 11.1\,\% (99)\\
+Shutdown rule, images only / VIIRS + images & 9.8 / 8.4\,\% & 10.0 / 8.6\,\%\\
+Image fine adjustment, all / moves $>$10\,\% & 8.3 / 17.5\,\% & 8.2 / 17.4\,\% (rule 8.0 / 17.9)\\
+Surprise flags, VIIRS (right / false) & 6 / 0 & 5 / 0\\
+Surprise flags, VIIRS else hot images (right / false, days early) & 10 / 5, 51 & 9 / 5, 58\\
+Surprise flags, image intensity (right / false) & 15 / 41 & 17 / 41\\
+Dated stops / restarts 2019--2026 & 57 / 59 & 55 / 57\\
+China running share vs NBS & $\rho=0.45$ & $\rho=0.43$\\
+Images vs VIIRS, monthly agreement & 0.71 & 0.74\\
+\bottomrule
+\end{tabularx}
+\caption{Main results before and after the new positions. The earlier sections give the numbers before the move; the conclusions do not change.}
+\end{table}
+
+The Kutch ``hit'' among the surprise flags (Q3 2026) disappears: it came from the wrong installation. The conclusions stand: VIIRS for shutdowns, images as a back-up for surprises (9 right out of 14 flags, about 8 weeks before the official figure), no gain from intensity.
+
 \subsection{World activity index and dated events}\label{sec:index}
 
 \textbf{Why.} The copper estimate (Section~\ref{sec:production}) shows that heat tells reliably whether a smelter runs, stops or restarts, but not small changes in throughput. Copper prices react to supply \emph{surprises} (unplanned stops, restarts, faster or slower start-ups), not to a plant running 3\,\% lower. We therefore built two products that use only what heat measures well: a weekly capacity-weighted index and a list of dated events. Both are point-in-time and computed by \code{orbitcu.activity\_index}.
@@ -910,9 +945,9 @@ With the rules fixed in advance, the satellite supply surprise does not beat buy
 \toprule
 \textbf{\#} & \textbf{Task} & \textbf{Owner}\\
 \midrule
-1 & Place the 14 low-confidence smelters by hand (Kamoa first); choose slot 30 and Manyar's capacity & Baptiste\\
+1 & Check Kutch (plant not seen at the new position, perhaps 2 km off), Toyo and the 8 unchanged low-confidence smelters; choose slot 30 and Manyar's capacity & Baptiste\\
 2 & \SOtwo: measure the December 2024 software step (and a Norilsk-specific step); add country statistics to test more sites; use \SOtwo{} with heat in the daily estimate & Ethan\\
-3 & Re-run the image scores once the 14 smelters are placed by hand (about 1\,h); re-test the image fine adjustment, intensity and surprise flags with more published figures; add the ``VIIRS, else hot images'' surprise flag to the weekly status & Radu\\
+3 & Redo \SOtwo{} fits at the moved sites; re-test the image fine adjustment, intensity and surprise flags with more published figures; add the ``VIIRS, else hot images'' surprise flag to the weekly status & Radu\\
 4 & Add the daily image score to the dashboard data & Radu\\
 5 & Daily ``running or not'' estimate per smelter; world and regional activity indices & Ethan\\
 6 & Exchange stocks; remaining official statistics (ICSG world, Cochilco, India) with their publication dates; more published output figures (NICICO monthly via an Iranian source, LS MnM, JX/PPC) to test more shutdowns and \SOtwo{} at Sarcheshmeh; a start-up rule for rising heat; review of the estimates before any trading signal & Robin\\
