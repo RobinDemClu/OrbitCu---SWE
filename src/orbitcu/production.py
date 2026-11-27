@@ -481,3 +481,119 @@ def estimate_sites(act: pd.DataFrame, rep: pd.DataFrame, sites, col: str = "hot_
             rows.append({"site_id": s.id, "quarter": str(q), "rate_basis": basis, "visible": vis,
                          "r": r, "factor": f, "normal_kt": rate * 3, "est_kt": rate * 3 * f})
     return pd.DataFrame(rows)
+
+
+# --- Sentinel-2 / Landsat images in the estimate ---------------------------------------------
+# VIIRS sees a 375 m hot spot at night; the 20-30 m images see the furnace itself, but only on
+# clear days (3-15 usable images per site and month).  Image activity of a period = images
+# with confirmed hot pixels / usable images (hot on any image, or cold on a clear one), pooled
+# over the period, so a cloudy month does not void a quarter.
+IMG_MIN_CUR = 3        # usable images needed in the period
+IMG_MIN_REF = 12       # usable images needed in the 12-month reference
+IMG_MIN_REF_ACT = 0.2  # a site hot on fewer than 20 % of its images is not visible on images
+
+
+def image_monthly(scores: pd.DataFrame) -> pd.DataFrame:
+    """Per site and month: usable / hot image counts and intensity sums (clear images)."""
+    s = scores.copy()
+    for c in ("hot_seen", "cold_seen"):
+        s[c] = s[c].astype("boolean").fillna(False).astype(bool)
+    s = s[s["quality"].isin(["clear", "partial", "cloudy"])]
+    s["month"] = pd.to_datetime(s["acquired_at"], utc=True, format="mixed").dt.tz_localize(None).dt.to_period("M")
+    s["usable"] = s["hot_seen"] | s["cold_seen"]
+    clear = s["quality"] == "clear"
+    s["area_clear"] = np.where(clear, s["hot_area_m2"], 0.0)
+    s["excess_clear"] = np.where(clear, s["swir_excess"], 0.0)
+    s["lst_clear"] = np.where(clear & s.get("lst_excess_k", pd.Series(np.nan, index=s.index)).notna(),
+                              s.get("lst_excess_k", 0.0), 0.0)
+    s["n_lst"] = (clear & s.get("lst_excess_k", pd.Series(np.nan, index=s.index)).notna()).astype(int)
+    g = s.groupby(["site_id", "month"])
+    out = pd.DataFrame({"img_usable": g["usable"].sum(), "img_hot": g["hot_seen"].sum(),
+                        "img_clear": g["quality"].apply(lambda q: (q == "clear").sum()),
+                        "img_area_clear": g["area_clear"].sum(), "img_excess_clear": g["excess_clear"].sum(),
+                        "img_lst_clear": g["lst_clear"].sum(), "img_n_lst": g["n_lst"].sum()}).reset_index()
+    return out
+
+
+def _entity_img(img: pd.DataFrame, sites, entity: str) -> pd.DataFrame:
+    """Monthly image counts of an entity (sum over its sites, months as PeriodIndex)."""
+    ids = ENTITY_SITES.get(entity, [entity])
+    d = img[img["site_id"].isin(ids)]
+    if d["site_id"].nunique() < len(ids):
+        return pd.DataFrame()
+    return d.drop(columns="site_id").groupby("month").sum()
+
+
+def image_ratio(e_img: pd.DataFrame, p0: pd.Period, p1: pd.Period, ref_months: int = 12,
+                num: str = "img_hot", den: str = "img_usable") -> tuple[float, float, int]:
+    """(ratio, reference activity, usable images in period) of pooled image activity."""
+    if e_img.empty:
+        return np.nan, np.nan, 0
+    cur = e_img.loc[(e_img.index >= p0) & (e_img.index <= p1)]
+    ref = e_img.loc[(e_img.index >= p0 - ref_months) & (e_img.index < p0)]
+    n_cur, n_ref = int(cur["img_usable"].sum()), int(ref["img_usable"].sum())
+    if n_cur < IMG_MIN_CUR or n_ref < IMG_MIN_REF or ref[den].sum() <= 0 or cur[den].sum() <= 0:
+        return np.nan, np.nan, n_cur
+    a_cur, a_ref = cur[num].sum() / cur[den].sum(), ref[num].sum() / ref[den].sum()
+    return (a_cur / a_ref if a_ref > 0 else np.nan), a_ref, n_cur
+
+
+def add_image_ratio(cases: pd.DataFrame, img: pd.DataFrame, sites) -> pd.DataFrame:
+    """Add r_img (images), r_comb (VIIRS and images) to ``robust_cases`` output.
+
+    r_comb: mean of the two ratios when both sources see the site; the visible one
+    otherwise (fixed in advance, no fitting)."""
+    c = cases.copy()
+    cache = {}
+    r_img, a_ref_img, n_img = [], [], []
+    for r in c.itertuples(index=False):
+        if r.entity not in cache:
+            cache[r.entity] = _entity_img(img, sites, r.entity)
+        x = image_ratio(cache[r.entity], pd.Period(r.period_start, "M"), pd.Period(r.period_end, "M"))
+        r_img.append(x[0]); a_ref_img.append(x[1]); n_img.append(x[2])
+    c["r_img"], c["a_ref_img"], c["n_img"] = r_img, a_ref_img, n_img
+    c["visible_img"] = c["a_ref_img"] >= IMG_MIN_REF_ACT
+    rv = c["r"].where(c["visible"])
+    ri = c["r_img"].where(c["visible_img"])
+    c["r_comb"] = pd.concat([rv, ri], axis=1).mean(axis=1, skipna=True)
+    c["visible_comb"] = c["r_comb"].notna()
+    return c
+
+
+def evaluate_ratio(cases: pd.DataFrame, r_col: str, vis_col: str, cut: float = CUT) -> pd.DataFrame:
+    """Same as ``evaluate`` for any ratio column."""
+    t = cases[cases[vis_col].fillna(False).astype(bool) & cases[r_col].notna() & (cases["naive_kt"] > 0)].copy()
+    t["sat_kt"] = t["naive_kt"] * shutdown_factor(t[r_col], cut)
+    t["err_naive_pct"] = 100 * (t["naive_kt"] - t["cu_kt"]) / t["cu_kt"]
+    t["err_sat_pct"] = 100 * (t["sat_kt"] - t["cu_kt"]) / t["cu_kt"]
+    return t
+
+
+def pit_fine_adjust(cases: pd.DataFrame, m: str = "r_img", stop_col: str = "r", cut: float = CUT,
+                    lo: float = 0.7, hi: float = 1.3, min_train: int = 15) -> pd.DataFrame:
+    """Shutdown rule, then a fine adjustment while the plant runs (point-in-time).
+
+    If the plant runs (``stop_col`` >= cut) and the measure ``m`` (default: share of images
+    with hot pixels vs the previous 12 months) exists, the estimate is
+    ``naive * clip(r_m ** beta, lo, hi)``; ``beta`` is the least-squares slope of
+    log(output / naive) on log(r_m) over running cases decided earlier (pooled, at least
+    ``min_train``), clipped to [0, 1.5].  Adds ``fine_kt``, ``beta`` and ``err_fine_pct``."""
+    t = cases[cases["visible"] & cases[stop_col].notna() & (cases["naive_kt"] > 0)].copy()
+    t = t.sort_values("decision_time").reset_index(drop=True)
+    t["y"] = np.log(t["cu_kt"] / t["naive_kt"])
+    est, betas = [], []
+    for r in t.itertuples(index=False):
+        f, b = float(shutdown_factor([getattr(r, stop_col)], cut)[0]), np.nan
+        x = getattr(r, m)
+        if f == 1.0 and np.isfinite(x) and x > 0:
+            tr = t[(t["decision_time"] < r.decision_time) & (t[stop_col] >= cut)][[m, "y"]].dropna()
+            tr = tr[tr[m] > 0]
+            if len(tr) >= min_train:
+                X = np.log(tr[m].clip(0.5, 2.0))
+                b = float(np.clip((X * tr["y"]).sum() / (X * X).sum(), 0.0, 1.5)) if (X * X).sum() > 0 else 0.0
+                f = float(np.clip(np.exp(b * np.log(np.clip(x, 0.5, 2.0))), lo, hi))
+        est.append(r.naive_kt * f); betas.append(b)
+    t["fine_kt"], t["beta"] = est, betas
+    t["err_naive_pct"] = 100 * (t["naive_kt"] - t["cu_kt"]) / t["cu_kt"]
+    t["err_fine_pct"] = 100 * (t["fine_kt"] - t["cu_kt"]) / t["cu_kt"]
+    return t

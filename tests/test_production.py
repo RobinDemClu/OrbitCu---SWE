@@ -83,3 +83,30 @@ def test_so2_ratio_year_on_year_and_point_in_time():
 def test_fused_factor_keeps_heat_shutdown_and_damps_so2():
     f = P.fused_factor([0.2, 1.0, 1.0, 1.0], [1.0, 0.8, np.nan, 3.0], cut=0.6, w=0.5)
     assert np.allclose(f, [0.2, 0.9, 1.0, 1.25])
+
+
+def test_image_ratio_pools_months_and_needs_enough_images():
+    import pandas as pd
+    from orbitcu import production as P
+    idx = pd.period_range("2024-01", "2025-03", freq="M")
+    e = pd.DataFrame({"img_usable": 4, "img_hot": 4}, index=idx)
+    e.loc[pd.Period("2025-01", "M"):, "img_hot"] = 1          # quarter mostly cold
+    r, a_ref, n = P.image_ratio(e, pd.Period("2025-01", "M"), pd.Period("2025-03", "M"))
+    assert n == 12 and a_ref == 1.0 and abs(r - 0.25) < 1e-9
+    e.loc[pd.Period("2025-01", "M"):, "img_usable"] = 0        # all cloudy: no ratio
+    assert P.image_ratio(e, pd.Period("2025-01", "M"), pd.Period("2025-03", "M"))[0] != P.image_ratio(e, pd.Period("2025-01", "M"), pd.Period("2025-03", "M"))[0]
+
+
+def test_pit_fine_adjust_uses_only_past_cases():
+    import numpy as np
+    import pandas as pd
+    from orbitcu import production as P
+    n = 30
+    d = pd.DataFrame({"decision_time": pd.date_range("2020-01-01", periods=n, freq="90D"),
+                      "visible": True, "r": 1.0, "naive_kt": 100.0,
+                      "r_img": np.r_[np.tile([0.8, 1.0, 1.25], 10)]})
+    d["cu_kt"] = 100.0 * d["r_img"] ** 0.5                       # output follows images, beta 0.5
+    t = P.pit_fine_adjust(d, min_train=15)
+    assert t["beta"].iloc[:15].isna().all()                       # not enough past cases yet
+    assert abs(t["beta"].iloc[-1] - 0.5) < 1e-6
+    assert t["err_fine_pct"].iloc[15:].abs().max() < 1e-6
