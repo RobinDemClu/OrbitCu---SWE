@@ -20,6 +20,6 @@ def test_build_and_render_from_minimal_results(tmp_path):
     assert "CD-KAMOA" in moved
     out = sitemap.render(data, tmp_path / "map.html")
     html = out.read_text(encoding="utf-8")
-    assert "/*__DATA__*/" not in html and "cdn.jsdelivr.net" not in html
+    assert "/*__DATA__*/" not in html and "cdn.jsdelivr.net" not in html and "fonts.googleapis.com" not in html
     start = html.index("const DATA = ") + len("const DATA = ")
     json.loads(html[start:html.index(";\nconst WORLD")])

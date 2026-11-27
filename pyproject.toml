@@ -28,4 +28,4 @@ where = ["src"]
 testpaths = ["tests"]
 
 [tool.setuptools.package-data]
-orbitcu = ["templates/*", "templates/vendor/*"]
+orbitcu = ["templates/*", "templates/vendor/*", "templates/vendor/fonts/*"]
