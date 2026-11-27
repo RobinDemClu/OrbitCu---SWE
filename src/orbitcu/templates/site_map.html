@@ -408,15 +408,27 @@ function writeHash() {
   const h = new URLSearchParams({ tab: state.tab, site: state.sel, week: W[state.w], sub: state.sub });
   if (state.cmp.length) h.set("cmp", state.cmp.join(","));
   if (state.tab === "markets") { h.set("shares", state.shares.join(",")); h.set("period", state.mk); }
-  history.replaceState(null, "", "#" + h.toString());
+  state.hash = h.toString();
+  // a page opened from a preview frame (about:srcdoc, sandbox) cannot change its address: keep the view in memory only
+  if (/^(https?|file):$/.test(location.protocol)) { try { history.replaceState(null, "", "#" + state.hash); } catch (e) { /* ignore */ } }
 }
 if (!state.cmp.length) state.cmp = sites.slice(0, 3).map(s => s.id);
 readHash();
+function showLinkBox(link, msg) {
+  const el = document.getElementById("toast"); clearTimeout(toast.h);
+  el.innerHTML = `<div style="margin-bottom:6px">${esc(msg)}</div><input type="text" readonly value="${esc(link)}" style="width:min(70vw,560px);font:inherit;font-family:var(--font-data);font-size:0.78rem;padding:4px 6px"> <button class="btn small" type="button">Close</button>`;
+  el.hidden = false; const inp = el.querySelector("input"); inp.focus(); inp.select();
+  el.querySelector("button").addEventListener("click", () => { el.hidden = true; });
+}
 function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => el.hidden = true, 1800); }
 document.getElementById("copyLink").addEventListener("click", async () => {
   writeHash();
-  try { await navigator.clipboard.writeText(location.href); toast("Link copied: it opens this exact view"); }
-  catch (e) { prompt("Copy this link", location.href); }
+  const real = /^(https?|file):$/.test(location.protocol);
+  const link = real ? location.href.split("#")[0] + "#" + state.hash : "#" + state.hash;
+  let ok = false;
+  try { await navigator.clipboard.writeText(link); ok = true; } catch (e) { /* clipboard blocked in some frames */ }
+  if (real && ok) { toast("Link copied: it opens this exact view"); return; }
+  showLinkBox(link, real ? "Copy this link: it opens this exact view." : "This preview has no web address. Open the HTML file in a browser and add this ending to its address to get this exact view:");
 });
 
 // ---------- tooltip ----------
