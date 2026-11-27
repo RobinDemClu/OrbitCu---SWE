@@ -114,10 +114,13 @@ def main(argv=None):
     if argv[:1] == ["image-scores"]:
         from . import image_scores
         return image_scores.main(argv[1:])
+    if argv[:1] == ["sitemap"]:
+        from . import sitemap
+        return sitemap.main(argv[1:])
     if argv[:1] == ["statusmap"]:
         from . import statusmap
         return statusmap.main(argv[1:])
-    p = argparse.ArgumentParser(prog="orbitcu", epilog="also: orbitcu statusmap [--open] (see orbitcu statusmap -h)")
+    p = argparse.ArgumentParser(prog="orbitcu", epilog="also: orbitcu statusmap [--open], orbitcu sitemap --data DIR (see -h of each)")
     sub = p.add_subparsers(dest="cmd", required=True)
     for name, fn in [("firms", cmd_firms), ("optical", cmd_optical), ("s5p", cmd_s5p), ("era5", cmd_era5),
                      ("s5p-batch", cmd_s5p_batch)]:

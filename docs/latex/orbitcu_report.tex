@@ -493,6 +493,8 @@ Kamoa-Kakula (DR Congo) & low & 102 (53) & \textbf{8 / 53} & 19\\
 \subsection{The interactive status map}
 The command \code{orbitcu statusmap --open} repeats Test 2 for the last 12 months and draws the result on a world map. For each smelter and month, it compares the number of hot days with the site's usual level and gives one of four statuses: \textbf{active} (at least half the usual level), \textbf{reduced}, \textbf{no heat detected}, or \textbf{signal too weak} when the satellite cannot decide. Downloads are kept month by month, so a second run only fetches the new month.
 
+\textbf{Results map.} A second page, \code{orbitcu sitemap --data <data folder>}, draws all the results of this report on the same world map, without downloading or recomputing anything: it reads the result files, so it is rebuilt in a few seconds after any recomputation. A week slider (February 2018 to October 2026) colours each smelter by its weekly status (running, stopped, unknown, Section~\ref{sec:index}), and the header gives the capacity in each state. Selecting a smelter opens a panel with (i) its current position and, for the seven sites moved by the team on 27 November 2026, the previous one and the distance; (ii) the weekly activity ratio with the dated stops, restarts and fast stop alerts; (iii) the quarterly output estimated from heat against the published figures, with the surprise alerts (VIIRS, else hot-image share: 10 right out of 15, median 51 days before publication) marked as right or wrong; (iv) the monthly share of hot Sentinel-2/Landsat images; and (v) the version-corrected annual \SOtwo{} emissions at Norilsk, Sarcheshmeh and Jinchang. Two world panels show the capacity-weighted running share and the China index against the NBS statistic (correlation 0.45). Where the published figure is not copper (Aurubis reports concentrate throughput), the panel says so: only the changes can be compared, not the level. The page is one self-contained HTML file (map, d3 and data embedded), \code{figures/carte\_statut\_fonderies.html} in the project folder.
+
 \subsection{\SOtwo{} emissions: first results}\label{sec:so2}
 \textbf{Method.} For each smelter and month, the \SOtwo{} pixels within 40\,km are turned to face the wind measured at the smelter, and a plume shape (spread across the wind, fading along it) is fitted to them, following Fioletov et al.\ [7], [22]. The fit gives an emission rate in tonnes of \SOtwo{} per day, with its uncertainty. When another source is nearby, its position is estimated and it is fitted at the same time: at Kutch (India), most of the \SOtwo{} comes from coal power plants about 20\,km away, and the method now separates them from the smelter. Emissions are then converted to copper with one factor per site, set from output the operator published earlier.
 
@@ -957,6 +959,7 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \textbf{Command} & \textbf{What it produces}\\
 \midrule
 \code{orbitcu statusmap --open} & Interactive smelter status map, \code{output/status\_map.html} (add \code{--months 6} for a faster first run)\\
+\code{orbitcu sitemap --data <data folder> --out figures/carte\_statut\_fonderies.html} & Results map: weekly status, events, output vs published, surprise alerts, image scores, \SOtwo{} per smelter (reads result files only, a few seconds)\\
 \code{orbitcu optical --sensor sentinel2 --sites PL-GLOGOW --start 2026-10-01 --end 2026-10-31} & Image clips (3\,$\times$\,3\,km) and a table with dates and cloud fractions\\
 \code{orbitcu firms --sites PL-GLOGOW --start ... --end ...} & VIIRS heat spots (position, temperature, power, dates)\\
 \code{orbitcu s5p --sites PL-GLOGOW --start ... --end ...} & Sentinel-5P \SOtwo{} pixels in the 50\,km disc\\
@@ -982,6 +985,7 @@ On Linux or macOS use \code{export FIRMS\_MAP\_KEY=...}; in \code{cmd}, \code{se
 \code{ingest} (\code{optical}, \code{firms}, \code{s5p}, \code{era5}, \code{pit}) & One downloader per source, plus the ``when was it available'' rules\\
 \code{geolocate}, \code{activity\_check} & Furnace position from heat spots; monthly hot days and active/inactive verdict\\
 \code{statusmap} & Status map (Test 2 on the last 12 months)\\
+\code{sitemap} & Results map built from the result files (status, events, output, alerts, images, \SOtwo{})\\
 \code{emissions}, \code{copper}, \code{so2\_copper} & \SOtwo{} emission per smelter and conversion to copper\\
 \code{production} & Cloud-corrected heat activity, copper output estimate and its point-in-time test\\
 \code{activity\_index} & Weekly running/stopped status, world index, dated events\\
