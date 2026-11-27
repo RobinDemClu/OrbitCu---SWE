@@ -160,3 +160,14 @@ def test_surprise_flags_hits_and_false_alarms():
     s = P.surprise_score(t)
     assert (s["surprises"], s["flags"], s["hits"], s["false_alarms"]) == (2, 3, 2, 1)
     assert s["median_lead_days_hits"] == 45
+
+
+def test_robust_case_not_testable_before_start_up():
+    act = _act([0.5] * 12 + [0.1, 0.1, 0.1])
+    q = pd.period_range("2020Q1", "2021Q1", freq="Q")
+    rep = pd.DataFrame({"site_id": "A", "period_start": q.start_time, "period_end": q.end_time.normalize(),
+                        "cu_kt": [30, 30, 30, 30, 6.0],
+                        "published_at": (q.end_time.normalize() + pd.Timedelta(days=20)).tz_localize("UTC")})
+    c = P.robust_cases(act, rep, [_Site("A")], start_dates={"A": "2020-06-01"})
+    assert not c.iloc[-1].visible                       # reference 2020 starts before start-up
+    assert P.robust_cases(act, rep, [_Site("A")], start_dates={}).iloc[-1].visible
