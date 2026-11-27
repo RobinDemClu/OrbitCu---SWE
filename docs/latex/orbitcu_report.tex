@@ -939,8 +939,75 @@ Market signals (LME spread) on Fujikura look better in the test (top-10 mean $0.
 \end{itemize}
 So the nickel price is driven by news about \emph{future} supply (quotas, export rules), which satellites do not see, more than by current plant activity, which they do. A real test would need monthly Indonesian output (SMM, Mysteel or INSG, through a paid terminal) to check whether output surprises move prices before we build a nickel index.
 
+\subsubsection*{Summary: why no trading strategy was found}\label{sec:trading-summary}
+Table~\ref{tab:trading-summary} gathers every test of this section. In total about 8\,600 rule-based strategies were backtested in four large searches (copper futures 1\,152, fabricator shares 4\,608, copper against aluminium and zinc 1\,440, Shanghai against London 1\,344), plus 18 versions of a combined model, the fixed-rule strategy, the NBS window, two event studies (weekly events and fast VIIRS alerts, 214 events in all), 265 monthly trades on operator shares and a risk-timing test. Each search was repeated 30 to 40 times on time-shifted satellite signals (placebos) to see what chance alone finds.
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{2.6cm} r >{\raggedright\arraybackslash}p{3.3cm} >{\raggedright\arraybackslash}p{2.6cm} r@{}}
+\toprule
+\textbf{Family} & \textbf{Market} & \textbf{Tests} & \textbf{Training $\rightarrow$ test} & \textbf{Chance (placebo)} & \textbf{Defl. SR}\\
+\midrule
+Fixed-rule supply surprise & COMEX, LME & 4 & world $-0.58 \rightarrow -0.02$; China $-0.81 \rightarrow 0.82$; buy-and-hold $0.60$ & placebo $p=0.48$ & --\\
+Trade before the NBS release & COMEX, LME & 68 trades & Sharpe $-0.10$ & permutation $p=0.62$ & --\\
+Weekly stop / restart events & COMEX, LME & 113 events & stops: none; restarts $-1.1$\,\% in 2 weeks ($p=0.03$) & not robust to 32 tests & --\\
+LME spread and stocks & COMEX, LME & 8 & spread $0.85 \rightarrow 0.05$ & $\rho$ n.s. & --\\
+Surprise flags (company output) & COMEX, LME, shares & 15 + 66 & $|t|<0.8$; share reaction $\rho=-0.06$ & -- & --\\
+Monthly flags, operator shares & 10 listed operators & 265 trades & $-0.7$\,\% per 4-week trade & permutation $p=0.81$ & --\\
+Fast VIIRS alerts & COMEX, shares & 101 alerts & restarts $-0.9$\,\% in 20 days ($t=-1.4$) & n.s. & --\\
+Large search, copper futures & COMEX, LME & 1\,152 & top 10: $1.1$--$1.3 \rightarrow -0.18$; $\rho_{\text{train,test}}=-0.10$ & 23\,\% beat the best & 0.73\\
+Large search, fabricator shares & 7 cable/tube makers & 4\,608 & top 10 $\rightarrow 0.16$; $\rho=0.15$ (placebo median $0.04$) & 17\,\% beat the best & 0.53\\
+Copper vs aluminium, zinc & LME & 1\,440 & top 10 $\approx1.5 \rightarrow -0.44$ & 77\,\% beat the best & --\\
+Combined ridge model & COMEX, LME, Cu vs base & 18 & out of sample $-0.76$ to $-0.03$ & -- & --\\
+Risk timing & COMEX & 2 & $0.45$ vs $0.49$ without satellite & -- & --\\
+Shanghai vs London & SHFE, LME & 1\,344 & top 10 $\rightarrow -0.08$; $\rho=-0.11$ & 73\,\% beat the best & 0.62\\
+\bottomrule
+\end{tabularx}
+\caption{All trading tests, 2019--2026, 2\,bp costs, 10\,\% volatility target, training 2019--2022 and test 2023--2026 where a split applies. ``Training $\rightarrow$ test'': Sharpe ratios. ``Chance'': share of placebo searches (time-shifted satellite signals) that find a strategy at least as good as the real best, or the permutation $p$-value. ``Defl.\ SR'': probability that the best strategy has a true Sharpe above zero once the number of trials is counted~[42]; 0.95 is the usual bar.}
+\label{tab:trading-summary}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/trading_correlations.png}
+\caption{What the satellite index is correlated with. Blue: official statistics, where the links are clear (China running share against NBS output, $0.43$; supply surprise against NBS surprise, $0.33$). Red: market prices, where every interval contains zero except the same-period link with the Shanghai/London ratio, which has the sign of a demand effect (smelters run harder when Chinese demand is strong), not of a supply shock.}
+\label{fig:trading-corr}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/trading_train_test.png}
+\caption{Training against test Sharpe ratio for the satellite strategies of the four large searches; red: the 10 best on training. A real signal would put the red points high in the test; they scatter around zero or below.}
+\label{fig:trading-tt}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/trading_placebo.png}
+\caption{Best full-period Sharpe found by each placebo search (grey) against the real best (red line). The real searches do no better than searches on signals that cannot contain information.}
+\label{fig:trading-placebo}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/trading_events.png}
+\caption{Copper returns after satellite-dated events. Left: excess return 1, 2, 4 and 8 weeks after weekly stops and restarts (COMEX dark, LME light); stops have no effect, restarts are followed by a small fall ($p$ between $0.02$ and $0.05$ at 1--2 weeks), which does not survive the number of tests. Right: fast VIIRS alerts, 1 to 20 trading days later; nothing is significant ($|t|\le1.4$).}
+\label{fig:trading-events}
+\end{figure}
+
+\textbf{Why the information does not pay.}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \emph{The effect is small against the size of the market.} The share of tracked capacity that is running moves between 81 and 86\,\%; a few weeks of outage at one smelter is tens of kilotonnes in a 27\,Mt refined market. Copper prices move with demand (China, the dollar, the business cycle) and with mine supply far more than with smelter weeks.
+  \item \emph{A smelter stop does not remove copper from the market.} Concentrate waits or goes to another smelter, refined stocks buffer the gap, and refineries keep running on stored anodes (KGHM, Section~\ref{sec:production}). The price that does react is the treatment charge paid to smelters and the cathode premium, which have no free daily data.
+  \item \emph{The market already knows.} Chinese smelter run rates are surveyed every week by SMM and Mysteel, and companies announce maintenance; our signal, with a one-week data delay, often arrives after information traders already have. The NBS test shows it directly: we anticipate the official figure, but the price does not react to it on release day.
+  \item \emph{Activity is partly a demand signal.} Smelters run harder when demand is strong (positive link with the Shanghai premium and LME stock draws), so supply and demand effects cancel in a simple long/short rule.
+  \item \emph{Few independent events.} About 110 stops and restarts in seven years; at this size only effects above about 1\,\% per event could be detected, and with hundreds of variants tried a few nominally significant results are expected by chance, which the placebo searches and the deflated Sharpe confirm.
+\end{enumerate}
+The same check on nickel (above) shows that even where supply is concentrated, prices follow news about \emph{future} supply rather than current plant activity.
+
 \begin{notebox}[Conclusion of the trading test]
-With the rules fixed in advance, the satellite supply surprise does not beat buy-and-hold on COMEX or LME copper over 2019--2026, and a placebo test cannot tell it from noise. This is a negative but clean result: no parameter was tuned on the test years. Trading only in the 11 days before the Chinese NBS release does not help either: the satellites do anticipate the official figure, but copper prices do not react to that figure. Stops one by one show no price effect; restarts are followed by a small fall ($-0.7$ to $-1.1$\,\% in two weeks, $p\approx0.03$, not robust to multiple testing); the LME spread moves the expected way but not significantly, and LME stocks do not confirm a supply shock. The satellite data describe smelters well but, on 2019--2026, carry no trading edge on exchange prices. Remaining ideas: re-test the restart effect on events after November 2026, and treatment charges (the price smelters are paid, the market most directly tied to smelter supply), which need a paid source (Fastmarkets, SMM, LSEG).
+With rules fixed in advance and about 8\,600 strategies tested on copper futures, fabricator shares, other base metals and the Shanghai/London spread (Table~\ref{tab:trading-summary}), no strategy driven by satellite smelter activity beats buy-and-hold or chance over 2019--2026: the best strategies on 2019--2022 do not hold in 2023--2026, placebo searches on time-shifted signals find equally good strategies, and deflated Sharpe probabilities stay between 0.53 and 0.73, below 0.95. The data describe smelters well and anticipate official Chinese output by about 11 days, but exchange prices do not react to that information at a weekly horizon (Figure~\ref{fig:trading-corr}). The markets most directly tied to smelters, treatment charges and cathode premiums, have no free history and remain the main untested idea; other open leads are a re-test of the restart effect on events after November 2026 and the Chinese sulphuric acid price (a smelter by-product), now being collected.
 \end{notebox}
 
 % =====================================================================
