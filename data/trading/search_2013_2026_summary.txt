@@ -1,0 +1,24 @@
+[data] instruments: COMEX 2013-01, LME 2013-01, CuAl 2013-01, CuZn 2013-01, CuBase 2013-01, SHFE 2013-01, SHFEvsLME 2013-01, CalSpread 2013-01, Fab_Prysmian 2013-01, Fab_Nexans 2013-01, Fab_Mueller 2013-01, Fab_Furukawa 2013-01, Fab_SumitomoElec 2013-01, Fab_Fujikura 2013-01, Fab_Hailiang 2013-01, Fab_basket 2013-01
+[search] building real signals
+[search] 18432 strategies on 2013-2026; share Sharpe > 0: 0.45; positive in both halves: 0.23; top 1 % mean 0.78; best 1.19
+[search] best 10:
+          signal transform  smooth       instrument position  hold  direction  sharpe_all  sharpe_h1  sharpe_h2
+AmericasAF_share      chg8       4 Fab_SumitomoElec     sign     8          1        1.19       1.40       1.11
+AmericasAF_share      chg8       4 Fab_SumitomoElec   scaled     8          1        1.11       1.44       0.98
+AmericasAF_share      chg8       4     Fab_Furukawa     sign     8          1        1.11       1.30       1.12
+AmericasAF_share     chg13       4 Fab_SumitomoElec     sign     1          1        1.05       1.53       0.76
+AmericasAF_share     chg13       4     Fab_Fujikura     sign     1          1        1.04       1.43       0.80
+AmericasAF_share     chg13       4 Fab_SumitomoElec   scaled     8          1        1.03       1.24       0.86
+AmericasAF_share      chg8       4     Fab_Furukawa   scaled     8          1        0.99       1.25       0.93
+AmericasAF_share      chg8       4       Fab_basket     sign     8          1        0.97       1.19       0.86
+AmericasAF_share     chg13       4 Fab_SumitomoElec   scaled     1          1        0.97       1.40       0.71
+AmericasAF_share      chg8       4     Fab_Fujikura     sign     8          1        0.97       1.14       0.85
+[search] best by instrument: Fab_SumitomoElec 1.19, Fab_Furukawa 1.11, Fab_Fujikura 1.04, Fab_basket 0.97, LME 0.91, SHFE 0.88, COMEX 0.81, Fab_Mueller 0.70, CuAl 0.70, CuZn 0.69, Fab_Nexans 0.69, Fab_Prysmian 0.69, CuBase 0.67, Fab_Hailiang 0.63, CalSpread 0.50, SHFEvsLME 0.44
+[walk-forward] top 10 chosen each January on past data only, traded 2016-2026: Sharpe 0.60; by year 2016 -0.31, 2017 +0.05, 2018 +1.02, 2019 +0.78, 2020 +0.36, 2021 -0.53, 2022 +1.80, 2023 +1.00, 2024 +0.66, 2025 +2.03, 2026 +0.83
+[walk-forward] instruments of the 10 picks by year: 2016: CalSpread,Fab_Furukawa,Fab_basket; 2017: Fab_Furukawa,Fab_Mueller,Fab_Nexans,Fab_basket; 2018: Fab_Fujikura,Fab_Furukawa,Fab_SumitomoElec,Fab_basket; 2019: COMEX,Fab_Furukawa,Fab_SumitomoElec,Fab_basket,LME,SHFE; 2020: Fab_Fujikura,Fab_SumitomoElec,Fab_basket,SHFE; 2021: Fab_Fujikura,Fab_SumitomoElec,Fab_basket; 2022: Fab_Fujikura,Fab_Furukawa,Fab_SumitomoElec,Fab_basket; 2023: Fab_Fujikura,Fab_Furukawa,Fab_SumitomoElec; 2024: Fab_Fujikura,Fab_Furukawa,Fab_SumitomoElec; 2025: Fab_Fujikura,Fab_Furukawa,Fab_SumitomoElec; 2026: Fab_Fujikura,Fab_Furukawa,Fab_SumitomoElec
+[placebo] best: real +1.192, placebo median +0.944, share of placebos >= real 0.010
+[placebo] share_pos: real +0.451, placebo median +0.450, share of placebos >= real 0.480
+[placebo] both: real +0.234, placebo median +0.216, share of placebos >= real 0.165
+[placebo] top1: real +0.781, placebo median +0.662, share of placebos >= real 0.040
+[placebo] wf: real +0.602, placebo median -0.148, share of placebos >= real 0.020
+[dsr] best strategy deflated Sharpe probability 0.38 (needs > 0.95)
